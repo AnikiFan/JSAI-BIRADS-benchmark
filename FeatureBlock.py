@@ -1,4 +1,5 @@
 from torch import nn
+import torch.cuda
 class FeatureBlock(nn.Module):
     def __init__(self,out_channels):
         super().__init__()
@@ -7,6 +8,8 @@ class FeatureBlock(nn.Module):
             nn.LazyBatchNorm2d(),
             nn.MaxPool2d(kernel_size=2,stride=2)
         )
+        if torch.cuda.is_available():
+            self.net = self.net.to(torch.device('cuda'))
 
     def forward(self,x):
         return self.net(x)

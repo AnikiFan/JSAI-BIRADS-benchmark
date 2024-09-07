@@ -1,4 +1,5 @@
 from torch import nn
+import torch.cuda
 class ConvolutionBlock(nn.Module):
     def __init__(self,conv_num,out_channels=64,lr=0.1,first=False):
         super().__init__()
@@ -16,6 +17,9 @@ class ConvolutionBlock(nn.Module):
                 nn.LazyBatchNorm2d(),
                 nn.MaxPool2d(kernel_size=2,stride=2) # 论文中使用的是MaxPool
             )
+        if torch.cuda.is_available():
+            self.net = self.net.to(torch.device('cuda'))
+
 
     def forward(self,x):
         return self.net(x)

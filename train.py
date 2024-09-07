@@ -7,6 +7,11 @@ from torcheval.metrics.functional import multiclass_precision,multiclass_f1_scor
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 from TDSNet import TDSNet
+from model4compare.GoogleNet import GoogleNet
+from model4compare.AlexNet import AlexNet
+from model4compare.VGG import VGG
+from model4compare.NiN import NiN
+
 def train_one_epoch(epoch_index, tb_writer):
     running_loss = 0.
     running_precision = 0.
@@ -60,6 +65,30 @@ def train_one_epoch(epoch_index, tb_writer):
 
     return last_loss,last_precision,last_f1
 
+def modelSelector(model,lr,num_class):
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    if model == 'TDSNet':
+        model = TDSNet(num_class)
+        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+        return model,SummaryWriter('runs/TDS_'+str(lr)+"_"+timestamp),optimizer,timestamp
+    elif model == 'AlexNet':
+        model = AlexNet(num_class)
+        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+        return model,SummaryWriter('runs/AlexNet_'+str(lr)+"_"+timestamp),optimizer,timestamp
+    elif model == 'GoogleNet':
+        model = GoogleNet(num_class)
+        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+        return model,SummaryWriter('runs/GoogleNet_'+str(lr)+"_"+timestamp),optimizer,timestamp
+    elif model == 'VGG':
+        model = VGG(((1, 64), (1, 128), (2, 256), (2, 512), (2, 512)),num_class)
+        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+        return model,SummaryWriter('runs/VGG_'+str(lr)+"_"+timestamp),optimizer,timestamp
+    elif model == 'NiN':
+        model = NiN(num_class)
+        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+        return model,SummaryWriter('runs/NiN_'+str(lr)+"_"+timestamp),optimizer,timestamp
+
+
 
 if __name__ == '__main__':
     "----------------------------------- data ---------------------------------------------"
@@ -84,15 +113,9 @@ if __name__ == '__main__':
     loss_fn = torch.nn.CrossEntropyLoss()
 
     "----------------------------------- model ---------------------------------------------"
-    model = TDSNet(10,lr=0.01)
-
-    "----------------------------------- optimizer ---------------------------------------------"
-    # Optimizers specified in the torch.optim package
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    model,writer,optimizer,timestamp = modelSelector('GoogleNet',0.001,10)
 
     "----------------------------------- training ---------------------------------------------"
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    writer = SummaryWriter('runs/fashion_trainer_{}'.format(timestamp))
     epoch_number = 0
 
     EPOCHS = 5

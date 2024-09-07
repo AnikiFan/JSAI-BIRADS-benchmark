@@ -7,7 +7,7 @@ from ClassifierBlock import ClassifierBlock
 from ConvolutionBlock import ConvolutionBlock
 from DDModule import DDModel
 class TDSNet(d2l.Classifier):
-    def __init__(self,num_class,lr=0.1):
+    def __init__(self,num_class=10):
         super().__init__()
         self.save_hyperparameters()
 

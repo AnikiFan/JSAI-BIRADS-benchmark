@@ -1,6 +1,7 @@
 import torch
 import torchvision
 import torchvision.transforms as transforms
+from torcheval.metrics.functional import multiclass_precision,multiclass_f1_score
 
 # PyTorch TensorBoard support
 from torch.utils.tensorboard import SummaryWriter
@@ -8,7 +9,11 @@ from datetime import datetime
 from TDSNet import TDSNet
 def train_one_epoch(epoch_index, tb_writer):
     running_loss = 0.
+    running_precision = 0.
+    running_f1 = 0.
     last_loss = 0.
+    last_precision = 0.
+    last_f1 = 0.
 
     # Here, we use enumerate(training_loader) instead of
     # iter(training_loader) so that we can track the batch
@@ -16,6 +21,9 @@ def train_one_epoch(epoch_index, tb_writer):
     for i, data in enumerate(training_loader):
         # Every data instance is an input + label pair
         inputs, labels = data
+        if torch.cuda.is_available():
+            inputs = inputs.to(torch.device('cuda'))
+            labels = labels.to(torch.device('cuda'))
 
         # Zero your gradients for every batch!
         optimizer.zero_grad()
@@ -27,6 +35,9 @@ def train_one_epoch(epoch_index, tb_writer):
         loss = loss_fn(outputs, labels)
         loss.backward()
 
+        running_precision += multiclass_precision(outputs,labels).tolist()
+        running_f1 += multiclass_f1_score(outputs,labels).tolist()
+
         # Adjust learning weights
         optimizer.step()
 
@@ -34,16 +45,27 @@ def train_one_epoch(epoch_index, tb_writer):
         running_loss += loss.item()
         if i % 1000 == 999:
             last_loss = running_loss / 1000 # loss per batch
-            print('  batch {} loss: {}'.format(i + 1, last_loss))
+            last_precision = running_precision / 1000 # loss per batch
+            last_f1 = running_f1 / 1000 # loss per batch
+            print('  batch {} loss     : {}'.format(i + 1, last_loss))
+            print('  batch {} precision: {}'.format(i + 1, last_precision))
+            print('  batch {} f1       : {}'.format(i + 1, last_f1))
             tb_x = epoch_index * len(training_loader) + i + 1
             tb_writer.add_scalar('Loss/train', last_loss, tb_x)
+            tb_writer.add_scalar('Precision/train', last_precision, tb_x)
+            tb_writer.add_scalar('F1/train', last_f1, tb_x)
             running_loss = 0.
+            running_precision = 0.
+            running_f1 = 0.
 
-    return last_loss
+    return last_loss,last_precision,last_f1
+
+
 if __name__ == '__main__':
     "----------------------------------- data ---------------------------------------------"
     transform = transforms.Compose(
         [transforms.ToTensor(),
+         transforms.Resize((256,256)),
          transforms.Normalize((0.5,), (0.5,))])
 
     # Create datasets for training & validation, download if necessary
@@ -51,8 +73,8 @@ if __name__ == '__main__':
     validation_set = torchvision.datasets.FashionMNIST('./data', train=False, transform=transform, download=True)
 
     # Create data loaders for our datasets; shuffle for training, not for validation
-    training_loader = torch.utils.data.DataLoader(training_set, batch_size=4, shuffle=True)
-    validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=4, shuffle=False)
+    training_loader = torch.utils.data.DataLoader(training_set, batch_size=4, shuffle=True,pin_memory=True,pin_memory_device = 'cuda' if torch.cuda.is_available()else '')
+    validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=4, shuffle=False,pin_memory=True,pin_memory_device = 'cuda' if torch.cuda.is_available()else '')
 
     # Class labels
     classes = ('T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
@@ -82,10 +104,12 @@ if __name__ == '__main__':
 
         # Make sure gradient tracking is on, and do a pass over the data
         model.train(True)
-        avg_loss = train_one_epoch(epoch_number, writer)
+        avg_loss,avg_precision,avg_f1 = train_one_epoch(epoch_number, writer)
 
 
         running_vloss = 0.0
+        running_vprecison = 0.0
+        running_vf1 = 0.0
         # Set the model to evaluation mode, disabling dropout and using population
         # statistics for batch normalization.
         model.eval()
@@ -94,17 +118,34 @@ if __name__ == '__main__':
         with torch.no_grad():
             for i, vdata in enumerate(validation_loader):
                 vinputs, vlabels = vdata
+                if torch.cuda.is_available():
+                    vinputs = vinputs.to(torch.device('cuda'))
+                    vlabels = vlabels.to(torch.device('cuda'))
                 voutputs = model(vinputs)
                 vloss = loss_fn(voutputs, vlabels)
+                vprecision = multiclass_precision(voutputs,vlabels).tolist()
+                vf1 = multiclass_f1_score(voutputs,vlabels).tolist()
                 running_vloss += vloss
+                running_vprecison += vprecision
+                running_vf1 += vf1
 
         avg_vloss = running_vloss / (i + 1)
-        print('LOSS train {} valid {}'.format(avg_loss, avg_vloss))
+        avg_vprecision = running_vprecison / (i + 1)
+        avg_vf1 =  running_vf1 / (i + 1)
+        print('LOSS      train {} valid {}'.format(avg_loss, avg_vloss))
+        print('PRECISION train {} valid {}'.format(avg_precision, avg_vprecision))
+        print('F1        train {} valid {}'.format(avg_f1, avg_vf1))
 
         # Log the running loss averaged per batch
         # for both training and validation
         writer.add_scalars('Training vs. Validation Loss',
                            { 'Training' : avg_loss, 'Validation' : avg_vloss },
+                           epoch_number + 1)
+        writer.add_scalars('Training vs. Validation Precision',
+                           { 'Training' : avg_precision, 'Validation' : avg_vprecision },
+                           epoch_number + 1)
+        writer.add_scalars('Training vs. Validation F1',
+                           { 'Training' : avg_f1, 'Validation' : avg_vf1 },
                            epoch_number + 1)
         writer.flush()
 

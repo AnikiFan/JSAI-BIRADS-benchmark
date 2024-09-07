@@ -7,14 +7,13 @@ from ClassifierBlock import ClassifierBlock
 from ConvolutionBlock import ConvolutionBlock
 from DDModule import DDModel
 class TDSNet(d2l.Classifier):
-    def __init__(self,lr=0.1):
+    def __init__(self,num_class,lr=0.1):
         super().__init__()
         self.save_hyperparameters()
 
         self.featureBlock = FeatureBlock(64)# out_channels = 64
 
-        self.num_class = 6
-        self.classifierBlock = ClassifierBlock(self.num_class,1024)
+        self.classifierBlock = ClassifierBlock(num_class,1024)
 
         self.cb1 = ConvolutionBlock(1,64,first = True) # out_channels = 64
         self.cb2 = ConvolutionBlock(2,128)# out_channels = 128

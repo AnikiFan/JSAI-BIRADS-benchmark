@@ -1,8 +1,5 @@
-import torch
-import torchvision
 from torch import nn
-from d2l import torch as d2l
-class FeatureBlock(d2l.Classifier):
+class FeatureBlock(nn.Module):
     def __init__(self,out_channels):
         super().__init__()
         self.net =nn.Sequential(
@@ -10,3 +7,6 @@ class FeatureBlock(d2l.Classifier):
             nn.LazyBatchNorm2d(),
             nn.MaxPool2d(kernel_size=2,stride=2)
         )
+
+    def forward(self,x):
+        return self.net(x)

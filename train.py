@@ -1,7 +1,7 @@
 import torch
 import torchvision
 import torchvision.transforms as transforms
-from torcheval.metrics.functional import multiclass_precision,multiclass_f1_score
+from torcheval.metrics.functional import multiclass_precision, multiclass_f1_score
 
 # PyTorch TensorBoard support
 from torch.utils.tensorboard import SummaryWriter
@@ -11,6 +11,7 @@ from model4compare.GoogleNet import GoogleNet
 from model4compare.AlexNet import AlexNet
 from model4compare.VGG import VGG
 from model4compare.NiN import NiN
+
 
 def train_one_epoch(epoch_index, tb_writer):
     running_loss = 0.
@@ -40,8 +41,8 @@ def train_one_epoch(epoch_index, tb_writer):
         loss = loss_fn(outputs, labels)
         loss.backward()
 
-        running_precision += multiclass_precision(outputs,labels).tolist()
-        running_f1 += multiclass_f1_score(outputs,labels).tolist()
+        running_precision += multiclass_precision(outputs, labels).tolist()
+        running_f1 += multiclass_f1_score(outputs, labels, average='macro').tolist()
 
         # Adjust learning weights
         optimizer.step()
@@ -49,9 +50,9 @@ def train_one_epoch(epoch_index, tb_writer):
         # Gather data and report
         running_loss += loss.item()
         if i % 1000 == 999:
-            last_loss = running_loss / 1000 # loss per batch
-            last_precision = running_precision / 1000 # loss per batch
-            last_f1 = running_f1 / 1000 # loss per batch
+            last_loss = running_loss / 1000  # loss per batch
+            last_precision = running_precision / 1000  # loss per batch
+            last_f1 = running_f1 / 1000  # loss per batch
             print('  batch {} loss     : {}'.format(i + 1, last_loss))
             print('  batch {} precision: {}'.format(i + 1, last_precision))
             print('  batch {} f1       : {}'.format(i + 1, last_f1))
@@ -63,38 +64,38 @@ def train_one_epoch(epoch_index, tb_writer):
             running_precision = 0.
             running_f1 = 0.
 
-    return last_loss,last_precision,last_f1
+    return last_loss, last_precision, last_f1
 
-def modelSelector(model,lr,num_class):
+
+def modelSelector(model, lr, num_class):
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     if model == 'TDSNet':
         model = TDSNet(num_class)
         optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
-        return model,SummaryWriter('runs/TDS_'+str(lr)+"_"+timestamp),optimizer,timestamp
+        return model, SummaryWriter('runs/TDS_' + str(lr) + "_" + timestamp), optimizer, timestamp
     elif model == 'AlexNet':
         model = AlexNet(num_class)
         optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
-        return model,SummaryWriter('runs/AlexNet_'+str(lr)+"_"+timestamp),optimizer,timestamp
+        return model, SummaryWriter('runs/AlexNet_' + str(lr) + "_" + timestamp), optimizer, timestamp
     elif model == 'GoogleNet':
         model = GoogleNet(num_class)
         optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
-        return model,SummaryWriter('runs/GoogleNet_'+str(lr)+"_"+timestamp),optimizer,timestamp
+        return model, SummaryWriter('runs/GoogleNet_' + str(lr) + "_" + timestamp), optimizer, timestamp
     elif model == 'VGG':
-        model = VGG(((1, 64), (1, 128), (2, 256), (2, 512), (2, 512)),num_class)
+        model = VGG(((1, 64), (1, 128), (2, 256), (2, 512), (2, 512)), num_class)
         optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
-        return model,SummaryWriter('runs/VGG_'+str(lr)+"_"+timestamp),optimizer,timestamp
+        return model, SummaryWriter('runs/VGG_' + str(lr) + "_" + timestamp), optimizer, timestamp
     elif model == 'NiN':
         model = NiN(num_class)
         optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
-        return model,SummaryWriter('runs/NiN_'+str(lr)+"_"+timestamp),optimizer,timestamp
-
+        return model, SummaryWriter('runs/NiN_' + str(lr) + "_" + timestamp), optimizer, timestamp
 
 
 if __name__ == '__main__':
     "----------------------------------- data ---------------------------------------------"
     transform = transforms.Compose(
         [transforms.ToTensor(),
-         transforms.Resize((256,256)),
+         transforms.Resize((256, 256)),
          transforms.Normalize((0.5,), (0.5,))])
 
     # Create datasets for training & validation, download if necessary
@@ -102,18 +103,20 @@ if __name__ == '__main__':
     validation_set = torchvision.datasets.FashionMNIST('./data', train=False, transform=transform, download=True)
 
     # Create data loaders for our datasets; shuffle for training, not for validation
-    training_loader = torch.utils.data.DataLoader(training_set, batch_size=4, shuffle=True,pin_memory=True,pin_memory_device = 'cuda' if torch.cuda.is_available()else '')
-    validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=4, shuffle=False,pin_memory=True,pin_memory_device = 'cuda' if torch.cuda.is_available()else '')
+    training_loader = torch.utils.data.DataLoader(training_set, batch_size=4, shuffle=True, pin_memory=True,
+                                                  pin_memory_device='cuda' if torch.cuda.is_available() else '')
+    validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=4, shuffle=False, pin_memory=True,
+                                                    pin_memory_device='cuda' if torch.cuda.is_available() else '')
 
     # Class labels
     classes = ('T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
-           'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle Boot')
+               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle Boot')
 
     "----------------------------------- loss function ---------------------------------------------"
     loss_fn = torch.nn.CrossEntropyLoss()
 
     "----------------------------------- model ---------------------------------------------"
-    model,writer,optimizer,timestamp = modelSelector('GoogleNet',0.001,10)
+    model, writer, optimizer, timestamp = modelSelector('GoogleNet', 0.001, 10)
 
     "----------------------------------- training ---------------------------------------------"
     epoch_number = 0
@@ -127,8 +130,7 @@ if __name__ == '__main__':
 
         # Make sure gradient tracking is on, and do a pass over the data
         model.train(True)
-        avg_loss,avg_precision,avg_f1 = train_one_epoch(epoch_number, writer)
-
+        avg_loss, avg_precision, avg_f1 = train_one_epoch(epoch_number, writer)
 
         running_vloss = 0.0
         running_vprecison = 0.0
@@ -146,15 +148,15 @@ if __name__ == '__main__':
                     vlabels = vlabels.to(torch.device('cuda'))
                 voutputs = model(vinputs)
                 vloss = loss_fn(voutputs, vlabels)
-                vprecision = multiclass_precision(voutputs,vlabels).tolist()
-                vf1 = multiclass_f1_score(voutputs,vlabels).tolist()
+                vprecision = multiclass_precision(voutputs, vlabels).tolist()
+                vf1 = multiclass_f1_score(voutputs, vlabels, average='macro').tolist()
                 running_vloss += vloss
                 running_vprecison += vprecision
                 running_vf1 += vf1
 
         avg_vloss = running_vloss / (i + 1)
         avg_vprecision = running_vprecison / (i + 1)
-        avg_vf1 =  running_vf1 / (i + 1)
+        avg_vf1 = running_vf1 / (i + 1)
         print('LOSS      train {} valid {}'.format(avg_loss, avg_vloss))
         print('PRECISION train {} valid {}'.format(avg_precision, avg_vprecision))
         print('F1        train {} valid {}'.format(avg_f1, avg_vf1))
@@ -162,13 +164,13 @@ if __name__ == '__main__':
         # Log the running loss averaged per batch
         # for both training and validation
         writer.add_scalars('Training vs. Validation Loss',
-                           { 'Training' : avg_loss, 'Validation' : avg_vloss },
+                           {'Training': avg_loss, 'Validation': avg_vloss},
                            epoch_number + 1)
         writer.add_scalars('Training vs. Validation Precision',
-                           { 'Training' : avg_precision, 'Validation' : avg_vprecision },
+                           {'Training': avg_precision, 'Validation': avg_vprecision},
                            epoch_number + 1)
         writer.add_scalars('Training vs. Validation F1',
-                           { 'Training' : avg_f1, 'Validation' : avg_vf1 },
+                           {'Training': avg_f1, 'Validation': avg_vf1},
                            epoch_number + 1)
         writer.flush()
 

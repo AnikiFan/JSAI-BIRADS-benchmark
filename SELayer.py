@@ -1,14 +1,16 @@
 import torch
 from torch import nn
+
+
 class SELayer(nn.Module):
     def __init__(self, channel, reduction=16):
         super(SELayer, self).__init__()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Sequential(
-            nn.Linear(channel, channel // reduction, bias=False,device=self.device),
+            nn.Linear(channel, channel // reduction, bias=False, device=self.device),
             nn.ReLU(inplace=True),
-            nn.Linear(channel // reduction, channel, bias=False,device=self.device),
+            nn.Linear(channel // reduction, channel, bias=False, device=self.device),
             nn.Sigmoid()
         )
 

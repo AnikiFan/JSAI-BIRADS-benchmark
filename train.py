@@ -5,7 +5,7 @@ from torcheval.metrics.functional import multiclass_precision, multiclass_f1_sco
 import os
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
-from TDSNet import TDSNet
+from TDSNet.TDSNet import TDSNet
 from model4compare.GoogleNet import GoogleNet
 from model4compare.AlexNet import AlexNet
 from model4compare.VGG import VGG
@@ -190,7 +190,7 @@ if __name__ == '__main__':
 
     "----------------------------------- model ---------------------------------------------"
     num_class = 6
-    model, writer, optimizer, timestamp = modelSelector('GoogleNet', 0.001, num_class)
+    model, writer, optimizer, timestamp = modelSelector('TDSNet', 0.001, num_class)
 
     "----------------------------------- training ---------------------------------------------"
     epoch_number = 0

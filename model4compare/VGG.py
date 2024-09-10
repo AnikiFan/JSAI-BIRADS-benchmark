@@ -1,12 +1,15 @@
 import torch
 from torch import nn
+
+
 def vgg_block(num_convs, out_channels):
     layers = []
     for _ in range(num_convs):
         layers.append(nn.LazyConv2d(out_channels, kernel_size=3, padding=1))
         layers.append(nn.ReLU())
-    layers.append(nn.MaxPool2d(kernel_size=2,stride=2))
+    layers.append(nn.MaxPool2d(kernel_size=2, stride=2))
     return nn.Sequential(*layers)
+
 
 class VGG(nn.Module):
     def __init__(self, arch, num_classes=10):
@@ -22,5 +25,5 @@ class VGG(nn.Module):
         if torch.cuda.is_available():
             self.net = self.net.to('cuda')
 
-    def forward(self,x):
+    def forward(self, x):
         return self.net(x)

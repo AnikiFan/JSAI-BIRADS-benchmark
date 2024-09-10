@@ -2,3 +2,10 @@
 *-ubyte
 model_*
 data/
+*.docx
+*.jpg
+*.png
+*.zip
+*.txt
+*.pyc
+runs/*

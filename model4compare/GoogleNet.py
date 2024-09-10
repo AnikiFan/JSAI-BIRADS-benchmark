@@ -1,22 +1,24 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
+
+
 class Inception(nn.Module):
     # c1--c4 are the number of output channels for each branch
     def __init__(self, c1, c2, c3, c4, **kwargs):
         super(Inception, self).__init__(**kwargs)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         # Branch 1
-        self.b1_1 = nn.LazyConv2d(c1, kernel_size=1,device=self.device)
+        self.b1_1 = nn.LazyConv2d(c1, kernel_size=1, device=self.device)
         # Branch 2
-        self.b2_1 = nn.LazyConv2d(c2[0], kernel_size=1,device=self.device)
-        self.b2_2 = nn.LazyConv2d(c2[1], kernel_size=3, padding=1,device=self.device)
+        self.b2_1 = nn.LazyConv2d(c2[0], kernel_size=1, device=self.device)
+        self.b2_2 = nn.LazyConv2d(c2[1], kernel_size=3, padding=1, device=self.device)
         # Branch 3
-        self.b3_1 = nn.LazyConv2d(c3[0], kernel_size=1,device=self.device)
-        self.b3_2 = nn.LazyConv2d(c3[1], kernel_size=5, padding=2,device=self.device)
+        self.b3_1 = nn.LazyConv2d(c3[0], kernel_size=1, device=self.device)
+        self.b3_2 = nn.LazyConv2d(c3[1], kernel_size=5, padding=2, device=self.device)
         # Branch 4
         self.b4_1 = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
-        self.b4_2 = nn.LazyConv2d(c4, kernel_size=1,device=self.device)
+        self.b4_2 = nn.LazyConv2d(c4, kernel_size=1, device=self.device)
 
     def forward(self, x):
         b1 = F.relu(self.b1_1(x))
@@ -25,6 +27,7 @@ class Inception(nn.Module):
         b4 = F.relu(self.b4_2(self.b4_1(x)))
         return torch.cat((b1, b2, b3, b4), dim=1)
 
+
 class GoogleNet(nn.Module):
     def __init__(self, num_classes=10):
         super(GoogleNet, self).__init__()
@@ -32,22 +35,26 @@ class GoogleNet(nn.Module):
                                  self.b5(), nn.LazyLinear(num_classes))
         if torch.cuda.is_available():
             self.net = self.net.to('cuda')
-    def forward(self,x):
+
+    def forward(self, x):
         return self.net(x)
 
     def b1(self):
         return nn.Sequential(
             nn.LazyConv2d(64, kernel_size=7, stride=2, padding=3),
             nn.ReLU(), nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
+
     def b2(self):
         return nn.Sequential(
             nn.LazyConv2d(64, kernel_size=1), nn.ReLU(),
             nn.LazyConv2d(192, kernel_size=3, padding=1), nn.ReLU(),
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
+
     def b3(self):
         return nn.Sequential(Inception(64, (96, 128), (16, 32), 32),
                              Inception(128, (128, 192), (32, 96), 64),
                              nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
+
     def b4(self):
         return nn.Sequential(Inception(192, (96, 208), (16, 48), 64),
                              Inception(160, (112, 224), (24, 64), 64),
@@ -55,7 +62,8 @@ class GoogleNet(nn.Module):
                              Inception(112, (144, 288), (32, 64), 64),
                              Inception(256, (160, 320), (32, 128), 128),
                              nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
+
     def b5(self):
         return nn.Sequential(Inception(256, (160, 320), (32, 128), 128),
                              Inception(384, (192, 384), (48, 128), 128),
-                             nn.AdaptiveAvgPool2d((1,1)), nn.Flatten())
+                             nn.AdaptiveAvgPool2d((1, 1)), nn.Flatten())

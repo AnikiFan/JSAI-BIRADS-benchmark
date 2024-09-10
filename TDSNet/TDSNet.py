@@ -1,9 +1,9 @@
 import torch
 from torch import nn
-from FeatureBlock import FeatureBlock
-from ClassifierBlock import ClassifierBlock
-from ConvolutionBlock import ConvolutionBlock
-from DDModule import DDModel
+from TDSNet.FeatureBlock import FeatureBlock
+from TDSNet.ClassifierBlock import ClassifierBlock
+from TDSNet.ConvolutionBlock import ConvolutionBlock
+from TDSNet.DDModule import DDModel
 
 
 class TDSNet(nn.Module):

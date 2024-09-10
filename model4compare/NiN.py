@@ -3,10 +3,13 @@ from torch import nn
 
 
 def nin_block(out_channels, kernel_size, strides, padding):
-    return nn.Sequential(
+    net =  nn.Sequential(
         nn.LazyConv2d(out_channels, kernel_size, strides, padding), nn.ReLU(),
         nn.LazyConv2d(out_channels, kernel_size=1), nn.ReLU(),
         nn.LazyConv2d(out_channels, kernel_size=1), nn.ReLU())
+    if torch.cuda.is_available():
+        net = net.to('cuda')
+    return net
 
 
 class NiN(nn.Module):

@@ -9,7 +9,6 @@ from DDModule import DDModel
 class TDSNet(nn.Module):
     def __init__(self, num_class=10):
         super().__init__()
-        self.save_hyperparameters()
 
         self.featureBlock = FeatureBlock(64)  # out_channels = 64
 

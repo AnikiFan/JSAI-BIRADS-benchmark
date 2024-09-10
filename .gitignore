@@ -4,3 +4,7 @@ model_*
 *.docx
 *.jpg
 *.png
+*.zip
+*.txt
+*.pyc
+runs/*

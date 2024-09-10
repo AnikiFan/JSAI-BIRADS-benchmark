@@ -1,6 +1,7 @@
 *.gz
 *-ubyte
 model_*
+data/
 *.docx
 *.jpg
 *.png

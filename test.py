@@ -2,14 +2,14 @@ import unittest
 
 import torch.cuda
 
-from ClassifierBlock import *
-from ConvolutionBlock import *
-from DDModule import *
-from DeformableConvolutionBlock import *
-from FeatureBlock import *
-from SELayer import *
-from SeparableConv2D import *
-from TDSNet import *
+from TDSNet.ClassifierBlock import *
+from TDSNet.ConvolutionBlock import *
+from TDSNet.DDModule import *
+from MyBlock.DeformableConvolutionBlock import *
+from TDSNet.FeatureBlock import *
+from MyBlock.SELayer import *
+from MyBlock.SeparableConv2D import *
+from TDSNet.TDSNet import *
 
 
 class MyTestCase(unittest.TestCase):

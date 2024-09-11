@@ -121,3 +121,28 @@ D:.
 ├─TDSNet
 └─__pycache__
 ```
+
+
+
+
+# train保存的模型文件结构
+checkPoint
+.
+├── Unet_Breast_20240911_163649
+│   ├── cfg.json
+│   ├── model
+│   │   ├── Unet_ac0.386731_f10.232353_0.pth
+│   │   └── Unet_ac0.422735_f10.289592_1.pth
+│   ├── model_cfg.json
+│   ├── optimizer
+│   │   ├── Unet_ac0.386731_f10.232353_0.pth
+│   │   └── Unet_ac0.422735_f10.289592_1.pth
+│   └── transforms_cfg.json
+└── readme.txt
+
+
+# 新增文件夹说明：
+checkPoint ： 保存训练过程中的模型文件
+model_data : Unet中用来下载预训练模型的地址，建议其他模型与之一致
+models ： 编写的模型文件，建议把TDSNet也放进去
+utils ： 一些工具函数，如检查数据集，早停，输出过滤（过滤f1wanning）等

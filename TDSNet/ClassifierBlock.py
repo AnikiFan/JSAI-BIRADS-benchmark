@@ -1,7 +1,7 @@
 import torch.cuda
 from torch import nn
-from MyBlock.SeparableConv2D import SeparableConv2D
-from MyBlock.SELayer import SELayer
+from utils.MyBlock.SeparableConv2D import SeparableConv2D
+from utils.MyBlock.SELayer import SELayer
 
 
 class ClassifierBlock(nn.Module):

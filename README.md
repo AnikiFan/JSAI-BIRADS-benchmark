@@ -29,9 +29,13 @@
 # 仓库目录结构
 
 ```
+卷 游戏及文件 的文件夹 PATH 列表
+卷序列号为 EA13-00A1
 D:.
 ├─.idea
-│  └─inspectionProfiles
+│  ├─inspectionProfiles
+│  └─shelf
+│      └─Uncommitted_changes_before_Update_at_9_11_2024_5_59_PM_[Changes]
 ├─data
 │  ├─breast
 │  │  ├─.ipynb_checkpoints
@@ -113,13 +117,15 @@ D:.
 │  │          ├─4B类
 │  │          ├─4C类
 │  │          └─5类
-│  └─FashionMNIST
-│      └─raw
-├─model4compare
-│  └─__pycache__
-├─MyBlock
+│  ├─FashionMNIST
+│  │  └─raw
+│  └─test
+├─models
+│  ├─model4compare
+│  └─UnetClassifer
 ├─TDSNet
-└─__pycache__
+└─utils
+    └─MyBlock
 ```
 
 
@@ -144,9 +150,9 @@ checkPoint
 
 
 # 新增文件夹说明：
-```
-**checkPoint** ： 保存训练过程中的模型文件
-model_data : Unet中用来下载预训练模型的地址，建议其他模型与之一致
-**models** ： 编写的模型文件，建议把TDSNet也放进去
-utils ： 一些工具函数，如检查数据集，早停，输出过滤（过滤f1wanning）等
-```
+
+- **checkPoint** ： 保存训练过程中的模型文件
+- model_data : Unet中用来下载预训练模型的地址，建议其他模型与之一致
+- **models** ： 编写的模型文件
+- utils ： 一些工具函数，如检查数据集，早停，输出过滤（过滤f1wanning）等
+  - MyModel ： 一些神经网络中所用的模块（pytorch中没有现成的）

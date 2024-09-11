@@ -8,7 +8,7 @@ import os
 import json
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
-# from TDSNet import TDSNet
+# from TDSNet.TDSNet import TDSNet
 from TDSNet.TDSNet import TDSNet
 from model4compare.GoogleNet import GoogleNet
 from model4compare.AlexNet import AlexNet
@@ -17,7 +17,6 @@ from model4compare.NiN import NiN
 import logging
 
 from models.UnetClassifer.unet import UnetClassifier
-from dataAugmentation import transform_train,transform_test # 图像增广
 from utils.datasetCheck import checkDataset # 数据集检查
 from utils.earlyStopping import EarlyStopping # 提前停止
 from utils.multiMessageFilter import setup_custom_logger  #! 把MultiMessageFilter放入/utils.multiMessageFilter.py文件中

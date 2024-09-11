@@ -5,10 +5,10 @@ import torch.cuda
 from TDSNet.ClassifierBlock import *
 from TDSNet.ConvolutionBlock import *
 from TDSNet.DDModule import *
-from MyBlock.DeformableConvolutionBlock import *
+from utils.MyBlock.DeformableConvolutionBlock import *
 from TDSNet.FeatureBlock import *
-from MyBlock.SELayer import *
-from MyBlock.SeparableConv2D import *
+from utils.MyBlock.SELayer import *
+from utils.MyBlock.SeparableConv2D import *
 from TDSNet.TDSNet import *
 
 

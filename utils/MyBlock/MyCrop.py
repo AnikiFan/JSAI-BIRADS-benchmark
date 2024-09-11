@@ -24,7 +24,7 @@ def show(imgs):
     plt.show()
 
 
-class MyRotationTransform(nn.Module):
+class MyCrop(nn.Module):
     """Rotate by one of the given angles."""
 
     def __init__(self):
@@ -146,11 +146,13 @@ if __name__ == '__main__':
     plt.rcParams["savefig.bbox"] = 'tight'
     torch.manual_seed(1)
 
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
     testImages = [read_image(os.path.join(os.pardir, 'data', 'test', image)).to(device) for image in
                   os.listdir(os.path.join(os.pardir, 'data', 'test'))]
 
     transforms = torch.nn.Sequential(
-        MyRotationTransform(),
+        MyCrop(),
         # T.RandomCrop(224),
         # T.RandomHorizontalFlip(p=0.3),
     )

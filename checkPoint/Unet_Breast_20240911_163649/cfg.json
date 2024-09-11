@@ -1,1 +1,0 @@
-{"model": "Unet", "data": "Breast", "epoch_num": 1000, "batch_size": 4, "in_channels": 3, "device": "mps", "pin_memory": false, "infoShowFrequency": 100}

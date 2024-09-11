@@ -148,8 +148,8 @@ if __name__ == '__main__':
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    testImages = [read_image(os.path.join(os.pardir, 'data', 'test', image)).to(device) for image in
-                  os.listdir(os.path.join(os.pardir, 'data', 'test'))]
+    testImages = [read_image(os.path.join(os.pardir,os.pardir, 'data', 'test', image)).to(device) for image in
+                  os.listdir(os.path.join(os.pardir,os.pardir, 'data', 'test'))]
 
     transforms = torch.nn.Sequential(
         MyCrop(),

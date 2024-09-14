@@ -374,25 +374,24 @@ if __name__ == '__main__':
 
         # Track best performance, and save the model's state
         is_best = avg_vloss < best_vloss
-        if is_best:
-            best_vloss = avg_vloss
-
-        # 保存断点重训所需的信息（需要包括epoch，model_state_dict，optimizer_state_dict，best_vloss）
-        checkpoint = {
-            'epoch': epoch + 1,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'best_vloss': best_vloss
-        }
         
         if is_best:
+            best_vloss = avg_vloss
             print(f"=> Validation loss improved to {avg_vloss:.6f} - saving best model")
             modelCheckPoint_path = os.path.join(checkPoint_path, 'model')
             
             # 保存checkpoint（包括epoch，model_state_dict，optimizer_state_dict，best_vloss，但仅在best时保存）
+            # 保存断点重训所需的信息（需要包括epoch，model_state_dict，optimizer_state_dict，best_vloss）
+            checkpoint = {
+                'epoch': epoch + 1,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'best_vloss': best_vloss
+            }
             if not os.path.exists(os.path.join(checkPoint_path, 'resume_checkpoint')):
                 os.makedirs(os.path.join(checkPoint_path, 'resume_checkpoint'))
             save_checkpoint(checkpoint, checkPoint_path, filename=f'resume_checkpoint/epoch{epoch + 1}_vloss{avg_vloss:.4f}_precision{avg_vprecision:.4f}_f1{avg_vf1:.4f}.pth.tar')
+            
             # 保存最佳模型参数
             if not os.path.exists(modelCheckPoint_path):
                 os.makedirs(modelCheckPoint_path)

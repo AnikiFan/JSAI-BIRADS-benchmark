@@ -18,12 +18,31 @@ def getDevice():
 
 
 # 根据配置创建 transforms
-def create_transforms(transform_config):
+# def create_transforms(transform_config):
+#     transform_list = []
+#     for transform_name, params in transform_config.items():
+#         transform = getattr(transforms, transform_name)(**params)
+#         transform_list.append(transform)
+#     return transforms.Compose(transform_list)
+
+
+def create_transforms(transform_config, custom_transforms=None):
+    if custom_transforms is None:
+        custom_transforms = {}
     transform_list = []
     for transform_name, params in transform_config.items():
-        transform = getattr(transforms, transform_name)(**params)
+        if transform_name in custom_transforms:
+            transform_class = custom_transforms[transform_name]
+            if params:
+                transform = transform_class(**params)
+            else:
+                transform = transform_class()
+        else:
+            transform = getattr(transforms, transform_name)(**params)
         transform_list.append(transform)
     return transforms.Compose(transform_list)
+
+
 
 
 def save_checkpoint(state, checkpoint_dir, filename='checkpoint.pth.tar'):

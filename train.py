@@ -9,7 +9,7 @@ import json
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 # from TDSNet.TDSNet import TDSNet
-from TDSNet.TDSNet import TDSNet
+# from TDSNet.TDSNet import TDSNet
 from model4compare.GoogleNet import GoogleNet
 from model4compare.AlexNet import AlexNet
 from model4compare.VGG import VGG
@@ -22,24 +22,28 @@ from utils.earlyStopping import EarlyStopping # 提前停止
 from utils.multiMessageFilter import setup_custom_logger  #! 把MultiMessageFilter放入/utils.multiMessageFilter.py文件中
 logger = setup_custom_logger() # 设置日志屏蔽器，屏蔽f1_score的warning
 from utils.tools import getDevice, create_transforms # getDevice获取设备，create_transforms根据json配置创建transforms对象
-
+from utils.tools import load_checkpoint, save_checkpoint # 加载和保存检查点
 
 # 配置
 cfg = {
     "model": "Unet", # 模型选择
     "data": "Breast", # 数据集选择
     "epoch_num": 1000, # 训练的 epoch 数量
+    "num_workers": 4, # 数据加载器的工作进程数量,注意此处太大会导致内存溢出，很容易无法训练
     "batch_size": 4, # 批处理大小
     "in_channels": 3, # 输入通道数（图像）
     "device": getDevice(), # 设备，自动检测无需修改
     "pin_memory": True if getDevice() == "cuda" else False, # 是否使用 pin_memory，无需修改
-    "infoShowFrequency": 100 # 信息显示频率(每多少个 batch 输出一次信息)
+    "infoShowFrequency": 100, # 信息显示频率(每多少个 batch 输出一次信息)
+    # 加入断点续训的配置
+    "resume": True,  # 是否从检查点恢复训练
+    "checkpoint_path": "/Users/huiyangzheng/Desktop/Project/Competition/GCAIAEC2024/AIC/TDS-Net/checkPoint/Unet_Breast_20240913_115446/resume_checkpoint/epoch1_vloss1.7540_precision0.3054_f10.2189.pth.tar",  # 检查点路径，如果为空，则自动寻找最新的检查点
 }
 
 # 模型配置，不同模型配置不同
 model_cfg = {
     "Unet": {
-        "backbone": "vgg",
+        "backbone": "resnet50",
         "lr": 0.001,
         "pretrained": True,
         "loss_fn": "CrossEntropyLoss"
@@ -105,7 +109,7 @@ transforms_cfg = {
         },
     },
     "transform_test": {
-        "Resize": {"size": (40, 40)},
+        "Resize": {"size": (40,40)},
         "ToTensor": {},
         "Normalize": {
             "mean": [0.4914, 0.4822, 0.4465],
@@ -137,7 +141,6 @@ def train_one_epoch(model,train_loader,epoch_index,num_class, tb_writer):
     # Here, we use enumerate(training_loader) instead of
     # iter(training_loader) so that we can track the batch
     # index and do some intra-epoch reporting
-    # 改为带进度条的循环
     for i, data in enumerate(tqdm.tqdm(train_loader, desc=f"Epoch {epoch_index + 1}")):
         # Every data instance is an input + label pair
         inputs, labels = data
@@ -183,32 +186,34 @@ def train_one_epoch(model,train_loader,epoch_index,num_class, tb_writer):
     return last_loss, last_precision, last_f1
 
 
-def modelSelector(model, lr, num_class):
+def modelSelector(model_name, lr, num_class):
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    if model == 'TDSNet':
-        model = TDSNet(num_class)
-        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
-        return model, SummaryWriter('runs/TDS_' + str(lr) + "_" + timestamp), optimizer, timestamp
-    elif model == 'AlexNet':
-        model = AlexNet(num_class)
-        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
-        return model, SummaryWriter('runs/AlexNet_' + str(lr) + "_" + timestamp), optimizer, timestamp
-    elif model == 'GoogleNet':
-        model = GoogleNet(num_class)
-        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
-        return model, SummaryWriter('runs/GoogleNet_' + str(lr) + "_" + timestamp), optimizer, timestamp
-    elif model == 'VGG':
-        model = VGG(((1, 64), (1, 128), (2, 256), (2, 512), (2, 512)), num_class)
-        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
-        return model, SummaryWriter('runs/VGG_' + str(lr) + "_" + timestamp), optimizer, timestamp
-    elif model == 'NiN':
-        model = NiN(num_class)
-        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
-        return model,SummaryWriter('runs/NiN_'+str(lr)+"_"+timestamp),optimizer,timestamp
-    elif model == 'Unet':
-        model = UnetClassifier(num_classes=num_class,in_channels = cfg['in_channels'], backbone=model_cfg[model]["backbone"],pretrained=model_cfg[model]["pretrained"])
-        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
-        return model,SummaryWriter('runs/Unet_'+str(lr)+"_"+timestamp),optimizer,timestamp
+    if model_name == 'TDSNet':
+        model_name = TDSNet(num_class)
+        optimizer = torch.optim.SGD(model_name.parameters(), lr=lr, momentum=0.9)
+        return model_name, SummaryWriter('runs/TDS_' + str(lr) + "_" + timestamp), optimizer, timestamp
+    elif model_name == 'AlexNet':
+        model_name = AlexNet(num_class)
+        optimizer = torch.optim.SGD(model_name.parameters(), lr=lr, momentum=0.9)
+        return model_name, SummaryWriter('runs/AlexNet_' + str(lr) + "_" + timestamp), optimizer, timestamp
+    elif model_name == 'GoogleNet':
+        model_name = GoogleNet(num_class)
+        optimizer = torch.optim.SGD(model_name.parameters(), lr=lr, momentum=0.9)
+        return model_name, SummaryWriter('runs/GoogleNet_' + str(lr) + "_" + timestamp), optimizer, timestamp
+    elif model_name == 'VGG':
+        model_name = VGG(((1, 64), (1, 128), (2, 256), (2, 512), (2, 512)), num_class)
+        optimizer = torch.optim.SGD(model_name.parameters(), lr=lr, momentum=0.9)
+        return model_name, SummaryWriter('runs/VGG_' + str(lr) + "_" + timestamp), optimizer, timestamp
+    elif model_name == 'NiN':
+        model_name = NiN(num_class)
+        optimizer = torch.optim.SGD(model_name.parameters(), lr=lr, momentum=0.9)
+        return model_name,SummaryWriter('runs/NiN_'+str(lr)+"_"+timestamp),optimizer,timestamp
+    elif model_name == 'Unet':
+        model_name = UnetClassifier(num_classes=num_class,in_channels = cfg['in_channels'], backbone=model_cfg[model_name]["backbone"],pretrained=model_cfg[model_name]["pretrained"])
+        optimizer = torch.optim.SGD(model_name.parameters(), lr=lr, momentum=0.9)
+        # 加载模型参数
+        # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+        return model_name,SummaryWriter('runs/Unet_'+str(lr)+"_"+timestamp),optimizer,timestamp
 
 
 def dataSelector(data='Breast'):
@@ -253,8 +258,8 @@ if __name__ == '__main__':
     num_class = len(train_ds.classes) # 获取类别数量
     
     # 创建数据加载器    
-    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=cfg["batch_size"], shuffle=True, pin_memory=cfg["pin_memory"], drop_last=True)
-    valid_loader = torch.utils.data.DataLoader(valid_ds, batch_size=cfg["batch_size"], shuffle=False, pin_memory=cfg["pin_memory"], drop_last=True)
+    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=cfg["batch_size"], shuffle=True, pin_memory=cfg["pin_memory"], drop_last=True, num_workers=cfg["num_workers"])
+    valid_loader = torch.utils.data.DataLoader(valid_ds, batch_size=cfg["batch_size"], shuffle=False, pin_memory=cfg["pin_memory"], drop_last=True, num_workers=cfg["num_workers"])
     # 检查数据集，输出相关信息
     checkDataset(train_ds, valid_ds, train_loader, valid_loader,num_samples_to_show=0) # 
     "----------------------------------- loss function ---------------------------------------------"
@@ -265,21 +270,61 @@ if __name__ == '__main__':
     print("-------------------------- preparing model... --------------------------")
     model,writer,optimizer,timestamp = modelSelector(cfg["model"], model_cfg[cfg["model"]]["lr"], num_class)
     model.to(torch.device(cfg["device"]))
+    print(f"cfg: {cfg}")
+    print(f"model_cfg: {model_cfg[cfg['model']]}")
+    
+    
+    "----------------------------------- resume from checkpoint ---------------------------------------------"
+    epoch_number = 0
+    best_vloss = float('inf')
+
+    # 定义检查点路径
+    checkPoint_path = os.path.join(os.getcwd(), 'checkPoint', f'{cfg["model"]}_{cfg["data"]}_{timestamp}')
+    if not os.path.exists(checkPoint_path):
+        os.makedirs(checkPoint_path)
+
+    # 将cfg和model_cfg保存到json文件（仅在第一次运行时保存）
+    if not os.path.exists(os.path.join(checkPoint_path, 'cfg.json')):
+        with open(os.path.join(checkPoint_path, 'cfg.json'), 'w') as f:
+            json.dump(cfg, f)
+    if not os.path.exists(os.path.join(checkPoint_path, 'model_cfg.json')):
+        with open(os.path.join(checkPoint_path, 'model_cfg.json'), 'w') as f:
+            json.dump(model_cfg[cfg['model']], f)
+    if not os.path.exists(os.path.join(checkPoint_path, 'transforms_cfg.json')):
+        with open(os.path.join(checkPoint_path, 'transforms_cfg.json'), 'w') as f:
+            json.dump(transforms_cfg, f)
+
+    if cfg["resume"]:
+        if cfg["checkpoint_path"]:
+            checkpoint_path = cfg["checkpoint_path"]
+        else:
+            # 自动寻找最新的检查点
+            checkpoint_path = os.path.join(checkPoint_path,'resume_checkpoint' ,'checkpoint.pth.tar')
+            if not os.path.exists(checkpoint_path):
+                # 如果当前目录下没有检查点，则尝试在checkPoint目录中寻找
+                checkpoint_dir = os.path.join(os.getcwd(), 'checkPoint')
+                all_subdirs = [os.path.join(checkpoint_dir, d) for d in os.listdir(checkpoint_dir)
+                               if os.path.isdir(os.path.join(checkpoint_dir, d))]
+                if all_subdirs:
+                    latest_subdir = max(all_subdirs, key=os.path.getmtime)
+                    checkpoint_path = os.path.join(latest_subdir, 'checkpoint.pth.tar')
+                else:
+                    checkpoint_path = None
+        if checkpoint_path and os.path.exists(checkpoint_path):
+            model, optimizer, epoch_number, best_vloss = load_checkpoint(model, optimizer, checkpoint_path)
+        else:
+            print("=> No checkpoint found, starting from scratch")
+    else:
+        print("=> Starting training from scratch")
 
     "----------------------------------- training ---------------------------------------------"
-    epoch_number = 0
-
-    # EPOCHS = 5
-    
     # 实例化 EarlyStopping，设定耐心值和最小变化
-    early_stopping = EarlyStopping(patience=10, min_delta=0.01)
+    early_stopping = EarlyStopping(patience=10, min_delta=0.001)
 
     best_vloss = 1_000_000.
     print("-------------------------- start training... --------------------------")
     print(f'time: {datetime.now()}')
     print(f"device: {cfg['device']}")
-    print(f"cfg: {cfg}")
-    print(f"model_cfg: {model_cfg}")
     for epoch in range(cfg["epoch_num"]):
 
         # Make sure gradient tracking is on, and do a pass over the data
@@ -334,39 +379,26 @@ if __name__ == '__main__':
             break
         
         # Track best performance, and save the model's state
-        if avg_vloss < best_vloss:
-            print(f"Validation loss improved from {best_vloss:.6f} to {avg_vloss:.6f} - saving model")
+        is_best = avg_vloss < best_vloss
+        if is_best:
             best_vloss = avg_vloss
-            
-            # if not os.path.exists('checkPoint'):
-            #     os.makedirs('checkPoint')
-            # if not os.path.exists(f'checkPoint/{cfg["model"]}_{cfg["data"]}_{timestamp}'):
-            #     os.makedirs(f'checkPoint/{cfg["model"]}_{timestamp}')
-            
-            #e.g checkPoint/Unet_Breast_20210929_123456
-            checkPoint_path = os.path.join(os.getcwd(), 'checkPoint', f'{cfg["model"]}_{cfg["data"]}_{timestamp}')
-            if not os.path.exists(checkPoint_path):
-                os.makedirs(checkPoint_path)
-            
-            # 将cfg和model_cfg保存到json文件
-            # e.g checkPoint/Unet_Breast_20210929_123456/cfg.json
-            with open(os.path.join(checkPoint_path, 'cfg.json'), 'w') as f:
-                json.dump(cfg, f)
-            with open(os.path.join(checkPoint_path, 'model_cfg.json'), 'w') as f:
-                json.dump(model_cfg, f)
-            with open(os.path.join(checkPoint_path, 'transforms_cfg.json'), 'w') as f:
-                json.dump(transforms_cfg, f)
-            
+
+        # 保存断点重训所需的信息（需要包括epoch，model_state_dict，optimizer_state_dict，best_vloss）
+        checkpoint = {
+            'epoch': epoch + 1,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'best_vloss': best_vloss
+        }
+        if not os.path.exists(os.path.join(checkPoint_path, 'resume_checkpoint')):
+            os.makedirs(os.path.join(checkPoint_path, 'resume_checkpoint'))
+        save_checkpoint(checkpoint, checkPoint_path, filename=f'resume_checkpoint/epoch{epoch + 1}_vloss{avg_vloss:.4f}_precision{avg_vprecision:.4f}_f1{avg_vf1:.4f}.pth.tar')
+        if is_best:
+            print(f"=> Validation loss improved to {avg_vloss:.6f} - saving best model")
             modelCheckPoint_path = os.path.join(checkPoint_path, 'model')
             if not os.path.exists(modelCheckPoint_path):
                 os.makedirs(modelCheckPoint_path)
-            torch.save(model.state_dict(), modelCheckPoint_path+f'/{cfg["model"]}_ac{avg_vprecision:.6f}_f1{avg_vf1:.6f}_{epoch}.pth')
-            optimizerCheckPoint_path = os.path.join(checkPoint_path, 'optimizer')
-            if not os.path.exists(optimizerCheckPoint_path):
-                os.makedirs(optimizerCheckPoint_path)
-            torch.save(optimizer.state_dict(), optimizerCheckPoint_path+f'/{cfg["model"]}_ac{avg_vprecision:.6f}_f1{avg_vf1:.6f}_{epoch}.pth')
-
-        epoch_number += 1
+            torch.save(model.state_dict(), os.path.join(modelCheckPoint_path, f'{cfg["model"]}_best.pth'))
         
     print("-------------------------- training finished --------------------------")
     print(f'time: {datetime.now()}')

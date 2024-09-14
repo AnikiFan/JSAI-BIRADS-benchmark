@@ -20,6 +20,7 @@ from utils.earlyStopping import EarlyStopping # 提前停止
 from utils.multiMessageFilter import setup_custom_logger  #! 把MultiMessageFilter放入/utils.multiMessageFilter.py文件中
 logger = setup_custom_logger() # 设置日志屏蔽器，屏蔽f1_score的warning
 from utils.tools import getDevice, create_transforms # getDevice获取设备，create_transforms根据json配置创建transforms对象
+from utils.tools import save_checkpoint, load_checkpoint  # 保存和加载检查点
 
 
 # 配置
@@ -27,14 +28,14 @@ cfg = {
     "model": "Unet", # 模型选择
     "data": "Breast", # 数据集选择
     "epoch_num": 1000, # 训练的 epoch 数量
-    "num_workers": 4, # 数据加载器的工作进程数量,注意此处太大会导致内存溢出，很容易无法训练
-    "batch_size": 4, # 批处理大小
+    "num_workers": 2, # 数据加载器的工作进程数量,注意此处太大会导致内存溢出，很容易无法训练
+    "batch_size": 16, # 批处理大小
     "in_channels": 3, # 输入通道数（图像）
     "device": getDevice(), # 设备，自动检测无需修改
     "pin_memory": True if getDevice() == "cuda" else False, # 是否使用 pin_memory，无需修改
     "infoShowFrequency": 100, # 信息显示频率(每多少个 batch 输出一次信息)
     # 加入断点续训的配置
-    "resume": True,  # 是否从检查点恢复训练
+    "resume": False,  # 是否从检查点恢复训练
     "checkpoint_path": "/Users/huiyangzheng/Desktop/Project/Competition/GCAIAEC2024/AIC/TDS-Net/checkPoint/Unet_Breast_20240913_115446/resume_checkpoint/epoch1_vloss1.7540_precision0.3054_f10.2189.pth.tar",  # 检查点路径，如果为空，则自动寻找最新的检查点
 }
 
@@ -93,7 +94,7 @@ model_cfg = {
 transforms_cfg = {
     "transform_train": {
         # "transforms的方法名字": {"参数名1": 参数值1, "参数名2": 参数值2, ...}
-        "Resize": {"size": (40, 40)},
+        "Resize": {"size": (400, 400)},
         "RandomHorizontalFlip": {},
         "RandomVerticalFlip": {},
         "RandomRotation": {"degrees": 30},
@@ -106,7 +107,7 @@ transforms_cfg = {
         },
     },
     "transform_test": {
-        "Resize": {"size": (40,40)},
+        "Resize": {"size": (400,400)},
         "ToTensor": {},
         "Normalize": {
             "mean": [0.4914, 0.4822, 0.4465],
@@ -134,47 +135,37 @@ def train_one_epoch(model, train_loader, epoch_index, num_class, tb_writer):
 
     model.train(True)
 
-    # Here, we use enumerate(training_loader) instead of
-    # iter(training_loader) so that we can track the batch
-    # index and do some intra-epoch reporting
     for i, data in enumerate(tqdm.tqdm(train_loader, desc=f"Epoch {epoch_index + 1}")):
-        # Every data instance is an input + label pair
         inputs, labels = data
         if cfg["device"] != "cpu":
             inputs = inputs.to(torch.device(cfg["device"]))
             labels = labels.to(torch.device(cfg["device"]))
 
-        # Zero your gradients for every batch!
         optimizer.zero_grad()
-
-        # Make predictions for this batch
         outputs = model(inputs)
-
-        # Compute the loss and its gradients
         loss = loss_fn(outputs, labels)
         loss.backward()
 
         running_precision += multiclass_precision(outputs, labels).tolist()
         running_f1 += multiclass_f1_score(outputs, labels, average='macro', num_classes=num_class).tolist()
 
-        # Adjust learning weights
         optimizer.step()
 
-        # Gather data and report
         running_loss += loss.item()
         frequency = cfg["infoShowFrequency"]
-        if i % frequency == frequency - 1:
-            last_loss = running_loss / frequency  # loss per batch
-            last_precision = running_precision / frequency  # loss per batch
-            last_f1 = running_f1 / frequency  # loss per batch
-            # 下面输出会与tqdm矛盾，建议注释掉？
-            # print('  batch {} loss     : {}'.format(i + 1, last_loss))
-            # print('           precision: {}'.format(i + 1, last_precision))
-            # print('           f1       : {}'.format(i + 1, last_f1))
+        is_last_batch = (i == len(train_loader) - 1)
+        if (i % frequency == frequency - 1) or is_last_batch:
+            # 计算实际的批次数
+            batch_count = frequency if not is_last_batch else (i % frequency + 1)
+            last_loss = running_loss / batch_count
+            last_precision = running_precision / batch_count
+            last_f1 = running_f1 / batch_count
+
             tb_x = epoch_index * len(train_loader) + i + 1
             tb_writer.add_scalar('Loss/train', last_loss, tb_x)
             tb_writer.add_scalar('Precision/train', last_precision, tb_x)
             tb_writer.add_scalar('F1/train', last_f1, tb_x)
+
             running_loss = 0.
             running_precision = 0.
             running_f1 = 0.

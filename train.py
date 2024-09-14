@@ -21,7 +21,7 @@ from utils.multiMessageFilter import setup_custom_logger  #! 把MultiMessageFilt
 logger = setup_custom_logger() # 设置日志屏蔽器，屏蔽f1_score的warning
 from utils.tools import getDevice, create_transforms # getDevice获取设备，create_transforms根据json配置创建transforms对象
 from utils.tools import save_checkpoint, load_checkpoint  # 保存和加载检查点
-
+from utils.MyBlock.MyCrop import MyCrop
 
 # 配置
 cfg = {
@@ -94,6 +94,7 @@ model_cfg = {
 transforms_cfg = {
     "transform_train": {
         # "transforms的方法名字": {"参数名1": 参数值1, "参数名2": 参数值2, ...}
+        "MyCrop": {}, # 自定义裁剪（fx）
         "Resize": {"size": (400, 400)},
         "RandomHorizontalFlip": {},
         "RandomVerticalFlip": {},
@@ -115,6 +116,8 @@ transforms_cfg = {
         },
     },
 }
+
+custom_transforms = {'MyCrop': MyCrop}
 
 
 def train_one_epoch(model, train_loader, epoch_index, num_class, tb_writer):
@@ -213,8 +216,10 @@ def dataSelector(data='Breast'):
         train_dir = os.path.join(os.getcwd(), "data", "breast", "train", "cla")
         test_dir = os.path.join(os.getcwd(), "data", "breast", "test_A", "cla")
         # 读取transform_cfg,创建transform_train和transform_test
-        transform_train = create_transforms(transforms_cfg["transform_train"])
-        transform_test = create_transforms(transforms_cfg["transform_test"])
+        # transform_train = create_transforms(transforms_cfg["transform_train"])
+        # transform_test = create_transforms(transforms_cfg["transform_test"])
+        transform_train = create_transforms(transforms_cfg["transform_train"], custom_transforms=custom_transforms)
+        transform_test = create_transforms(transforms_cfg["transform_test"], custom_transforms=custom_transforms)
         print("transform_train: ", transform_train)
         print("transform_test: ", transform_test)
 
@@ -379,15 +384,19 @@ if __name__ == '__main__':
             'optimizer_state_dict': optimizer.state_dict(),
             'best_vloss': best_vloss
         }
-        if not os.path.exists(os.path.join(checkPoint_path, 'resume_checkpoint')):
-            os.makedirs(os.path.join(checkPoint_path, 'resume_checkpoint'))
-        save_checkpoint(checkpoint, checkPoint_path, filename=f'resume_checkpoint/epoch{epoch + 1}_vloss{avg_vloss:.4f}_precision{avg_vprecision:.4f}_f1{avg_vf1:.4f}.pth.tar')
+        
         if is_best:
             print(f"=> Validation loss improved to {avg_vloss:.6f} - saving best model")
             modelCheckPoint_path = os.path.join(checkPoint_path, 'model')
+            
+            # 保存checkpoint（包括epoch，model_state_dict，optimizer_state_dict，best_vloss，但仅在best时保存）
+            if not os.path.exists(os.path.join(checkPoint_path, 'resume_checkpoint')):
+                os.makedirs(os.path.join(checkPoint_path, 'resume_checkpoint'))
+            save_checkpoint(checkpoint, checkPoint_path, filename=f'resume_checkpoint/epoch{epoch + 1}_vloss{avg_vloss:.4f}_precision{avg_vprecision:.4f}_f1{avg_vf1:.4f}.pth.tar')
+            # 保存最佳模型参数
             if not os.path.exists(modelCheckPoint_path):
                 os.makedirs(modelCheckPoint_path)
             torch.save(model.state_dict(), os.path.join(modelCheckPoint_path, f'{cfg["model"]}_best.pth'))
-        
+                
     print("-------------------------- training finished --------------------------")
     print(f'time: {datetime.now()}')

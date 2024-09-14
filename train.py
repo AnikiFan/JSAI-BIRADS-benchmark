@@ -4,17 +4,15 @@ import torchvision.transforms as transforms
 from torcheval.metrics.functional import multiclass_precision, multiclass_f1_score
 import tqdm
 import os
-import os
 import json
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 # from TDSNet.TDSNet import TDSNet
-# from TDSNet.TDSNet import TDSNet
-from model4compare.GoogleNet import GoogleNet
-from model4compare.AlexNet import AlexNet
-from model4compare.VGG import VGG
-from model4compare.NiN import NiN
-import logging
+from TDSNet.TDSNet import TDSNet
+from models.model4compare.GoogleNet import GoogleNet
+from models.model4compare.AlexNet import AlexNet
+from models.model4compare.VGG import VGG
+from models.model4compare.NiN import NiN
 
 from models.UnetClassifer.unet import UnetClassifier
 from utils.datasetCheck import checkDataset # 数据集检查
@@ -22,7 +20,7 @@ from utils.earlyStopping import EarlyStopping # 提前停止
 from utils.multiMessageFilter import setup_custom_logger  #! 把MultiMessageFilter放入/utils.multiMessageFilter.py文件中
 logger = setup_custom_logger() # 设置日志屏蔽器，屏蔽f1_score的warning
 from utils.tools import getDevice, create_transforms # getDevice获取设备，create_transforms根据json配置创建transforms对象
-from utils.tools import load_checkpoint, save_checkpoint # 加载和保存检查点
+
 
 # 配置
 cfg = {
@@ -80,7 +78,6 @@ model_cfg = {
     }
 }
 
-
 # transform_train = torchvision.transforms.Compose([
 #     torchvision.transforms.Resize((40, 40)),  # 缩放到 40x40 像素
 #     # torchvision.transforms.RandomResizedCrop(32, scale=(0.64, 1.0), ratio=(1.0, 1.0)),  # 随机裁剪并缩放到 32x32
@@ -119,8 +116,7 @@ transforms_cfg = {
 }
 
 
-
-def train_one_epoch(model,train_loader,epoch_index,num_class, tb_writer):
+def train_one_epoch(model, train_loader, epoch_index, num_class, tb_writer):
     '''
     训练一个 epoch
     :param model: 模型
@@ -134,10 +130,10 @@ def train_one_epoch(model,train_loader,epoch_index,num_class, tb_writer):
     running_f1 = 0.
     last_loss = 0.
     last_precision = 0.
-    last_f1 = 0.    
+    last_f1 = 0.
 
     model.train(True)
-    
+
     # Here, we use enumerate(training_loader) instead of
     # iter(training_loader) so that we can track the batch
     # index and do some intra-epoch reporting
@@ -167,7 +163,7 @@ def train_one_epoch(model,train_loader,epoch_index,num_class, tb_writer):
         # Gather data and report
         running_loss += loss.item()
         frequency = cfg["infoShowFrequency"]
-        if i % frequency == frequency-1:
+        if i % frequency == frequency - 1:
             last_loss = running_loss / frequency  # loss per batch
             last_precision = running_precision / frequency  # loss per batch
             last_f1 = running_f1 / frequency  # loss per batch
@@ -207,13 +203,14 @@ def modelSelector(model_name, lr, num_class):
     elif model_name == 'NiN':
         model_name = NiN(num_class)
         optimizer = torch.optim.SGD(model_name.parameters(), lr=lr, momentum=0.9)
-        return model_name,SummaryWriter('runs/NiN_'+str(lr)+"_"+timestamp),optimizer,timestamp
+        return model_name, SummaryWriter('runs/NiN_' + str(lr) + "_" + timestamp), optimizer, timestamp
     elif model_name == 'Unet':
-        model_name = UnetClassifier(num_classes=num_class,in_channels = cfg['in_channels'], backbone=model_cfg[model_name]["backbone"],pretrained=model_cfg[model_name]["pretrained"])
+        model_name = UnetClassifier(num_classes=num_class, in_channels=cfg['in_channels'],
+                               backbone=model_cfg[model_name]["backbone"], pretrained=model_cfg[model_name]["pretrained"])
         optimizer = torch.optim.SGD(model_name.parameters(), lr=lr, momentum=0.9)
         # 加载模型参数
         # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-        return model_name,SummaryWriter('runs/Unet_'+str(lr)+"_"+timestamp),optimizer,timestamp
+        return model_name, SummaryWriter('runs/Unet_' + str(lr) + "_" + timestamp), optimizer, timestamp
 
 
 def dataSelector(data='Breast'):
@@ -229,7 +226,7 @@ def dataSelector(data='Breast'):
         transform_test = create_transforms(transforms_cfg["transform_test"])
         print("transform_train: ", transform_train)
         print("transform_test: ", transform_test)
-        
+
         # 创建数据集
         train_ds, train_valid_ds = [
             torchvision.datasets.ImageFolder(
@@ -254,21 +251,21 @@ def dataSelector(data='Breast'):
 if __name__ == '__main__':
     "----------------------------------- data ---------------------------------------------"
     print("-------------------------- preparing data... --------------------------")
-    train_ds, valid_ds = dataSelector('Breast') # 数据集选择
-    num_class = len(train_ds.classes) # 获取类别数量
-    
+    train_ds, valid_ds = dataSelector('Breast')  # 数据集选择
+    num_class = len(train_ds.classes)  # 获取类别数量
+
     # 创建数据加载器    
     train_loader = torch.utils.data.DataLoader(train_ds, batch_size=cfg["batch_size"], shuffle=True, pin_memory=cfg["pin_memory"], drop_last=True, num_workers=cfg["num_workers"])
     valid_loader = torch.utils.data.DataLoader(valid_ds, batch_size=cfg["batch_size"], shuffle=False, pin_memory=cfg["pin_memory"], drop_last=True, num_workers=cfg["num_workers"])
     # 检查数据集，输出相关信息
-    checkDataset(train_ds, valid_ds, train_loader, valid_loader,num_samples_to_show=0) # 
+    checkDataset(train_ds, valid_ds, train_loader, valid_loader, num_samples_to_show=0)  #
     "----------------------------------- loss function ---------------------------------------------"
     # if model_cfg[cfg["model"]]["loss_fn"] == "CrossEntropyLoss":
     loss_fn = torch.nn.CrossEntropyLoss()
 
     "----------------------------------- model ---------------------------------------------"
     print("-------------------------- preparing model... --------------------------")
-    model,writer,optimizer,timestamp = modelSelector(cfg["model"], model_cfg[cfg["model"]]["lr"], num_class)
+    model, writer, optimizer, timestamp = modelSelector(cfg["model"], model_cfg[cfg["model"]]["lr"], num_class)
     model.to(torch.device(cfg["device"]))
     print(f"cfg: {cfg}")
     print(f"model_cfg: {model_cfg[cfg['model']]}")
@@ -347,7 +344,8 @@ if __name__ == '__main__':
                 voutputs = model(vinputs)
                 vloss = loss_fn(voutputs, vlabels)
                 vprecision = multiclass_precision(voutputs, vlabels).tolist()
-                vf1 = multiclass_f1_score(voutputs, vlabels, average='macro', num_classes=num_class).tolist() #note:设置成macro进而计算每个类别的f1值
+                vf1 = multiclass_f1_score(voutputs, vlabels, average='macro',
+                                          num_classes=num_class).tolist()  # note:设置成macro进而计算每个类别的f1值
                 running_vloss += vloss
                 running_vprecison += vprecision
                 running_vf1 += vf1
@@ -377,7 +375,7 @@ if __name__ == '__main__':
         if early_stopping.early_stop:
             print("Early stopping triggered!")
             break
-        
+
         # Track best performance, and save the model's state
         is_best = avg_vloss < best_vloss
         if is_best:

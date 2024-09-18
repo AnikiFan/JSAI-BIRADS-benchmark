@@ -37,6 +37,9 @@ cfg = {
     # 加入断点续训的配置
     "resume": False,  # 是否从检查点恢复训练
     "checkpoint_path": "/Users/huiyangzheng/Desktop/Project/Competition/GCAIAEC2024/AIC/TDS-Net/checkPoint/Unet_Breast_20240913_115446/resume_checkpoint/epoch1_vloss1.7540_precision0.3054_f10.2189.pth.tar",  # 检查点路径，如果为空，则自动寻找最新的检查点
+    "debug": {
+        "num_samples_to_show": 4, # 显示样本个数
+    }
 }
 
 # 模型配置，不同模型配置不同
@@ -254,7 +257,7 @@ if __name__ == '__main__':
     train_loader = torch.utils.data.DataLoader(train_ds, batch_size=cfg["batch_size"], shuffle=True, pin_memory=cfg["pin_memory"], drop_last=True, num_workers=cfg["num_workers"])
     valid_loader = torch.utils.data.DataLoader(valid_ds, batch_size=cfg["batch_size"], shuffle=False, pin_memory=cfg["pin_memory"], drop_last=True, num_workers=cfg["num_workers"])
     # 检查数据集，输出相关信息
-    checkDataset(train_ds, valid_ds, train_loader, valid_loader, num_samples_to_show=0)  #
+    checkDataset(train_ds, valid_ds, train_loader, valid_loader, cfg["debug"]["num_samples_to_show"])  #
     "----------------------------------- loss function ---------------------------------------------"
     # if model_cfg[cfg["model"]]["loss_fn"] == "CrossEntropyLoss":
     loss_fn = torch.nn.CrossEntropyLoss()

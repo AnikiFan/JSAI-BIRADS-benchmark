@@ -1,6 +1,8 @@
 import torch
 from collections import Counter
 import matplotlib.pyplot as plt
+import logging
+logging.getLogger('matplotlib.font_manager').disabled = True
 
 def checkDataset(train_ds, valid_ds, training_loader, validation_loader, num_samples_to_show=4):
     """

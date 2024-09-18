@@ -162,10 +162,12 @@ class MyCrop(nn.Module):
                 p -= 1
 
         if (right - left) < w * 0.4:
-            warnings.warn('width too small after cropped!')
+            if debug:
+                warnings.warn('width too small after cropped!')
             left, right = 0, w - 1
         if (bottom - top) < h * 0.4:
-            warnings.warn('height too small after cropped!')
+            if debug:
+                warnings.warn('height too small after cropped!')
             top, bottom = 0, h - 1
 
         # 使用 torchvision.transforms.functional.crop 进行裁剪

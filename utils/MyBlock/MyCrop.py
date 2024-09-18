@@ -12,6 +12,7 @@ import torchvision.transforms.functional as TF
 from PIL import Image #加入PIL用于处理输入MyCrop是PIL Image而不是Tensor的情况
 import warnings
 
+debug = False
 
 def show(imgs):
     ncols, nrows = (len(imgs) + 1) // 2, 2
@@ -62,7 +63,8 @@ class MyCrop(nn.Module):
         2. 白色比例超过阈值(白色这里定义为三通道相同，且都大于等于250)
         3. 彩色比例超过阈值(彩色这里定义为三通道与平均值之差的绝对值与三通道平均值之比之和大于0.5)
         """
-        # show([x])
+        if debug:
+            show([x])
         c, h, w = x.shape
         row_tolerance = h * 0.05
         col_tolerance = w * 0.05
@@ -159,19 +161,21 @@ class MyCrop(nn.Module):
                 tolerance_cnt += 1
                 p -= 1
 
-        if right - left < w * 0.4:
+        if (right - left) < w * 0.4:
             warnings.warn('width too small after cropped!')
             left, right = 0, w - 1
-        if bottom - top < h * 0.4:
+        if (bottom - top) < h * 0.4:
             warnings.warn('height too small after cropped!')
             top, bottom = 0, h - 1
 
         # 使用 torchvision.transforms.functional.crop 进行裁剪
-        # show([TF.crop(x, top, left, bottom - top, right - left)])
+        if debug:
+            show([TF.crop(x, top, left, bottom - top, right - left)])
         return TF.crop(x, top, left, bottom - top, right - left)
 
 
 if __name__ == '__main__':
+    debug = True
     plt.rcParams["savefig.bbox"] = 'tight'
     torch.manual_seed(1)
 

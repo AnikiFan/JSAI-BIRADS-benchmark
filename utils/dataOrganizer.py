@@ -34,7 +34,7 @@ class DataOrganizer:
                 continue
 
             images = os.listdir(class_images_dir)
-            num_valid = max(1, math.floor(len(images) * valid_ratio))
+            num_valid = max(1, math.floor(len(images) * self.valid_ratio))
 
             # 随机选择部分图像作为验证集
             valid_images = random.sample(images, num_valid)

@@ -394,11 +394,6 @@ if __name__ == '__main__':
             if not os.path.exists(os.path.join(checkPoint_path, 'resume_checkpoint')):
                 os.makedirs(os.path.join(checkPoint_path, 'resume_checkpoint'))
             save_checkpoint(checkpoint, checkPoint_path, filename=f'resume_checkpoint/epoch{epoch + 1}_vloss{avg_vloss:.4f}_precision{avg_vprecision:.4f}_f1{avg_vf1:.4f}.pth.tar')
-            
-            # 保存最佳模型参数
-            if not os.path.exists(modelCheckPoint_path):
-                os.makedirs(modelCheckPoint_path)
-            torch.save(model.state_dict(), os.path.join(modelCheckPoint_path, f'{cfg["model"]}_best.pth'))
-                
+
     print("-------------------------- training finished --------------------------")
     print(f'time: {datetime.now()}')

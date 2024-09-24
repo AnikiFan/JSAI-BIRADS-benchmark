@@ -22,6 +22,7 @@ logger = setup_custom_logger() # 设置日志屏蔽器，屏蔽f1_score的warnin
 from utils.tools import getDevice, create_transforms # getDevice获取设备，create_transforms根据json配置创建transforms对象
 from utils.tools import save_checkpoint, load_checkpoint  # 保存和加载检查点
 from utils.MyBlock.MyCrop import MyCrop
+from utils.PILResize import PILResize
 
 # 配置
 cfg = {
@@ -36,7 +37,7 @@ cfg = {
     "infoShowFrequency": 100, # 信息显示频率(每多少个 batch 输出一次信息)
     # 加入断点续训的配置
     "resume": False,  # 是否从检查点恢复训练
-    "checkpoint_path": "/Users/huiyangzheng/Desktop/Project/Competition/GCAIAEC2024/AIC/TDS-Net/checkPoint/Unet_Breast_20240913_115446/resume_checkpoint/epoch1_vloss1.7540_precision0.3054_f10.2189.pth.tar",  # 检查点路径，如果为空，则自动寻找最新的检查点
+    "checkpoint_path": None, # 检查点路径，如果为空，则自动寻找最新的检查点
     "debug": {
         "num_samples_to_show": 4, # 显示样本个数
     }
@@ -82,23 +83,15 @@ model_cfg = {
     }
 }
 
-# transform_train = torchvision.transforms.Compose([
-#     torchvision.transforms.Resize((40, 40)),  # 缩放到 40x40 像素
-#     # torchvision.transforms.RandomResizedCrop(32, scale=(0.64, 1.0), ratio=(1.0, 1.0)),  # 随机裁剪并缩放到 32x32
-#     torchvision.transforms.RandomHorizontalFlip(),  # 随机水平翻转
-#     torchvision.transforms.RandomVerticalFlip(),  # 随机垂直翻转
-#     torchvision.transforms.RandomRotation(degrees=30),  # 随机旋转 -30 到 30 度
-#     torchvision.transforms.RandomAffine(degrees=0, translate=(0.1, 0.1)),  # 随机平移
-#     torchvision.transforms.RandomPerspective(distortion_scale=0.5, p=0.5),  # 随机网格畸变
-#     torchvision.transforms.ToTensor(),  # 转换为张量
-#     torchvision.transforms.Normalize([0.4914, 0.4822, 0.4465], [0.2023, 0.1994, 0.2010])  # 归一化
-#     ])
+
 
 transforms_cfg = {
     "transform_train": {
         # "transforms的方法名字": {"参数名1": 参数值1, "参数名2": 参数值2, ...}
-        "MyCrop": {}, # 自定义裁剪（fx）
-        "Resize": {"size": (400, 400)},
+        # "Resize": {"size": (400, 400)},
+        "PILResize": {"size": (400, 400)},
+        "MyCrop": {}, 
+
         "RandomHorizontalFlip": {},
         "RandomVerticalFlip": {},
         "RandomRotation": {"degrees": 30},
@@ -111,7 +104,8 @@ transforms_cfg = {
         },
     },
     "transform_test": {
-        "Resize": {"size": (400,400)},
+        # "Resize": {"size": (400,400)},
+        "PILResize": {"size": (400,400)},
         "ToTensor": {},
         "Normalize": {
             "mean": [0.4914, 0.4822, 0.4465],
@@ -120,7 +114,10 @@ transforms_cfg = {
     },
 }
 
-custom_transforms = {'MyCrop': MyCrop}
+custom_transforms = {
+    'MyCrop': MyCrop,
+    'PILResize': PILResize
+    }
 
 
 def train_one_epoch(model, train_loader, epoch_index, num_class, tb_writer):
@@ -335,7 +332,7 @@ if __name__ == '__main__':
 
         # Disable gradient computation and reduce memory consumption.
         with torch.no_grad():
-            for i, vdata in enumerate(train_loader):
+            for i, vdata in enumerate(valid_loader):
                 vinputs, vlabels = vdata
                 if cfg["device"] != "cpu":
                     vinputs = vinputs.to(torch.device(cfg["device"]))
@@ -399,6 +396,11 @@ if __name__ == '__main__':
             if not os.path.exists(modelCheckPoint_path):
                 os.makedirs(modelCheckPoint_path)
             torch.save(model.state_dict(), os.path.join(modelCheckPoint_path, f'{cfg["model"]}_best.pth'))
-                
+        
+        # 记录训练过程的性能变化
+        with open(os.path.join(checkPoint_path, 'training_log.txt'), 'a') as f:
+            f.write(f"Epoch {epoch + 1}: vloss={avg_vloss:.4f}, precision={avg_vprecision:.4f}, f1={avg_vf1:.4f}\n")
+        epoch_number += 1
+
     print("-------------------------- training finished --------------------------")
     print(f'time: {datetime.now()}')

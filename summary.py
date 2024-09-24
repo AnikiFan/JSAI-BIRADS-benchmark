@@ -11,20 +11,22 @@ from thop import clever_format, profile
 from torchsummary import summary
 
 from models.UnetClassifer.unet import UnetClassifier
+# from models.attentionUnet.attentionUnet import AttentionUNet
 
 import torchvision.models as models
 
 
 
 if __name__ == "__main__":
-    input_shape     = [512, 512]
-    num_classes     = 21
-    backbone        = 'vgg'
+    input_shape     = [64, 64]
+    num_classes     = 6
+    backbone        = 'resnet50'
     
     device  = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     
     model = UnetClassifier(num_classes = num_classes, backbone = backbone).to(device)
+    # model = AttentionUNet().to(device)
 
     summary(model, (3, input_shape[0], input_shape[1]))
     dummy_input     = torch.randn(1, 3, input_shape[0], input_shape[1]).to(device)

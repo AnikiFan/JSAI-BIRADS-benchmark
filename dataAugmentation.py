@@ -23,7 +23,7 @@ def read_image_and_label(image_path, label_path):
 
     # 检查图像是否成功读取
     if image is None:
-        print(f"Warning: Failed to read image {image_path}")
+        print(f"警告: 无法读取图像 {image_path}")
         return None, None
 
     # 读取标签
@@ -76,6 +76,9 @@ def apply_augmentations(image, label, augmentations, image_base_name, images_dst
         aug_label_path = os.path.join(labels_dst_path, aug_label_file)
         save_image_and_label(aug_image, label, aug_image_path, aug_label_path)
 
+        # 输出增强信息
+        # print(f"已增强图像: {aug_image_file} 使用增广策略: {aug.__class__.__name__}")
+
 def perform_mixup(image, label, class_names, class_to_images, src_root, images_dst_path, labels_dst_path, image_base_name, i, mixup_alpha):
     """
     对图像进行 Mixup 增广并保存。
@@ -101,6 +104,7 @@ def perform_mixup(image, label, class_names, class_to_images, src_root, images_d
     # 读取 Mixup 图像和标签
     mix_image, mix_label = read_image_and_label(mix_image_src_file, mix_label_src_file)
     if mix_image is None:
+        print(f"跳过 Mixup，因为无法读取图像: {mix_image_src_file}")
         return  # 跳过无法读取的图像
 
     # 调整 Mixup 图像尺寸为原图像尺寸
@@ -124,6 +128,9 @@ def perform_mixup(image, label, class_names, class_to_images, src_root, images_d
     mixup_label_path = os.path.join(labels_dst_path, mixup_label_file)
     with open(mixup_label_path, 'w', encoding='utf-8') as f:
         f.write(f"{label} {lam}\n{mix_label} {1 - lam}")
+
+    # 输出 Mixup 信息
+    # print(f"已进行 Mixup 增强: {mixup_image_file} 混合类别: {label} 和 {mix_label} 权重: {lam:.2f}/{1 - lam:.2f}")
 
 def process_image(image_file, class_name, src_root, dst_root, augmentations, class_aug_times, class_names, class_to_images, use_mixup, mixup_alpha):
     """
@@ -164,6 +171,9 @@ def process_image(image_file, class_name, src_root, dst_root, augmentations, cla
     if image is None:
         return  # 跳过无法读取的图像
 
+    # 输出当前处理的图像
+    # print(f"正在处理图像: {image_file} 类别: {class_name}")
+
     # 定义统一的尺寸
     TARGET_HEIGHT = 224
     TARGET_WIDTH = 224
@@ -175,6 +185,9 @@ def process_image(image_file, class_name, src_root, dst_root, augmentations, cla
     aug_image_path = os.path.join(images_dst_path, image_file)
     aug_label_path = os.path.join(labels_dst_path, os.path.splitext(image_file)[0] + '.txt')
     save_image_and_label(image, label, aug_image_path, aug_label_path)
+
+    # 输出原始图像保存信息
+    # print(f"已保存原始图像: {image_file} 和标签: {os.path.splitext(image_file)[0] + '.txt'}")
 
     # 获取图像文件的基础名称
     image_base_name = os.path.splitext(image_file)[0]
@@ -216,6 +229,10 @@ def create_augmented_dataset(src_root, dst_root, class_aug_times, augmentations,
 
     for class_name in class_names:
         images_src_path = os.path.join(src_root, class_name, 'images')
+        if not os.path.exists(images_src_path):
+            print(f"警告: 类别 {class_name} 下的 images 文件夹不存在。")
+            class_to_images[class_name] = []
+            continue
         image_files = [f for f in os.listdir(images_src_path) if f.lower().endswith(('.jpg', '.png', '.jpeg'))]
         class_to_images[class_name] = image_files
 
@@ -235,10 +252,10 @@ def create_augmented_dataset(src_root, dst_root, class_aug_times, augmentations,
 
 def main():
     # 源数据集路径（原始数据集）
-    src_root = '/Users/huiyangzheng/Desktop/Project/Competition/GCAIAEC2024/Data/乳腺分类训练数据集/train'
+    src_root = '/Users/huiyangzheng/Desktop/Project/Competition/GCAIAEC2024/AIC/TDS-Net/data/乳腺分类训练数据集/train_split_0.9'
 
     # 目标数据集路径（增广后的数据集）
-    dst_root = '/Users/huiyangzheng/Desktop/Project/Competition/GCAIAEC2024/Data/乳腺分类训练数据集/train_augmented'
+    dst_root = '/Users/huiyangzheng/Desktop/Project/Competition/GCAIAEC2024/AIC/TDS-Net/data/乳腺分类训练数据集/train_split_0.9_augmented_demo'
 
     # 原数据集各类别数量：
     # 2类: 463

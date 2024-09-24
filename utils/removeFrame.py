@@ -11,6 +11,7 @@ def removeFrame(x):
     3. 彩色比例超过阈值(彩色这里定义为三通道与平均值之差的绝对值与三通道平均值之比之和大于0.5)
     """
     c, h, w = x.shape
+    assert c == 3 or c == 1,"input shape should be (c,h,w)!"
     row_tolerance = h * 0.05
     col_tolerance = w * 0.05
     max_row_tolerance_time = 2

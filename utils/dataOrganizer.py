@@ -12,10 +12,10 @@ class DataOrganizer:
         self.test_dir = test_dir
         self.valid_ratio = valid_ratio
 
-    def copy_file(self):
+    def copy_file(self,src_file,dest_dir):
         """将文件复制到目标目录"""
         os.makedirs(self.dest_dir, exist_ok=True)
-        shutil.copy(self.src_file, self.dest_dir)
+        shutil.copy(src_file, dest_dir)
 
     def organize_train_valid(self):
         """组织训练集和验证集"""
@@ -65,8 +65,8 @@ class DataOrganizer:
 
     def reorg_data(self, valid_ratio=0.1):
         """调用上面的函数，组织训练集、验证集和测试集"""
-        self.organize_train_valid(self.train_dir, self.dest_dir, self.valid_ratio)
-        self.organize_test(self.test_dir, self.dest_dir)
+        self.organize_train_valid()
+        self.organize_test()
 
 
 if __name__ == '__main__':

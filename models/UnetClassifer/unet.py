@@ -158,7 +158,6 @@ class UnetClassifier(Unet):
         pooled = pooled.view(pooled.size(0), -1)  # 扁平化
         classification = self.fc(pooled)  # 分类输出
 
-        return classification,final # 返回分类结果和分割结果
-
-
+        # return classification,final # 返回分类结果和分割结果
+        return classification
 

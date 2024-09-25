@@ -105,8 +105,24 @@ if __name__ == "__main__":
     split_ratio = 0.9
     
     # 定义输出训练集和测试集目录
-    output_train_dir = f'/Users/huiyangzheng/Desktop/Project/Competition/GCAIAEC2024/AIC/TDS-Net/data/乳腺分类训练数据集/train_split_{split_ratio}'
-    output_test_dir = f'/Users/huiyangzheng/Desktop/Project/Competition/GCAIAEC2024/AIC/TDS-Net/data/乳腺分类训练数据集/test_split_{split_ratio}'
+    output_train_dir = os.path.join(os.path.dirname(original_dataset_dir), 'train_split', 'split_train')
+    output_test_dir = os.path.join(os.path.dirname(original_dataset_dir), 'train_split', 'split_test')
+    
+    # 创建输出目录
+    os.makedirs(output_train_dir, exist_ok=True)
+    os.makedirs(output_test_dir, exist_ok=True)
+    
+    # 同时写入text来保存相关信息
+    text_dir = os.path.join(os.path.dirname(original_dataset_dir), 'train_split', 'split_info.txt')
+    
+    # 创建text文件所在目录
+    os.makedirs(os.path.dirname(text_dir), exist_ok=True)
+    
+    # 写入分割信息
+    with open(text_dir, 'w') as f:  
+        f.write(f'train_dir: {output_train_dir}\n')
+        f.write(f'test_dir: {output_test_dir}\n')
+        f.write(f'split_ratio: {split_ratio}\n')
     
     # 调用函数进行数据集划分
     split_dataset(original_dataset_dir, output_train_dir, output_test_dir, split_ratio=split_ratio) 

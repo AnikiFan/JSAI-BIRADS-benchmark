@@ -1,7 +1,7 @@
 import torch
 import torchvision
 import torchvision.transforms as transforms
-from torcheval.metrics.functional import multiclass_precision, multiclass_f1_score
+from torcheval.metrics.functional import  multiclass_f1_score,multiclass_accuracy,multiclass_confusion_matrix
 import tqdm
 import os
 import json
@@ -120,10 +120,10 @@ def train_one_epoch(model, train_loader, epoch_index, num_class, tb_writer):
     :param tb_writer: TensorBoard 写入器
     '''
     running_loss = 0.
-    running_precision = 0.
+    running_accuracy = 0.
     running_f1 = 0.
     last_loss = 0.
-    last_precision = 0.
+    last_accuracy = 0.
     last_f1 = 0.
 
     model.train(True)
@@ -139,7 +139,7 @@ def train_one_epoch(model, train_loader, epoch_index, num_class, tb_writer):
         loss = loss_fn(outputs, labels)
         loss.backward()
 
-        running_precision += multiclass_precision(outputs, labels).tolist()
+        running_accuracy += multiclass_accuracy(outputs, labels).tolist()
         running_f1 += multiclass_f1_score(outputs, labels, average='macro', num_classes=num_class).tolist()
 
         optimizer.step()
@@ -151,19 +151,19 @@ def train_one_epoch(model, train_loader, epoch_index, num_class, tb_writer):
             # 计算实际的批次数
             batch_count = frequency if not is_last_batch else (i % frequency + 1)
             last_loss = running_loss / batch_count
-            last_precision = running_precision / batch_count
+            last_accuracy = running_accuracy / batch_count
             last_f1 = running_f1 / batch_count
 
             tb_x = epoch_index * len(train_loader) + i + 1
             tb_writer.add_scalar('Loss/train', last_loss, tb_x)
-            tb_writer.add_scalar('Precision/train', last_precision, tb_x)
+            tb_writer.add_scalar('Accuracy/train', last_accuracy, tb_x)
             tb_writer.add_scalar('F1/train', last_f1, tb_x)
 
             running_loss = 0.
-            running_precision = 0.
+            running_accuracy = 0.
             running_f1 = 0.
 
-    return last_loss, last_precision, last_f1
+    return last_loss, last_accuracy, last_f1
 
 
 def modelSelector(model_name, lr, num_class):
@@ -315,36 +315,32 @@ if __name__ == '__main__':
     for epoch in range(cfg["epoch_num"]):
 
         # Make sure gradient tracking is on, and do a pass over the data
-        avg_loss, avg_precision, avg_f1 = train_one_epoch(model, train_loader, epoch, num_class, writer)
+        avg_loss, avg_accuracy, avg_f1 = train_one_epoch(model, train_loader, epoch, num_class, writer)
 
-        running_vloss = 0.0
-        running_vprecison = 0.0
-        running_vf1 = 0.0
         # Set the model to evaluation mode, disabling dropout and using population
         # statistics for batch normalization.
         model.eval()
 
         # Disable gradient computation and reduce memory consumption.
+        ground_truth = []
+        prediction = []
         with torch.no_grad():
-            for i, vdata in enumerate(train_loader):
+            for i, vdata in enumerate(valid_loader):
                 vinputs, vlabels = vdata
                 if cfg["device"] != "cpu":
                     vinputs = vinputs.to(torch.device(cfg["device"]))
                     vlabels = vlabels.to(torch.device(cfg["device"]))
                 voutputs = model(vinputs)
-                vloss = loss_fn(voutputs, vlabels)
-                vprecision = multiclass_precision(voutputs, vlabels).tolist()
-                vf1 = multiclass_f1_score(voutputs, vlabels, average='macro',
-                                          num_classes=num_class).tolist()  # note:设置成macro进而计算每个类别的f1值
-                running_vloss += vloss
-                running_vprecison += vprecision
-                running_vf1 += vf1
+                ground_truth.append(vlabels)
+                prediction.append(voutputs)
 
-        avg_vloss = running_vloss / (i + 1)
-        avg_vprecision = running_vprecison / (i + 1)
-        avg_vf1 = running_vf1 / (i + 1)
+        ground_truth = torch.cat(ground_truth,dim = 0)
+        prediction = torch.cat(prediction,dim = 0)
+        avg_vloss = loss_fn(prediction,ground_truth)
+        avg_vaccuracy = multiclass_accuracy(prediction,ground_truth).tolist()
+        avg_vf1 = multiclass_f1_score(prediction,ground_truth,average='macro',num_classes=num_class).tolist()
         print('LOSS      train {} valid {}'.format(avg_loss, avg_vloss))
-        print('PRECISION train {} valid {}'.format(avg_precision, avg_vprecision))
+        print('ACCURACY  train {} valid {}'.format(avg_accuracy, avg_vaccuracy))
         print('F1        train {} valid {}'.format(avg_f1, avg_vf1))
 
         # Log the running loss averaged per batch
@@ -352,12 +348,13 @@ if __name__ == '__main__':
         writer.add_scalars('Training vs. Validation Loss',
                            {'Training': avg_loss, 'Validation': avg_vloss},
                            epoch_number + 1)
-        writer.add_scalars('Training vs. Validation Precision',
-                           {'Training': avg_precision, 'Validation': avg_vprecision},
+        writer.add_scalars('Training vs. Validation Accuracy',
+                           {'Training': avg_accuracy, 'Validation': avg_vaccuracy},
                            epoch_number + 1)
         writer.add_scalars('Training vs. Validation F1',
                            {'Training': avg_f1, 'Validation': avg_vf1},
                            epoch_number + 1)
+        writer.add_text(f'confusion matrix of epoch {epoch_number+1}',str(multiclass_confusion_matrix(prediction,ground_truth,num_classes=num_class)))
         writer.flush()
 
         # 检查早停条件
@@ -385,7 +382,7 @@ if __name__ == '__main__':
             if not os.path.exists(os.path.join(checkPoint_path, 'resume_checkpoint')):
                 os.makedirs(os.path.join(checkPoint_path, 'resume_checkpoint'))
             save_checkpoint(checkpoint, checkPoint_path,
-                            filename=f'resume_checkpoint/epoch{epoch + 1}_vloss{avg_vloss:.4f}_precision{avg_vprecision:.4f}_f1{avg_vf1:.4f}.pth.tar')
+                            filename=f'resume_checkpoint/epoch{epoch + 1}_vloss{avg_vloss:.4f}_accuracy{avg_vaccuracy:.4f}_f1{avg_vf1:.4f}.pth.tar')
 
     print("-------------------------- training finished --------------------------")
     print(f'time: {datetime.now()}')

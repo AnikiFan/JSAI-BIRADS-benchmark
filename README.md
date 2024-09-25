@@ -1,3 +1,9 @@
+# tensorboard使用方法
+
+```commandline
+tensorboard --logdir=./runs
+```
+
 # TDS-Net网络结构
 
 ```

@@ -107,9 +107,9 @@ class Unet(nn.Module):
                 param.requires_grad = True
 
 
-class UnetClassifier(nn.Module):
+class PretrainedClassifier(nn.Module):
     def __init__(self, num_classes=10,in_channels = 3, pretrained=False, backbone='vgg'):
-        super(UnetClassifier, self).__init__()
+        super(PretrainedClassifier, self).__init__()
         # 使用已有的Unet作为基础
         self.unet = Unet(num_classes=num_classes, in_channels=in_channels,pretrained=pretrained, backbone=backbone)
         
@@ -139,5 +139,25 @@ class UnetClassifier(nn.Module):
         x = self.fc(x)               # 全连接层
         return x
 
-# 示例：创建UNet分类器
-model = UnetClassifier(num_classes=10, pretrained=False, backbone='vgg')
+
+# day9.25
+class UnetClassifier(Unet):
+    def __init__(self, in_channels, num_classes, pretrained=False, backbone='vgg'):
+        super(UnetClassifier, self).__init__(in_channels, num_classes, pretrained, backbone)
+        
+        # 分类层
+        self.global_pool = nn.AdaptiveAvgPool2d((1, 1))  # 全局平均池化
+        self.fc = nn.Linear(num_classes, num_classes)  # 全连接层，用于分类
+
+    def forward(self, inputs):
+        # 调用父类的前向传播
+        final, _ = super(UnetClassifier, self).forward(inputs)
+
+        # 分类部分
+        pooled = self.global_pool(final)  # 应用全局平均池化
+        pooled = pooled.view(pooled.size(0), -1)  # 扁平化
+        classification = self.fc(pooled)  # 分类输出
+
+        return classification,final # 返回分类结果和分割结果
+
+

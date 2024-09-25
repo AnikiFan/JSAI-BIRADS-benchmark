@@ -6,15 +6,17 @@ import tqdm
 import os
 import json
 from torch.utils.tensorboard import SummaryWriter
+from PIL import Image
+from torch.utils.data import Dataset
 from datetime import datetime
 # from TDSNet.TDSNet import TDSNet
-from TDSNet.TDSNet import TDSNet
+# from TDSNet.TDSNet import TDSNet
 from models.model4compare.GoogleNet import GoogleNet
 from models.model4compare.AlexNet import AlexNet
 from models.model4compare.VGG import VGG
 from models.model4compare.NiN import NiN
 
-from models.UnetClassifer.unet import UnetClassifier
+from models.UnetClassifer.unet import PretrainedClassifier,UnetClassifier
 from utils.datasetCheck import checkDataset # 数据集检查
 from utils.earlyStopping import EarlyStopping # 提前停止
 from utils.multiMessageFilter import setup_custom_logger  #! 把MultiMessageFilter放入/utils.multiMessageFilter.py文件中
@@ -26,7 +28,7 @@ from utils.PILResize import PILResize
 
 # 配置
 cfg = {
-    "model": "Unet", # 模型选择
+    "model": "UnetClassifier", # 模型选择
     "data": "Breast", # 数据集选择
     "epoch_num": 1000, # 训练的 epoch 数量
     "num_workers": 2, # 数据加载器的工作进程数量,注意此处太大会导致内存溢出，很容易无法训练
@@ -38,14 +40,22 @@ cfg = {
     # 加入断点续训的配置
     "resume": False,  # 是否从检查点恢复训练
     "checkpoint_path": None, # 检查点路径，如果为空，则自动寻找最新的检查点
+    "dataset_root": '/Users/huiyangzheng/Desktop/Project/Competition/GCAIAEC2024/AIC/TDS-Net/data/乳腺分类训练数据集/train_split', # 数据集根目录
     "debug": {
         "num_samples_to_show": 4, # 显示样本个数
     }
+    
 }
 
 # 模型配置，不同模型配置不同
 model_cfg = {
-    "Unet": {
+    "PretrainedClassifier": {
+        "backbone": "resnet50",
+        "lr": 0.001,
+        "pretrained": True,
+        "loss_fn": "CrossEntropyLoss"
+    },
+    "UnetClassifier": {
         "backbone": "resnet50",
         "lr": 0.001,
         "pretrained": True,
@@ -118,6 +128,46 @@ custom_transforms = {
     'MyCrop': MyCrop,
     'PILResize': PILResize
     }
+
+class OriginalImageDataset(Dataset):
+    def __init__(self, root_dir, transform=None):
+        """
+        自定义数据集类
+        :param root_dir: 数据集根目录，包含多个类别文件夹
+        :param transform: 预处理变换
+        """
+        self.root_dir = root_dir
+        self.transform = transform
+        self.classes = sorted(entry.name for entry in os.scandir(root_dir) if entry.is_dir())
+        self.class_to_idx = {cls_name: idx for idx, cls_name in enumerate(self.classes)}
+        self.image_paths = []
+        self.labels = []
+        
+        for cls in self.classes:
+            images_dir = os.path.join(root_dir, cls, 'images')
+            if not os.path.isdir(images_dir):
+                logger.warning(f"类别 {cls} 下没有找到 images 目录，跳过")
+                continue
+            for root, _, fnames in sorted(os.walk(images_dir)):
+                for fname in sorted(fnames):
+                    if fname.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
+                        path = os.path.join(root, fname)
+                        self.image_paths.append(path)
+                        self.labels.append(self.class_to_idx[cls])
+        
+        assert len(self.image_paths) == len(self.labels), "图像路径和标签数量不匹配"
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        image_path = self.image_paths[idx]
+        label = self.labels[idx]
+        image = Image.open(image_path).convert('RGB')
+        if self.transform:
+            image = self.transform(image)
+        return image, label
+
 
 
 def train_one_epoch(model, train_loader, epoch_index, num_class, tb_writer):
@@ -198,19 +248,51 @@ def modelSelector(model_name, lr, num_class):
         model_name = NiN(num_class)
         optimizer = torch.optim.SGD(model_name.parameters(), lr=lr, momentum=0.9)
         return model_name, SummaryWriter('runs/NiN_' + str(lr) + "_" + timestamp), optimizer, timestamp
-    elif model_name == 'Unet':
-        model_name = UnetClassifier(num_classes=num_class, in_channels=cfg['in_channels'],
+    elif model_name == 'PretrainedClassifier':
+        model_name = PretrainedClassifier(num_classes=num_class, in_channels=cfg['in_channels'],
                                backbone=model_cfg[model_name]["backbone"], pretrained=model_cfg[model_name]["pretrained"])
         optimizer = torch.optim.SGD(model_name.parameters(), lr=lr, momentum=0.9)
         # 加载模型参数
         # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
         return model_name, SummaryWriter('runs/Unet_' + str(lr) + "_" + timestamp), optimizer, timestamp
+    elif model_name == 'UnetClassifier':
+        model_name = UnetClassifier(num_classes=num_class, in_channels=cfg['in_channels'],
+                               backbone=model_cfg[model_name]["backbone"], pretrained=model_cfg[model_name]["pretrained"])
+        optimizer = torch.optim.SGD(model_name.parameters(), lr=lr, momentum=0.9)
+        return model_name, SummaryWriter('runs/Unet_' + str(lr) + "_" + timestamp), optimizer, timestamp
 
 
 def dataSelector(data='Breast'):
     """
-    #todo:
     """
+    if data == "BreastOriginal":
+        # 假设数据集根目录为当前工作目录下的 'dataset'
+        dataset_root = cfg["dataset_root"]
+        if not os.path.isdir(dataset_root):
+            raise FileNotFoundError(f"数据集根目录 {dataset_root} 不存在")
+        
+        # 读取transform_cfg, 创建 transform_train 和 transform_test
+        transform_train = create_transforms(transforms_cfg["transform_train"], custom_transforms=custom_transforms)
+        transform_test = create_transforms(transforms_cfg["transform_test"], custom_transforms=custom_transforms)
+        print("transform_train: ", transform_train)
+        print("transform_test: ", transform_test)
+
+        # 创建自定义数据集
+        # full_dataset = CustomImageDataset(root_dir=dataset_root, transform=transform_train)
+        train_ds_path = os.path.join(dataset_root, "train")
+        train_ds = OriginalImageDataset(root_dir=dataset_root, transform=transform_train)
+        valid_ds = OriginalImageDataset(root_dir=dataset_root, transform=transform_test)
+        
+        # 划分训练集和验证集（例如 80% 训练，20% 验证）
+        total_size = len(full_dataset)
+        valid_size = int(0.2 * total_size)
+        train_size = total_size - valid_size
+        train_ds, valid_ds = torch.utils.data.random_split(full_dataset, [train_size, valid_size],
+                                                           generator=torch.Generator().manual_seed(42))
+        
+        # 为验证集设置不同的 transform
+        valid_ds.dataset.transform = transform_test  # 修改验证集的 transform
+        
     if data == "Breast":
         dest_dir = os.path.join(os.getcwd(), "data", "breast", "train_valid_test")
         train_dir = os.path.join(os.getcwd(), "data", "breast", "train", "cla")

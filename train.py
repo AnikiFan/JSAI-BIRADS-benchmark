@@ -43,6 +43,10 @@ cfg = {
     "dataset_root": '/Users/huiyangzheng/Desktop/Project/Competition/GCAIAEC2024/AIC/TDS-Net/data/乳腺分类训练数据集/train_split', # 数据集根目录
     "debug": {
         "num_samples_to_show": 4, # 显示样本个数
+    } ,
+    "early_stopping": {
+        "patience": 20, # 耐心值
+        "min_delta": 0.001 # 最小变化
     }
     
 }
@@ -402,7 +406,7 @@ if __name__ == '__main__':
 
     "----------------------------------- training ---------------------------------------------"
     # 实例化 EarlyStopping，设定耐心值和最小变化
-    early_stopping = EarlyStopping(patience=10, min_delta=0.001)
+    early_stopping = EarlyStopping(cfg["early_stopping"]["patience"], cfg["early_stopping"]["min_delta"])
 
     best_vloss = 1_000_000.
     print("-------------------------- start training... --------------------------")

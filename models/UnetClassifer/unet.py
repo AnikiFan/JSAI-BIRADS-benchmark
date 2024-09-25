@@ -151,7 +151,7 @@ class UnetClassifier(Unet):
 
     def forward(self, inputs):
         # 调用父类的前向传播
-        final, _ = super(UnetClassifier, self).forward(inputs)
+        final= super(UnetClassifier, self).forward(inputs)
 
         # 分类部分
         pooled = self.global_pool(final)  # 应用全局平均池化

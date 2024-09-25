@@ -57,6 +57,7 @@ model_cfg = {
     },
     "UnetClassifier": {
         "backbone": "resnet50",
+        "freeze_backbone": True,
         "lr": 0.001,
         "pretrained": True,
         "loss_fn": "CrossEntropyLoss"
@@ -99,14 +100,13 @@ transforms_cfg = {
     "transform_train": {
         # "transforms的方法名字": {"参数名1": 参数值1, "参数名2": 参数值2, ...}
         # "Resize": {"size": (400, 400)},
-        "PILResize": {"size": (400, 400)},
         "MyCrop": {}, 
-
-        "RandomHorizontalFlip": {},
-        "RandomVerticalFlip": {},
-        "RandomRotation": {"degrees": 30},
-        "RandomAffine": {"degrees": 0, "translate": [0.1, 0.1]},
-        "RandomPerspective": {"distortion_scale": 0.5, "p": 0.5},
+        "PILResize": {"size": (128, 128)},
+        # "RandomHorizontalFlip": {},
+        # "RandomVerticalFlip": {},
+        # "RandomRotation": {"degrees": 30},
+        # "RandomAffine": {"degrees": 0, "translate": [0.1, 0.1]},
+        # "RandomPerspective": {"distortion_scale": 0.5, "p": 0.5},
         "ToTensor": {},
         "Normalize": {
             "mean": [0.4914, 0.4822, 0.4465],
@@ -115,7 +115,8 @@ transforms_cfg = {
     },
     "transform_test": {
         # "Resize": {"size": (400,400)},
-        "PILResize": {"size": (400,400)},
+        "MyCrop": {},
+        "PILResize": {"size": (128,128)},
         "ToTensor": {},
         "Normalize": {
             "mean": [0.4914, 0.4822, 0.4465],
@@ -258,6 +259,9 @@ def modelSelector(model_name, lr, num_class):
     elif model_name == 'UnetClassifier':
         model_name = UnetClassifier(num_classes=num_class, in_channels=cfg['in_channels'],
                                backbone=model_cfg[model_name]["backbone"], pretrained=model_cfg[model_name]["pretrained"])
+        if model_cfg[model_name]["freeze_backbone"]:
+            model_name.freeze_backbone()
+            print("freeze_backbone")
         optimizer = torch.optim.SGD(model_name.parameters(), lr=lr, momentum=0.9)
         return model_name, SummaryWriter('runs/Unet_' + str(lr) + "_" + timestamp), optimizer, timestamp
 

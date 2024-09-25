@@ -24,11 +24,11 @@ def checkDataset(train_ds, valid_ds, training_loader, validation_loader, num_sam
     print(f"Detected number of classes: {num_classes}")
 
     # 检查每个类别的样本数量
-    train_labels = [label for _, label in train_ds.samples]
+    train_labels = train_ds.labels
     train_counter = Counter(train_labels)
     print("Train dataset class distribution:", train_counter)
 
-    valid_labels = [label for _, label in valid_ds.samples]
+    valid_labels = valid_ds.labels
     valid_counter = Counter(valid_labels)
     print("Validation dataset class distribution:", valid_counter)
 

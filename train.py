@@ -59,6 +59,7 @@ model_cfg = {
         "backbone": "resnet50",
         "freeze_backbone": True,
         "lr": 0.001,
+        "optimizer": "adam",
         "pretrained": True,
         "loss_fn": "CrossEntropyLoss"
     },
@@ -262,7 +263,10 @@ def modelSelector(model_name, lr, num_class):
         if model_cfg[model_name]["freeze_backbone"]:
             model.freeze_backbone()
             print("freeze_backbone")
-        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+        if model_cfg[model_name]["optimizer"] == "adam":
+            optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+        elif model_cfg[model_name]["optimizer"] == "sgd":
+            optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
         return model, SummaryWriter('runs/Unet_' + str(lr) + "_" + timestamp), optimizer, timestamp
 
 

@@ -1,7 +1,7 @@
 import torch
 import torchvision
 import torchvision.transforms as transforms
-from torcheval.metrics.functional import  multiclass_f1_score,multiclass_accuracy,multiclass_confusion_matrix
+from torcheval.metrics.functional import multiclass_f1_score, multiclass_accuracy, multiclass_confusion_matrix
 import tqdm
 import os
 import json
@@ -15,12 +15,13 @@ from models.model4compare.NiN import NiN
 from models.UnetClassifer.unet import UnetClassifier
 from utils.datasetCheck import checkDataset  # 数据集检查
 from utils.earlyStopping import EarlyStopping  # 提前停止
-from utils.multiMessageFilter import setup_custom_logger  # ! 把MultiMessageFilter放入/utils.multiMessageFilter.py文件中
+from utils.multiMessageFilter import MultiMessageFilter  # ! 把MultiMessageFilter放入/utils.multiMessageFilter.py文件中
 from utils.tools import getDevice, create_transforms  # getDevice获取设备，create_transforms根据json配置创建transforms对象
 from utils.tools import save_checkpoint, load_checkpoint  # 保存和加载检查点
 from utils.MyBlock.MyCrop import MyCrop
+from utils.ClaDataset import getClaTrainValidData
 
-logger = setup_custom_logger()  # 设置日志屏蔽器，屏蔽f1_score的warning
+MultiMessageFilter().setup()
 
 # 配置
 cfg = {
@@ -203,28 +204,14 @@ def dataSelector(data='Breast'):
     #todo:
     """
     if data == "Breast":
-        dest_dir = os.path.join(os.getcwd(), "data", "breast", "train_valid_test")
-        train_dir = os.path.join(os.getcwd(), "data", "breast", "train", "cla")
-        test_dir = os.path.join(os.getcwd(), "data", "breast", "test_A", "cla")
-        # 读取transform_cfg,创建transform_train和transform_test
-        # transform_train = create_transforms(transforms_cfg["transform_train"])
-        # transform_test = create_transforms(transforms_cfg["transform_test"])
-        transform_train = create_transforms(transforms_cfg["transform_train"], custom_transforms=custom_transforms)
-        transform_test = create_transforms(transforms_cfg["transform_test"], custom_transforms=custom_transforms)
-        print("transform_train: ", transform_train)
-        print("transform_test: ", transform_test)
-
+        train_transform = create_transforms(transforms_cfg["transform_train"], custom_transforms=custom_transforms)
+        valid_transform = create_transforms(transforms_cfg["transform_test"], custom_transforms=custom_transforms)
+        print("train_transform: ", train_transform)
+        print("valid_transform: ", valid_transform)
         # 创建数据集
-        train_ds, train_valid_ds = [
-            torchvision.datasets.ImageFolder(
-                os.path.join(dest_dir, folder),
-                transform=transform_train) for folder in ['train', 'train_valid']
-        ]
-        valid_ds, test_ds = [
-            torchvision.datasets.ImageFolder(
-                os.path.join(dest_dir, folder),
-                transform=transform_test) for folder in ['valid', 'test']
-        ]
+        train_ds, valid_ds = getClaTrainValidData(data_folder_path=os.path.join(os.curdir, 'data'),
+                                                  train_transform=train_transform, valid_transform=valid_transform,
+                                                  image_format='PIL')
     elif data == 'FashionMNIST':
         transform = transforms.Compose(
             [transforms.ToTensor(),
@@ -334,11 +321,11 @@ if __name__ == '__main__':
                 ground_truth.append(vlabels)
                 prediction.append(voutputs)
 
-        ground_truth = torch.cat(ground_truth,dim = 0)
-        prediction = torch.cat(prediction,dim = 0)
-        avg_vloss = loss_fn(prediction,ground_truth)
-        avg_vaccuracy = multiclass_accuracy(prediction,ground_truth).tolist()
-        avg_vf1 = multiclass_f1_score(prediction,ground_truth,average='macro',num_classes=num_class).tolist()
+        ground_truth = torch.cat(ground_truth, dim=0)
+        prediction = torch.cat(prediction, dim=0)
+        avg_vloss = loss_fn(prediction, ground_truth)
+        avg_vaccuracy = multiclass_accuracy(prediction, ground_truth).tolist()
+        avg_vf1 = multiclass_f1_score(prediction, ground_truth, average='macro', num_classes=num_class).tolist()
         print('LOSS      train {} valid {}'.format(avg_loss, avg_vloss))
         print('ACCURACY  train {} valid {}'.format(avg_accuracy, avg_vaccuracy))
         print('F1        train {} valid {}'.format(avg_f1, avg_vf1))
@@ -354,7 +341,8 @@ if __name__ == '__main__':
         writer.add_scalars('Training vs. Validation F1',
                            {'Training': avg_f1, 'Validation': avg_vf1},
                            epoch_number + 1)
-        writer.add_text(f'confusion matrix of epoch {epoch_number+1}',str(multiclass_confusion_matrix(prediction,ground_truth,num_classes=num_class)))
+        writer.add_text(f'confusion matrix of epoch {epoch_number + 1}',
+                        str(multiclass_confusion_matrix(prediction, ground_truth, num_classes=num_class)))
         writer.flush()
 
         # 检查早停条件

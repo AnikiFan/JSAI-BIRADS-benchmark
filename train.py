@@ -230,40 +230,40 @@ def train_one_epoch(model, train_loader, epoch_index, num_class, tb_writer):
 def modelSelector(model_name, lr, num_class):
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     if model_name == 'TDSNet':
-        model_name = TDSNet(num_class)
+        model = TDSNet(num_class)
         optimizer = torch.optim.SGD(model_name.parameters(), lr=lr, momentum=0.9)
-        return model_name, SummaryWriter('runs/TDS_' + str(lr) + "_" + timestamp), optimizer, timestamp
+        return model, SummaryWriter('runs/TDS_' + str(lr) + "_" + timestamp), optimizer, timestamp
     elif model_name == 'AlexNet':
-        model_name = AlexNet(num_class)
+        model = AlexNet(num_class)
         optimizer = torch.optim.SGD(model_name.parameters(), lr=lr, momentum=0.9)
-        return model_name, SummaryWriter('runs/AlexNet_' + str(lr) + "_" + timestamp), optimizer, timestamp
+        return model, SummaryWriter('runs/AlexNet_' + str(lr) + "_" + timestamp), optimizer, timestamp
     elif model_name == 'GoogleNet':
-        model_name = GoogleNet(num_class)
+        model = GoogleNet(num_class)
         optimizer = torch.optim.SGD(model_name.parameters(), lr=lr, momentum=0.9)
-        return model_name, SummaryWriter('runs/GoogleNet_' + str(lr) + "_" + timestamp), optimizer, timestamp
+        return model, SummaryWriter('runs/GoogleNet_' + str(lr) + "_" + timestamp), optimizer, timestamp
     elif model_name == 'VGG':
-        model_name = VGG(((1, 64), (1, 128), (2, 256), (2, 512), (2, 512)), num_class)
+        model = VGG(((1, 64), (1, 128), (2, 256), (2, 512), (2, 512)), num_class)
         optimizer = torch.optim.SGD(model_name.parameters(), lr=lr, momentum=0.9)
-        return model_name, SummaryWriter('runs/VGG_' + str(lr) + "_" + timestamp), optimizer, timestamp
+        return model, SummaryWriter('runs/VGG_' + str(lr) + "_" + timestamp), optimizer, timestamp
     elif model_name == 'NiN':
-        model_name = NiN(num_class)
+        model = NiN(num_class)
         optimizer = torch.optim.SGD(model_name.parameters(), lr=lr, momentum=0.9)
-        return model_name, SummaryWriter('runs/NiN_' + str(lr) + "_" + timestamp), optimizer, timestamp
+        return model, SummaryWriter('runs/NiN_' + str(lr) + "_" + timestamp), optimizer, timestamp
     elif model_name == 'PretrainedClassifier':
-        model_name = PretrainedClassifier(num_classes=num_class, in_channels=cfg['in_channels'],
+        model = PretrainedClassifier(num_classes=num_class, in_channels=cfg['in_channels'],
                                backbone=model_cfg[model_name]["backbone"], pretrained=model_cfg[model_name]["pretrained"])
         optimizer = torch.optim.SGD(model_name.parameters(), lr=lr, momentum=0.9)
         # 加载模型参数
         # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-        return model_name, SummaryWriter('runs/Unet_' + str(lr) + "_" + timestamp), optimizer, timestamp
+        return model, SummaryWriter('runs/Unet_' + str(lr) + "_" + timestamp), optimizer, timestamp
     elif model_name == 'UnetClassifier':
-        model_name = UnetClassifier(num_classes=num_class, in_channels=cfg['in_channels'],
+        model = UnetClassifier(num_classes=num_class, in_channels=cfg['in_channels'],
                                backbone=model_cfg[model_name]["backbone"], pretrained=model_cfg[model_name]["pretrained"])
         if model_cfg[model_name]["freeze_backbone"]:
-            model_name.freeze_backbone()
+            model.freeze_backbone()
             print("freeze_backbone")
         optimizer = torch.optim.SGD(model_name.parameters(), lr=lr, momentum=0.9)
-        return model_name, SummaryWriter('runs/Unet_' + str(lr) + "_" + timestamp), optimizer, timestamp
+        return model, SummaryWriter('runs/Unet_' + str(lr) + "_" + timestamp), optimizer, timestamp
 
 
 def dataSelector(data='Breast'):

@@ -1,7 +1,7 @@
 import torch
 import torchvision
 import torchvision.transforms as transforms
-from torcheval.metrics.functional import multiclass_precision, multiclass_f1_score, multiclass_accuracy
+from torcheval.metrics.functional import multiclass_precision,multiclass_f1_score, multiclass_accuracy, multiclass_confusion_matrix
 import tqdm
 import os
 import json
@@ -9,23 +9,22 @@ from torch.utils.tensorboard import SummaryWriter
 from PIL import Image
 from torch.utils.data import Dataset
 from datetime import datetime
-# from TDSNet.TDSNet import TDSNet
-# from TDSNet.TDSNet import TDSNet
+from TDSNet.TDSNet import TDSNet
 from models.model4compare.GoogleNet import GoogleNet
 from models.model4compare.AlexNet import AlexNet
 from models.model4compare.VGG import VGG
 from models.model4compare.NiN import NiN
-
 from models.UnetClassifer.unet import PretrainedClassifier,UnetClassifier
 from utils.datasetCheck import checkDataset # 数据集检查
 from utils.earlyStopping import EarlyStopping # 提前停止
-from utils.multiMessageFilter import setup_custom_logger  #! 把MultiMessageFilter放入/utils.multiMessageFilter.py文件中
-logger = setup_custom_logger() # 设置日志屏蔽器，屏蔽f1_score的warning
+from utils.multiMessageFilter import MultiMessageFilter  # ! 把MultiMessageFilter放入/utils.multiMessageFilter.py文件中
 from utils.tools import getDevice, create_transforms # getDevice获取设备，create_transforms根据json配置创建transforms对象
 from utils.tools import save_checkpoint, load_checkpoint  # 保存和加载检查点
 from utils.MyBlock.MyCrop import MyCrop
 from utils.PILResize import PILResize
+from utils.ClaDataset import getClaTrainValidData
 
+MultiMessageFilter().setup()
 # 配置
 cfg = {
     "model": "UnetClassifier", # 模型选择
@@ -103,20 +102,16 @@ model_cfg = {
         "loss_fn": "CrossEntropyLoss"
     }
 }
-
-
-
 transforms_cfg = {
     "transform_train": {
         # "transforms的方法名字": {"参数名1": 参数值1, "参数名2": 参数值2, ...}
-        # "Resize": {"size": (400, 400)},
-        "MyCrop": {}, 
-        "PILResize": {"size": (128, 128)},
-        # "RandomHorizontalFlip": {},
-        # "RandomVerticalFlip": {},
-        # "RandomRotation": {"degrees": 30},
-        # "RandomAffine": {"degrees": 0, "translate": [0.1, 0.1]},
-        # "RandomPerspective": {"distortion_scale": 0.5, "p": 0.5},
+        "MyCrop": {},  # 自定义裁剪（fx）
+        "Resize": {"size": (400, 400)},
+        "RandomHorizontalFlip": {},
+        "RandomVerticalFlip": {},
+        "RandomRotation": {"degrees": 30},
+        "RandomAffine": {"degrees": 0, "translate": [0.1, 0.1]},
+        "RandomPerspective": {"distortion_scale": 0.5, "p": 0.5},
         "ToTensor": {},
         "Normalize": {
             "mean": [0.4914, 0.4822, 0.4465],
@@ -428,6 +423,7 @@ if __name__ == '__main__':
     print(f"cfg: {cfg}")
     print(f"model_cfg: {model_cfg[cfg['model']]}")
 
+
     "----------------------------------- resume from checkpoint ---------------------------------------------"
     epoch_number = 0
     best_vloss = float('inf')
@@ -453,6 +449,7 @@ if __name__ == '__main__':
             checkpoint_path = cfg["checkpoint_path"]
         else:
             # 自动寻找最新的检查点
+            checkpoint_path = os.path.join(checkPoint_path, 'resume_checkpoint', 'checkpoint.pth.tar')
             checkpoint_path = os.path.join(checkPoint_path, 'resume_checkpoint', 'checkpoint.pth.tar')
             if not os.path.exists(checkpoint_path):
                 # 如果当前目录下没有检查点，则尝试在 checkPoint 目录中寻找
@@ -537,6 +534,7 @@ if __name__ == '__main__':
 
         # 追踪最佳性能，并保存模型状态
         is_best = avg_vloss < best_vloss
+
 
         if is_best:
             best_vloss = avg_vloss

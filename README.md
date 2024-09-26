@@ -1,3 +1,9 @@
+# tensorboard使用方法
+
+```commandline
+tensorboard --logdir=./runs
+```
+
 # TDS-Net网络结构
 
 ```
@@ -35,12 +41,22 @@ D:.
 ├─.idea
 │  ├─inspectionProfiles
 │  └─shelf
-│      └─Uncommitted_changes_before_Update_at_9_11_2024_5_59_PM_[Changes]
+│      └─Uncommitted_changes_before_Update_at_9_21_2024_7_56_PM_[Changes]
 ├─data
 │  ├─breast
 │  │  ├─.ipynb_checkpoints
 │  │  ├─.jupyter
 │  │  │  └─desktop-workspaces
+│  │  ├─BUS
+│  │  │  ├─.idea
+│  │  │  │  └─inspectionProfiles
+│  │  │  ├─Images
+│  │  │  └─Masks
+│  │  ├─myTrain
+│  │  │  └─cla
+│  │  ├─OASBUD
+│  │  ├─testA
+│  │  │  └─cla
 │  │  ├─test_A
 │  │  │  ├─cla
 │  │  │  │  ├─2类
@@ -93,39 +109,48 @@ D:.
 │  │  │      ├─direction_labels
 │  │  │      ├─images
 │  │  │      └─shape_labels
-│  │  └─train_valid_test
-│  │      ├─test
-│  │      │  └─unknown
-│  │      ├─train
-│  │      │  ├─2类
-│  │      │  ├─3类
-│  │      │  ├─4A类
-│  │      │  ├─4B类
-│  │      │  ├─4C类
-│  │      │  └─5类
-│  │      ├─train_valid
-│  │      │  ├─2类
-│  │      │  ├─3类
-│  │      │  ├─4A类
-│  │      │  ├─4B类
-│  │      │  ├─4C类
-│  │      │  └─5类
-│  │      └─valid
-│  │          ├─2类
-│  │          ├─3类
-│  │          ├─4A类
-│  │          ├─4B类
-│  │          ├─4C类
-│  │          └─5类
+│  │  ├─train_valid_test
+│  │  │  ├─test
+│  │  │  │  └─unknown
+│  │  │  ├─train
+│  │  │  │  ├─2类
+│  │  │  │  ├─3类
+│  │  │  │  ├─4A类
+│  │  │  │  ├─4B类
+│  │  │  │  ├─4C类
+│  │  │  │  └─5类
+│  │  │  ├─train_valid
+│  │  │  │  ├─2类
+│  │  │  │  ├─3类
+│  │  │  │  ├─4A类
+│  │  │  │  ├─4B类
+│  │  │  │  ├─4C类
+│  │  │  │  └─5类
+│  │  │  └─valid
+│  │  │      ├─2类
+│  │  │      ├─3类
+│  │  │      ├─4A类
+│  │  │      ├─4B类
+│  │  │      ├─4C类
+│  │  │      └─5类
+│  │  └─USG
+│  │      └─.idea
+│  │          └─inspectionProfiles
 │  ├─FashionMNIST
 │  │  └─raw
 │  └─test
 ├─models
 │  ├─model4compare
+│  │  └─__pycache__
 │  └─UnetClassifer
+│      └─__pycache__
 ├─TDSNet
+│  └─__pycache__
+├─test
 └─utils
-    └─MyBlock
+    ├─MyBlock
+    │  └─__pycache__
+    └─__pycache__
 ```
 
 

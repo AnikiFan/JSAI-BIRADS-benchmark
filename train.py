@@ -1,7 +1,7 @@
 import torch
 import torchvision
 import torchvision.transforms as transforms
-from torcheval.metrics.functional import multiclass_precision, multiclass_f1_score
+from torcheval.metrics.functional import multiclass_precision, multiclass_f1_score, multiclass_accuracy
 import tqdm
 import os
 import json
@@ -205,6 +205,7 @@ def train_one_epoch(model, train_loader, epoch_index, num_class, tb_writer):
         loss = loss_fn(outputs, labels)
         loss.backward()
 
+        running_accuracy += multiclass_accuracy(outputs, labels).tolist()
         running_precision += multiclass_precision(outputs, labels).tolist()
         running_f1 += multiclass_f1_score(outputs, labels, average='macro', num_classes=num_class).tolist()
 
@@ -219,17 +220,19 @@ def train_one_epoch(model, train_loader, epoch_index, num_class, tb_writer):
             last_loss = running_loss / batch_count
             last_precision = running_precision / batch_count
             last_f1 = running_f1 / batch_count
+            last_accuracy = running_accuracy / batch_count
 
             tb_x = epoch_index * len(train_loader) + i + 1
             tb_writer.add_scalar('Loss/train', last_loss, tb_x)
             tb_writer.add_scalar('Precision/train', last_precision, tb_x)
             tb_writer.add_scalar('F1/train', last_f1, tb_x)
-
+            tb_writer.add_scalar('Accuracy/train', last_accuracy, tb_x)
+            
             running_loss = 0.
             running_precision = 0.
             running_f1 = 0.
 
-    return last_loss, last_precision, last_f1
+    return last_loss, last_precision, last_f1, last_accuracy
 
 
 def modelSelector(model_name, lr, num_class):
@@ -415,9 +418,10 @@ if __name__ == '__main__':
     for epoch in range(cfg["epoch_num"]):
 
         # Make sure gradient tracking is on, and do a pass over the data
-        avg_loss, avg_precision, avg_f1 = train_one_epoch(model, train_loader, epoch, num_class, writer)
+        avg_loss, avg_precision, avg_f1, avg_accuracy = train_one_epoch(model, train_loader, epoch, num_class, writer)
 
         running_vloss = 0.0
+        running_vaccuracy = 0.0
         running_vprecison = 0.0
         running_vf1 = 0.0
         # Set the model to evaluation mode, disabling dropout and using population
@@ -432,18 +436,24 @@ if __name__ == '__main__':
                     vinputs = vinputs.to(torch.device(cfg["device"]))
                     vlabels = vlabels.to(torch.device(cfg["device"]))
                 voutputs = model(vinputs)
+                
                 vloss = loss_fn(voutputs, vlabels)
+                vaccuracy = multiclass_accuracy(voutputs, vlabels).tolist()
                 vprecision = multiclass_precision(voutputs, vlabels).tolist()
                 vf1 = multiclass_f1_score(voutputs, vlabels, average='macro',
                                           num_classes=num_class).tolist()  # note:设置成macro进而计算每个类别的f1值
                 running_vloss += vloss
+                running_vaccuracy += vaccuracy
                 running_vprecison += vprecision
                 running_vf1 += vf1
 
         avg_vloss = running_vloss / (i + 1)
+        avg_vaccuracy = running_vaccuracy / (i + 1)
         avg_vprecision = running_vprecison / (i + 1)
         avg_vf1 = running_vf1 / (i + 1)
+        
         print('LOSS      train {} valid {}'.format(avg_loss, avg_vloss))
+        print('ACCURACY  train {} valid {}'.format(avg_accuracy, avg_vaccuracy))
         print('PRECISION train {} valid {}'.format(avg_precision, avg_vprecision))
         print('F1        train {} valid {}'.format(avg_f1, avg_vf1))
 
@@ -454,6 +464,9 @@ if __name__ == '__main__':
                            epoch_number + 1)
         writer.add_scalars('Training vs. Validation Precision',
                            {'Training': avg_precision, 'Validation': avg_vprecision},
+                           epoch_number + 1)
+        writer.add_scalars('Training vs. Validation Accuracy',
+                           {'Training': avg_accuracy, 'Validation': avg_vaccuracy},
                            epoch_number + 1)
         writer.add_scalars('Training vs. Validation F1',
                            {'Training': avg_f1, 'Validation': avg_vf1},

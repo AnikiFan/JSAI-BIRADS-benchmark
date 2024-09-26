@@ -31,8 +31,8 @@ def move_image(image_path, label_name, dst):
         warn(f"image {image_path + label_name.replace('.txt')} doesn't exist!")
 
 
-data_path = os.path.join(os.pardir, 'data', 'breast', 'test_A', 'cla')
-dst = os.path.join(os.pardir, 'data', 'breast', 'testA', 'cla')
+data_path = os.path.join(os.pardir, 'data', 'breast', 'train', 'cla')
+dst = os.path.join(os.pardir, 'data', 'breast', 'myTrain', 'cla')
 
 os.makedirs(dst, exist_ok=True)
 label_tables = []

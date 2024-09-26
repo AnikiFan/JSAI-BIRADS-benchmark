@@ -73,5 +73,5 @@ if __name__ == '__main__':
     dest_dir = os.path.join(os.getcwd(), "data", "breast", "train_valid_test")
     train_dir = os.path.join(os.getcwd(), "data", "breast", "train", "cla")
     test_dir = os.path.join(os.getcwd(), "data", "breast", "test_A", "cla")
-    organizer = DataOrganizer(train_dir,test_dir, dest_dir, valid_ratio=0.1)
+    organizer = DataOrganizer(dest_dir=dest_dir,test_dir=test_dir, train_dir=train_dir, valid_ratio=0.1)
     organizer.reorg_data()

@@ -1,7 +1,7 @@
 import torch
 import torchvision
 import torchvision.transforms as transforms
-from torcheval.metrics.functional import multiclass_precision, multiclass_f1_score, multiclass_accuracy
+from torcheval.metrics.functional import multiclass_precision,multiclass_f1_score, multiclass_accuracy, multiclass_confusion_matrix
 import tqdm
 import os
 import json
@@ -9,23 +9,22 @@ from torch.utils.tensorboard import SummaryWriter
 from PIL import Image
 from torch.utils.data import Dataset
 from datetime import datetime
-# from TDSNet.TDSNet import TDSNet
-# from TDSNet.TDSNet import TDSNet
+from TDSNet.TDSNet import TDSNet
 from models.model4compare.GoogleNet import GoogleNet
 from models.model4compare.AlexNet import AlexNet
 from models.model4compare.VGG import VGG
 from models.model4compare.NiN import NiN
-
 from models.UnetClassifer.unet import PretrainedClassifier,UnetClassifier
 from utils.datasetCheck import checkDataset # 数据集检查
 from utils.earlyStopping import EarlyStopping # 提前停止
-from utils.multiMessageFilter import setup_custom_logger  #! 把MultiMessageFilter放入/utils.multiMessageFilter.py文件中
-logger = setup_custom_logger() # 设置日志屏蔽器，屏蔽f1_score的warning
+from utils.multiMessageFilter import MultiMessageFilter  # ! 把MultiMessageFilter放入/utils.multiMessageFilter.py文件中
 from utils.tools import getDevice, create_transforms # getDevice获取设备，create_transforms根据json配置创建transforms对象
 from utils.tools import save_checkpoint, load_checkpoint  # 保存和加载检查点
 from utils.MyBlock.MyCrop import MyCrop
 from utils.PILResize import PILResize
+from utils.ClaDataset import getClaTrainValidData
 
+MultiMessageFilter().setup()
 # 配置
 cfg = {
     "model": "UnetClassifier", # 模型选择
@@ -103,20 +102,16 @@ model_cfg = {
         "loss_fn": "CrossEntropyLoss"
     }
 }
-
-
-
 transforms_cfg = {
     "transform_train": {
         # "transforms的方法名字": {"参数名1": 参数值1, "参数名2": 参数值2, ...}
-        # "Resize": {"size": (400, 400)},
-        "MyCrop": {}, 
-        "PILResize": {"size": (128, 128)},
-        # "RandomHorizontalFlip": {},
-        # "RandomVerticalFlip": {},
-        # "RandomRotation": {"degrees": 30},
-        # "RandomAffine": {"degrees": 0, "translate": [0.1, 0.1]},
-        # "RandomPerspective": {"distortion_scale": 0.5, "p": 0.5},
+        "MyCrop": {},  # 自定义裁剪（fx）
+        "Resize": {"size": (400, 400)},
+        "RandomHorizontalFlip": {},
+        "RandomVerticalFlip": {},
+        "RandomRotation": {"degrees": 30},
+        "RandomAffine": {"degrees": 0, "translate": [0.1, 0.1]},
+        "RandomPerspective": {"distortion_scale": 0.5, "p": 0.5},
         "ToTensor": {},
         "Normalize": {
             "mean": [0.4914, 0.4822, 0.4465],
@@ -236,11 +231,9 @@ def train_one_epoch(model, train_loader, epoch_index, num_class, tb_writer):
     '''
     running_loss = 0.
     running_accuracy = 0.
-    running_precision = 0.
     running_f1 = 0.
     last_loss = 0.
     last_accuracy = 0.
-    last_precision = 0.
     last_f1 = 0.
 
     model.train(True)
@@ -257,7 +250,6 @@ def train_one_epoch(model, train_loader, epoch_index, num_class, tb_writer):
         loss.backward()
 
         running_accuracy += multiclass_accuracy(outputs, labels).tolist()
-        running_precision += multiclass_precision(outputs, labels).tolist()
         running_f1 += multiclass_f1_score(outputs, labels, average='macro', num_classes=num_class).tolist()
 
         optimizer.step()
@@ -269,21 +261,21 @@ def train_one_epoch(model, train_loader, epoch_index, num_class, tb_writer):
             # 计算实际的批次数
             batch_count = frequency if not is_last_batch else (i % frequency + 1)
             last_loss = running_loss / batch_count
-            last_precision = running_precision / batch_count
+            last_accuracy = running_accuracy / batch_count
             last_f1 = running_f1 / batch_count
             last_accuracy = running_accuracy / batch_count
 
             tb_x = epoch_index * len(train_loader) + i + 1
             tb_writer.add_scalar('Loss/train', last_loss, tb_x)
-            tb_writer.add_scalar('Precision/train', last_precision, tb_x)
+            tb_writer.add_scalar('Accuracy/train', last_accuracy, tb_x)
             tb_writer.add_scalar('F1/train', last_f1, tb_x)
             tb_writer.add_scalar('Accuracy/train', last_accuracy, tb_x)
             
             running_loss = 0.
-            running_precision = 0.
+            running_accuracy = 0.
             running_f1 = 0.
 
-    return last_loss, last_precision, last_f1, last_accuracy
+    return last_loss, last_accuracy, last_f1
 
 
 def modelSelector(model_name, lr, num_class):
@@ -360,17 +352,10 @@ def dataSelector(data='Breast'):
         valid_ds.dataset.transform = transform_test  # 修改验证集的 transform
         
     if data == "Breast":
-        dest_dir = os.path.join(os.getcwd(), "data", "breast", "train_valid_test")
-        train_dir = os.path.join(os.getcwd(), "data", "breast", "train", "cla")
-        test_dir = os.path.join(os.getcwd(), "data", "breast", "test_A", "cla")
-        # 读取transform_cfg,创建transform_train和transform_test
-        # transform_train = create_transforms(transforms_cfg["transform_train"])
-        # transform_test = create_transforms(transforms_cfg["transform_test"])
-        transform_train = create_transforms(transforms_cfg["transform_train"], custom_transforms=custom_transforms)
-        transform_test = create_transforms(transforms_cfg["transform_test"], custom_transforms=custom_transforms)
-        print("transform_train: ", transform_train)
-        print("transform_test: ", transform_test)
-
+        train_transform = create_transforms(transforms_cfg["transform_train"], custom_transforms=custom_transforms)
+        valid_transform = create_transforms(transforms_cfg["transform_test"], custom_transforms=custom_transforms)
+        print("train_transform: ", train_transform)
+        print("valid_transform: ", valid_transform)
         # 创建数据集
         train_ds, train_valid_ds = [
             torchvision.datasets.ImageFolder(
@@ -387,6 +372,9 @@ def dataSelector(data='Breast'):
         train_ds = OriginalImageDataset(root_dir=cfg["dataset_root"]["train_dir"], transform=transform_train)
         valid_ds = OriginalImageDataset(root_dir=cfg["dataset_root"]["test_dir"], transform=transform_test)
         
+        # train_ds, valid_ds = getClaTrainValidData(data_folder_path=os.path.join(os.curdir, 'data'),
+        #                                           train_transform=train_transform, valid_transform=valid_transform,
+        #                                           image_format='PIL')
     elif data == 'FashionMNIST':
         transform = transforms.Compose(
             [transforms.ToTensor(),
@@ -404,8 +392,12 @@ if __name__ == '__main__':
     num_class = len(train_ds.classes)  # 获取类别数量
 
     # 创建数据加载器    
-    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=cfg["batch_size"], shuffle=True, pin_memory=cfg["pin_memory"], drop_last=True, num_workers=cfg["num_workers"])
-    valid_loader = torch.utils.data.DataLoader(valid_ds, batch_size=cfg["batch_size"], shuffle=False, pin_memory=cfg["pin_memory"], drop_last=True, num_workers=cfg["num_workers"])
+    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=cfg["batch_size"], shuffle=True,
+                                               pin_memory=cfg["pin_memory"], drop_last=True,
+                                               num_workers=cfg["num_workers"])
+    valid_loader = torch.utils.data.DataLoader(valid_ds, batch_size=cfg["batch_size"], shuffle=False,
+                                               pin_memory=cfg["pin_memory"], drop_last=True,
+                                               num_workers=cfg["num_workers"])
     # 检查数据集，输出相关信息
     checkDataset(train_ds, valid_ds, train_loader, valid_loader, cfg["debug"]["num_samples_to_show"])  #
     "----------------------------------- loss function ---------------------------------------------"
@@ -418,8 +410,7 @@ if __name__ == '__main__':
     model.to(torch.device(cfg["device"]))
     print(f"cfg: {cfg}")
     print(f"model_cfg: {model_cfg[cfg['model']]}")
-    
-    
+
     "----------------------------------- resume from checkpoint ---------------------------------------------"
     epoch_number = 0
     best_vloss = float('inf')
@@ -445,7 +436,7 @@ if __name__ == '__main__':
             checkpoint_path = cfg["checkpoint_path"]
         else:
             # 自动寻找最新的检查点
-            checkpoint_path = os.path.join(checkPoint_path,'resume_checkpoint' ,'checkpoint.pth.tar')
+            checkpoint_path = os.path.join(checkPoint_path, 'resume_checkpoint', 'checkpoint.pth.tar')
             if not os.path.exists(checkpoint_path):
                 # 如果当前目录下没有检查点，则尝试在checkPoint目录中寻找
                 checkpoint_dir = os.path.join(os.getcwd(), 'checkPoint')
@@ -474,17 +465,15 @@ if __name__ == '__main__':
     for epoch in range(cfg["epoch_num"]):
 
         # Make sure gradient tracking is on, and do a pass over the data
-        avg_loss, avg_precision, avg_f1, avg_accuracy = train_one_epoch(model, train_loader, epoch, num_class, writer)
+        avg_loss, avg_accuracy, avg_f1 = train_one_epoch(model, train_loader, epoch, num_class, writer)
 
-        running_vloss = 0.0
-        running_vaccuracy = 0.0
-        running_vprecison = 0.0
-        running_vf1 = 0.0
         # Set the model to evaluation mode, disabling dropout and using population
         # statistics for batch normalization.
         model.eval()
 
         # Disable gradient computation and reduce memory consumption.
+        ground_truth = []
+        prediction = []
         with torch.no_grad():
             for i, vdata in enumerate(valid_loader):
                 vinputs, vlabels = vdata
@@ -492,25 +481,16 @@ if __name__ == '__main__':
                     vinputs = vinputs.to(torch.device(cfg["device"]))
                     vlabels = vlabels.to(torch.device(cfg["device"]))
                 voutputs = model(vinputs)
-                
-                vloss = loss_fn(voutputs, vlabels)
-                vaccuracy = multiclass_accuracy(voutputs, vlabels).tolist()
-                vprecision = multiclass_precision(voutputs, vlabels).tolist()
-                vf1 = multiclass_f1_score(voutputs, vlabels, average='macro',
-                                          num_classes=num_class).tolist()  # note:设置成macro进而计算每个类别的f1值
-                running_vloss += vloss
-                running_vaccuracy += vaccuracy
-                running_vprecison += vprecision
-                running_vf1 += vf1
+                ground_truth.append(vlabels)
+                prediction.append(voutputs)
 
-        avg_vloss = running_vloss / (i + 1)
-        avg_vaccuracy = running_vaccuracy / (i + 1)
-        avg_vprecision = running_vprecison / (i + 1)
-        avg_vf1 = running_vf1 / (i + 1)
-        
+        ground_truth = torch.cat(ground_truth, dim=0)
+        prediction = torch.cat(prediction, dim=0)
+        avg_vloss = loss_fn(prediction, ground_truth)
+        avg_vaccuracy = multiclass_accuracy(prediction, ground_truth).tolist()
+        avg_vf1 = multiclass_f1_score(prediction, ground_truth, average='macro', num_classes=num_class).tolist()
         print('LOSS      train {} valid {}'.format(avg_loss, avg_vloss))
         print('ACCURACY  train {} valid {}'.format(avg_accuracy, avg_vaccuracy))
-        print('PRECISION train {} valid {}'.format(avg_precision, avg_vprecision))
         print('F1        train {} valid {}'.format(avg_f1, avg_vf1))
 
         # Log the running loss averaged per batch
@@ -518,8 +498,8 @@ if __name__ == '__main__':
         writer.add_scalars('Training vs. Validation Loss',
                            {'Training': avg_loss, 'Validation': avg_vloss},
                            epoch_number + 1)
-        writer.add_scalars('Training vs. Validation Precision',
-                           {'Training': avg_precision, 'Validation': avg_vprecision},
+        writer.add_scalars('Training vs. Validation Accuracy',
+                           {'Training': avg_accuracy, 'Validation': avg_vaccuracy},
                            epoch_number + 1)
         writer.add_scalars('Training vs. Validation Accuracy',
                            {'Training': avg_accuracy, 'Validation': avg_vaccuracy},
@@ -527,6 +507,8 @@ if __name__ == '__main__':
         writer.add_scalars('Training vs. Validation F1',
                            {'Training': avg_f1, 'Validation': avg_vf1},
                            epoch_number + 1)
+        writer.add_text(f'confusion matrix of epoch {epoch_number + 1}',
+                        str(multiclass_confusion_matrix(prediction, ground_truth, num_classes=num_class)))
         writer.flush()
 
         # 检查早停条件
@@ -537,12 +519,12 @@ if __name__ == '__main__':
 
         # Track best performance, and save the model's state
         is_best = avg_vloss < best_vloss
-        
+
         if is_best:
             best_vloss = avg_vloss
             print(f"=> Validation loss improved to {avg_vloss:.6f} - saving best model")
             modelCheckPoint_path = os.path.join(checkPoint_path, 'model')
-            
+
             # 保存checkpoint（包括epoch，model_state_dict，optimizer_state_dict，best_vloss，但仅在best时保存）
             # 保存断点重训所需的信息（需要包括epoch，model_state_dict，optimizer_state_dict，best_vloss）
             checkpoint = {
@@ -553,7 +535,7 @@ if __name__ == '__main__':
             }
             if not os.path.exists(os.path.join(checkPoint_path, 'resume_checkpoint')):
                 os.makedirs(os.path.join(checkPoint_path, 'resume_checkpoint'))
-            save_checkpoint(checkpoint, checkPoint_path, filename=f'resume_checkpoint/epoch{epoch + 1}_vloss{avg_vloss:.4f}_precision{avg_vprecision:.4f}_f1{avg_vf1:.4f}.pth.tar')
+            save_checkpoint(checkpoint, checkPoint_path, filename=f'resume_checkpoint/epoch{epoch + 1}_vloss{avg_vloss:.4f}_f1{avg_vf1:.4f}.pth.tar')
             
             # 保存最佳模型参数
             if not os.path.exists(modelCheckPoint_path):
@@ -562,7 +544,7 @@ if __name__ == '__main__':
         
         # 记录训练过程的性能变化
         with open(os.path.join(checkPoint_path, 'training_log.txt'), 'a') as f:
-            f.write(f"Epoch {epoch + 1}: vloss={avg_vloss:.4f}, accuracy={avg_vaccuracy:.4f}, precision={avg_vprecision:.4f}, f1={avg_vf1:.4f}\n")
+            f.write(f"Epoch {epoch + 1}: vloss={avg_vloss:.4f}, accuracy={avg_vaccuracy:.4f}, f1={avg_vf1:.4f}\n")
         epoch_number += 1
 
     print("-------------------------- training finished --------------------------")

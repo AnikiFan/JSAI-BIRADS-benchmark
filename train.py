@@ -551,9 +551,9 @@ if __name__ == '__main__':
                 'optimizer_state_dict': optimizer.state_dict(),
                 'best_vloss': best_vloss
             }
-            if not os.path.exists(os.path.join(checkPoint_path, 'resume_checkpoint')):
-                os.makedirs(os.path.join(checkPoint_path, 'resume_checkpoint'))
-            save_checkpoint(checkpoint, checkPoint_path, filename=f'resume_checkpoint/epoch{epoch + 1}_vloss{avg_vloss:.4f}_precision{avg_vprecision:.4f}_f1{avg_vf1:.4f}.pth.tar')
+            # if not os.path.exists(os.path.join(checkPoint_path, 'resume_checkpoint')):
+            #     os.makedirs(os.path.join(checkPoint_path, 'resume_checkpoint'))
+            # save_checkpoint(checkpoint, checkPoint_path, filename=f'resume_checkpoint/epoch{epoch + 1}_vloss{avg_vloss:.4f}_precision{avg_vprecision:.4f}_f1{avg_vf1:.4f}.pth.tar')
             
             # 保存最佳模型参数
             if not os.path.exists(modelCheckPoint_path):

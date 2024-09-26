@@ -23,6 +23,7 @@ from utils.tools import save_checkpoint, load_checkpoint  # 保存和加载检�
 from utils.MyBlock.MyCrop import MyCrop
 from utils.PILResize import PILResize
 from utils.ClaDataset import getClaTrainValidData
+from warnings import warn
 
 MultiMessageFilter().setup()
 # 配置
@@ -106,7 +107,7 @@ transforms_cfg = {
     "transform_train": {
         # "transforms的方法名字": {"参数名1": 参数值1, "参数名2": 参数值2, ...}
         "MyCrop": {},  # 自定义裁剪（fx）
-        "Resize": {"size": (400, 400)},
+        "Resize": {"size": (256,256)},
         "RandomHorizontalFlip": {},
         "RandomVerticalFlip": {},
         "RandomRotation": {"degrees": 30},
@@ -152,7 +153,7 @@ class OriginalTransformImageDataset(Dataset):
         for cls in self.classes:
             images_dir = os.path.join(root_dir, cls, 'images')
             if not os.path.isdir(images_dir):
-                logger.warning(f"类别 {cls} 下没有找到 images 目录，跳过")
+                warn(f"类别 {cls} 下没有找到 images 目录，跳过")
                 continue
             for root, _, fnames in sorted(os.walk(images_dir)):
                 for fname in sorted(fnames):
@@ -336,7 +337,7 @@ def dataSelector(data='Breast'):
         print("transform_test: ", transform_test)
 
         # 创建自定义数据集
-        # full_dataset = CustomImageDataset(root_dir=dataset_root, transform=transform_train)
+        full_dataset = CustomImageDataset(root_dir=dataset_root, transform=transform_train)
         train_ds_path = os.path.join(dataset_root, "train")
         train_ds = OriginalImageDataset(root_dir=dataset_root, transform=transform_train)
         valid_ds = OriginalImageDataset(root_dir=dataset_root, transform=transform_test)
@@ -354,23 +355,26 @@ def dataSelector(data='Breast'):
     if data == "Breast":
         train_transform = create_transforms(transforms_cfg["transform_train"], custom_transforms=custom_transforms)
         valid_transform = create_transforms(transforms_cfg["transform_test"], custom_transforms=custom_transforms)
+        dest_dir = os.path.join(os.getcwd(), "data", "breast", "train_valid_test")
+        train_dir = os.path.join(os.getcwd(), "data", "breast", "train", "cla")
+        test_dir = os.path.join(os.getcwd(), "data", "breast", "test_A", "cla")
         print("train_transform: ", train_transform)
         print("valid_transform: ", valid_transform)
         # 创建数据集
         train_ds, train_valid_ds = [
             torchvision.datasets.ImageFolder(
                 os.path.join(dest_dir, folder),
-                transform=transform_train) for folder in ['train', 'train_valid']
+                transform=train_transform) for folder in ['train', 'train_valid']
         ]
         valid_ds, test_ds = [
             torchvision.datasets.ImageFolder(
                 os.path.join(dest_dir, folder),
-                transform=transform_test) for folder in ['valid', 'test']
+                transform=train_transform) for folder in ['valid', 'test']
         ]
 
     if data == "BreastOriginal":
-        train_ds = OriginalImageDataset(root_dir=cfg["dataset_root"]["train_dir"], transform=transform_train)
-        valid_ds = OriginalImageDataset(root_dir=cfg["dataset_root"]["test_dir"], transform=transform_test)
+        train_ds = OriginalImageDataset(root_dir=cfg["dataset_root"]["train_dir"], transform=train_transform)
+        valid_ds = OriginalImageDataset(root_dir=cfg["dataset_root"]["test_dir"], transform=train_transform)
         
         # train_ds, valid_ds = getClaTrainValidData(data_folder_path=os.path.join(os.curdir, 'data'),
         #                                           train_transform=train_transform, valid_transform=valid_transform,

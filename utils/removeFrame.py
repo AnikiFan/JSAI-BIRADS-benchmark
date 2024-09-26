@@ -107,11 +107,11 @@ def removeFrame(x):
             tolerance_cnt += 1
             p -= 1
 
-    if (right - left) < w * 0.4:
-        warnings.warn('width too small after cropped!')
-        left, right = 0, w - 1
-    if (bottom - top) < h * 0.4:
-        warnings.warn('height too small after cropped!')
-        top, bottom = 0, h - 1
+    # if (right - left) < w * 0.4:
+    #     warnings.warn('width too small after cropped!')
+    #     left, right = 0, w - 1
+    # if (bottom - top) < h * 0.4:
+    #     warnings.warn('height too small after cropped!')
+    #     top, bottom = 0, h - 1
 
     return top,left,bottom-top,right-left

@@ -186,9 +186,11 @@ def train_one_epoch(model, train_loader, epoch_index, num_class, tb_writer):
     :param tb_writer: TensorBoard 写入器
     '''
     running_loss = 0.
+    running_accuracy = 0.
     running_precision = 0.
     running_f1 = 0.
     last_loss = 0.
+    last_accuracy = 0.
     last_precision = 0.
     last_f1 = 0.
 
@@ -506,7 +508,7 @@ if __name__ == '__main__':
         
         # 记录训练过程的性能变化
         with open(os.path.join(checkPoint_path, 'training_log.txt'), 'a') as f:
-            f.write(f"Epoch {epoch + 1}: vloss={avg_vloss:.4f}, precision={avg_vprecision:.4f}, f1={avg_vf1:.4f}\n")
+            f.write(f"Epoch {epoch + 1}: vloss={avg_vloss:.4f}, accuracy={avg_vaccuracy:.4f}, precision={avg_vprecision:.4f}, f1={avg_vf1:.4f}\n")
         epoch_number += 1
 
     print("-------------------------- training finished --------------------------")

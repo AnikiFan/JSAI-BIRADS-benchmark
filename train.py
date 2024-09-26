@@ -29,7 +29,7 @@ from utils.PILResize import PILResize
 # 配置
 cfg = {
     "model": "UnetClassifier", # 模型选择
-    "data": "Breast", # 数据集选择
+    "data": "BreastOriginal", # 数据集选择
     "epoch_num": 1000, # 训练的 epoch 数量
     "num_workers": 2, # 数据加载器的工作进程数量,注意此处太大会导致内存溢出，很容易无法训练
     "batch_size": 16, # 批处理大小
@@ -47,6 +47,11 @@ cfg = {
     "early_stopping": {
         "patience": 20, # 耐心值
         "min_delta": 0.001 # 最小变化
+    },
+    "dataset_root": {
+        "train_dir": "/Users/huiyangzheng/Desktop/Project/Competition/GCAIAEC2024/AIC/TDS-Net/data/乳腺分类训练数据集/train_split/train_split_train",
+        "test_dir": "/Users/huiyangzheng/Desktop/Project/Competition/GCAIAEC2024/AIC/TDS-Net/data/乳腺分类训练数据集/train_split/train_split_test",
+        "split_ratio": 0.9
     }
     
 }
@@ -135,7 +140,7 @@ custom_transforms = {
     'PILResize': PILResize
     }
 
-class OriginalImageDataset(Dataset):
+class OriginalTransformImageDataset(Dataset):
     def __init__(self, root_dir, transform=None):
         """
         自定义数据集类
@@ -175,7 +180,51 @@ class OriginalImageDataset(Dataset):
         return image, label
 
 
+class OriginalImageDataset(Dataset):
+    def __init__(self, root_dir, transform=None):
+        self.samples = []
+        self.transform = transform
+        self.class_to_idx = {}
+        self.classes = []
+        map_class_to_idx = {
+            "2类":1,
+            "3类":2,
+            "4A类":3,
+            "4B类":4,
+            "4C类":5,
+            "5类":6,
+        }
+        # 获取所有类别（文件夹名称）
+        class_names = sorted(entry.name for entry in os.scandir(root_dir) if entry.is_dir())
+        for idx, class_name in enumerate(class_names):
+            self.classes.append(class_name)
+            self.class_to_idx[class_name] = idx
 
+        # 遍历每个类别文件夹
+        for class_name in self.classes:
+            class_dir = os.path.join(root_dir, class_name)
+            images_dir = os.path.join(class_dir, 'images')
+            if not os.path.isdir(images_dir):
+                continue
+            # 遍历 images 子文件夹中的所有图像文件
+            for root, _, fnames in sorted(os.walk(images_dir)):
+                for fname in sorted(fnames):
+                    if fname.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.tiff')):
+                        path = os.path.join(root, fname)
+                        item = (path, self.class_to_idx[class_name])
+                        self.samples.append(item)
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx):
+        path, target = self.samples[idx]
+        image = Image.open(path).convert('RGB')
+        if self.transform is not None:
+            image = self.transform(image)
+        return image, target
+    
+    
 def train_one_epoch(model, train_loader, epoch_index, num_class, tb_writer):
     '''
     训练一个 epoch
@@ -282,7 +331,7 @@ def modelSelector(model_name, lr, num_class):
 def dataSelector(data='Breast'):
     """
     """
-    if data == "BreastOriginal":
+    if data == "BreastOriginalTransform":
         # 假设数据集根目录为当前工作目录下的 'dataset'
         dataset_root = cfg["dataset_root"]
         if not os.path.isdir(dataset_root):
@@ -333,6 +382,11 @@ def dataSelector(data='Breast'):
                 os.path.join(dest_dir, folder),
                 transform=transform_test) for folder in ['valid', 'test']
         ]
+
+    if data == "BreastOriginal":
+        train_ds = OriginalImageDataset(root_dir=cfg["dataset_root"]["train_dir"], transform=transform_train)
+        valid_ds = OriginalImageDataset(root_dir=cfg["dataset_root"]["test_dir"], transform=transform_test)
+        
     elif data == 'FashionMNIST':
         transform = transforms.Compose(
             [transforms.ToTensor(),

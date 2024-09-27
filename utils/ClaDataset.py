@@ -6,10 +6,10 @@ from torchvision.transforms import transforms
 from PIL import Image
 
 
-def make_table(data_folder_path, official=True, BUS=True, USG=True):
-    official_data_path = os.path.join(data_folder_path, 'breast', 'myTrain', 'cla')
-    BUS_data_path = os.path.join(data_folder_path, 'breast', 'BUS', 'Images')
-    USG_data_path = os.path.join(data_folder_path, 'breast', 'USG')
+def make_table(data_folder_path, official_train=True, BUS=True, USG=True, seed=42):
+    official_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'train')
+    BUS_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'BUS', 'Images')
+    USG_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'USG')
     assert os.path.exists(official_data_path), "please run claTrainSetOrganize.py first!"
     assert os.path.exists(BUS_data_path), "please run replace.ipynb first!"
     assert os.path.exists(USG_data_path), "please run process.ipynb first!"
@@ -27,6 +27,9 @@ def make_table(data_folder_path, official=True, BUS=True, USG=True):
         tables.append(table)
     table = pd.concat(tables, axis=0)
     table.reset_index(drop=True, inplace=True)
+    idx = np.arange(len(table))
+    np.random.default_rng(seed).shuffle(idx)
+    table = table.iloc[idx, :]
     return table
 
 
@@ -46,6 +49,8 @@ class TableDataset(VisionDataset):
         self.classes = self.table.label.unique()
         self.labels = self.table.label
         self.transform = transform
+        self.idx = 0
+        self.samples = self
 
     @staticmethod
     def _PIL_reader(image_path):
@@ -67,6 +72,15 @@ class TableDataset(VisionDataset):
             return self.transform(self.reader(self.table.iloc[item].file_name)), self.table.iloc[item].label
         return self.reader(self.table.iloc[item].file_name), self.table.iloc[item].label
 
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.idx < len(self):
+            self.idx += 1
+            return self[self.idx - 1]
+        else:
+            raise StopIteration
     # def __getitems__(self, items):
     #     return self.table.iloc[items, 'file_name'].apply(lambda x: self.reader(x)).to_list()
 
@@ -74,10 +88,7 @@ class TableDataset(VisionDataset):
 class ClaCrossValidationData:
     def __init__(self, data_folder_path, k_fold=5, train_transform=None, valid_transform=None, image_format='PIL',
                  BUS=True, USG=True, seed=42):
-        self.table = make_table(data_folder_path=data_folder_path, official=True, BUS=BUS, USG=USG)
-        idx = np.arange(self.table.shape[0])
-        np.random.default_rng(seed=seed).shuffle(idx)
-        self.table = self.table.iloc[idx, :]
+        self.table = make_table(data_folder_path=data_folder_path, official=True, BUS=BUS, USG=USG, seed=seed)
         self.sep_point = np.round(np.linspace(0, self.table.shape[0], k_fold + 1)).astype(np.int_)
         self.cur_valid_fold = 0
         self.k_fold = k_fold
@@ -105,24 +116,9 @@ class ClaCrossValidationData:
 
 
 def getClaTrainValidData(data_folder_path, valid_ratio=0.2, train_transform=None, valid_transform=None, BUS=True,
-                         USG=True,
-                         image_format='PIL', seed=42):
-    table = make_table(data_folder_path=data_folder_path, official=True, BUS=BUS, USG=USG)
-    idx = np.arange(table.shape[0])
-    np.random.default_rng(seed=seed).shuffle(idx)
-    table = table.iloc[idx, :]
+                         USG=True, image_format='PIL', seed=42):
+    table = make_table(data_folder_path=data_folder_path, official=True, BUS=BUS, USG=USG, seed=seed)
     sep_point = int(table.shape[0] * valid_ratio)
     return (
         TableDataset(table.iloc[sep_point:, :], transform=train_transform, image_format=image_format),
         TableDataset(table.iloc[:sep_point, :], transform=valid_transform, image_format=image_format))
-
-
-if __name__ == "__main__":
-    test = ClaCrossValidationData(data_folder_path=os.path.join(os.pardir, 'data'), image_format='Tensor')
-    for i in range(5):
-        train, valid = next(test)
-        print(len(train), len(valid))
-        print(type(train[0][0]), type(valid[0][0]))
-        print(type(train[0][1]), type(valid[0][1]))
-        print(train[0][0].shape, valid[0][0].shape)
-        print(train[0][1], valid[0][1])

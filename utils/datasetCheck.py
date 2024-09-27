@@ -5,6 +5,7 @@ import logging
 from ClaDataset import getClaTrainValidData
 from torch.utils.data import DataLoader
 import os
+from ClaDataset import ClaCrossValidationData
 
 logging.getLogger('matplotlib.font_manager').disabled = True
 
@@ -101,6 +102,17 @@ def checkDataset(train_ds, valid_ds, training_loader, validation_loader, num_sam
 # 调用该函数来检查你的数据集格式
 # check_dataset_format(train_ds, valid_ds, training_loader, validation_loader)
 if __name__ == '__main__':
-    train_ds, valid_ds = getClaTrainValidData(data_folder_path=os.path.join(os.pardir, 'data'), image_format='Tensor')
-    train_loader, valid_loader = DataLoader(train_ds), DataLoader(valid_ds)
-    checkDataset(train_ds, valid_ds, train_loader, valid_loader)
+    augmented_folder_path = os.path.join(os.pardir, 'data', 'breast', 'cla', 'augmented')
+    k_fold = 5
+    CVData = ClaCrossValidationData(data_folder_path=os.path.join(os.pardir, 'data'), image_format='Tensor',
+            augmented_folder_list=[os.path.join(augmented_folder_path, x) for x in os.listdir(augmented_folder_path)])
+    # train_ds, valid_ds = getClaTrainValidData(data_folder_path=os.path.join(os.pardir, 'data'), image_format='Tensor',
+    #                                           augmented_folder_list=[os.path.join(augmented_folder_path, x) for x in
+    #                                                                  os.listdir(augmented_folder_path)])
+    # train_loader, valid_loader = DataLoader(train_ds), DataLoader(valid_ds)
+    for _ in range(k_fold):
+        train_ds,valid_ds = next(CVData)
+        train_loader,valid_loader = DataLoader(train_ds),DataLoader(valid_ds)
+        checkDataset(train_ds, valid_ds, train_loader, valid_loader,num_samples_to_show=0)
+        print()
+        print()

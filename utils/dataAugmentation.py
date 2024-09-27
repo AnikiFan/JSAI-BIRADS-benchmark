@@ -9,10 +9,16 @@ from warnings import warn
 
 
 def make_fingerprint(transform):
+    """
+
+    :param transform: 一个Aalbumentations的Compose对象！这里利用了该对象的str表示方法首尾两行为括号的特性！
+    :return:
+    """
     fingerprint = '_'.join(str(transform).splitlines()[1:-1])
     fingerprint = re.sub(r'[<>:"/\\|?*]', '_', fingerprint)
     fingerprint = fingerprint.lower()
     fingerprint = fingerprint.replace(' ','')
+    fingerprint = fingerprint.rstrip(',')
     return fingerprint
 
 
@@ -31,7 +37,7 @@ class MixUp:
         self.table = make_table(data_folder_path=data_folder_path, official_train=official_train, BUS=BUS, USG=USG)
         self.lam = np.random.beta(mixup_alpha, mixup_alpha)
         self.fingerprint = make_fingerprint(self)
-        self.fingerprint = f"mixup(mixup_alpha={mixup_alpha},official_train={official_train},BUS={BUS},USG={USG})"
+        self.fingerprint = f"Mixup(mixup_alpha={mixup_alpha},official_train={official_train},BUS={BUS},USG={USG})".lower()
         self.dst_folder = os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', self.fingerprint)
 
     def process_image(self):
@@ -78,21 +84,24 @@ class Preprocess:
         os.makedirs(self.dst_folder)
         table = make_table(data_folder_path=self.data_folder_path, official_train=True, BUS=True, USG=True)
         table.file_name.apply(lambda file_name: self.read_transform_write(file_name, self.dst_folder))
-        table.file_name = table.file_name.str.split(os.sep).apply(lambda x: x[-1])
+        table.file_name = table.file_name.str.split(os.sep).str[-1]
         table.to_csv(os.path.join(self.dst_folder, 'ground_truth.csv'), index=False)
 
 
 if __name__ == '__main__':
     MixUp(0.4).process_image()
 
-    transform = A.Compose([A.Rotate(limit=10, p=1)])
+    transform = A.Compose([A.Rotate(limit=10, always_apply=True),A.HorizontalFlip(always_apply=True)])
     Preprocess(transform, make_fingerprint(transform)).process_image()
 
-    transform = A.Compose([A.RandomBrightnessContrast(p=1)])
+    transform = A.Compose([A.Rotate(limit=10, always_apply=True)])
     Preprocess(transform, make_fingerprint(transform)).process_image()
 
-    transform = A.Compose([A.Perspective(scale=(0.05, 0.1), p=1)])
+    transform = A.Compose([A.RandomBrightnessContrast(always_apply=True)])
     Preprocess(transform, make_fingerprint(transform)).process_image()
 
-    transform = A.Compose([A.ElasticTransform(alpha=1, sigma=50, p=1)])
+    transform = A.Compose([A.Perspective(scale=(0.05, 0.1), always_apply=True)])
+    Preprocess(transform, make_fingerprint(transform)).process_image()
+
+    transform = A.Compose([A.ElasticTransform(alpha=1, sigma=50, always_apply=True)])
     Preprocess(transform, make_fingerprint(transform)).process_image()

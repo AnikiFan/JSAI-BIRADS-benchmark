@@ -8,7 +8,8 @@ class MultiMessageFilter(logging.Filter):
         "b'tIME'",
         "iCCP",
         "Compression method",
-        "Warning: Some classes do not exist in the target. F1 scores for these classes will be cast to zeros.",
+        "Warning: Some classes",
+        "UserWarning: A new version"
     ]
 
     def __init__(self):

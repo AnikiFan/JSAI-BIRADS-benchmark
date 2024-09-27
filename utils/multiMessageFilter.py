@@ -9,7 +9,7 @@ class MultiMessageFilter(logging.Filter):
         "iCCP",
         "Compression method",
         "Warning: Some classes",
-        "UserWarning: A new version"
+        " UserWarning: A new version"
     ]
 
     def __init__(self):

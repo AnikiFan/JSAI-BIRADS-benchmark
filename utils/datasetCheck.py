@@ -2,7 +2,12 @@ import torch
 from collections import Counter
 import matplotlib.pyplot as plt
 import logging
+from ClaDataset import getClaTrainValidData
+from torch.utils.data import DataLoader
+import os
+
 logging.getLogger('matplotlib.font_manager').disabled = True
+
 
 def checkDataset(train_ds, valid_ds, training_loader, validation_loader, num_samples_to_show=4):
     """
@@ -18,7 +23,7 @@ def checkDataset(train_ds, valid_ds, training_loader, validation_loader, num_sam
     返回:
     - 无返回值，但会打印检查结果并显示样本图像
     """
-    
+
     # 检查类别数量
     num_classes = len(train_ds.classes)
     print(f"Detected number of classes: {num_classes}")
@@ -34,23 +39,24 @@ def checkDataset(train_ds, valid_ds, training_loader, validation_loader, num_sam
 
     # 检查训练集中第一张图像的类型和尺寸
     sample_image, sample_label = train_ds[0]
-    print(f"Train sample image shape: {sample_image.size()}")
-    print(f"Train sample image type: {type(sample_image)}")
-    print(f"Train sample image label: {sample_label}")
 
     # 确保训练集图像张量是 FloatTensor 并且尺寸正确
     assert isinstance(sample_image, torch.FloatTensor), "Train image is not a FloatTensor"
     assert sample_image.size(0) == 3, "Train image: Expected 3 channels (RGB)"
 
-    # 检查验证集中第一张图像的类型和尺寸
+    print(f"Train sample image shape: {sample_image.size()}")
+    print(f"Train sample image type: {type(sample_image)}")
+    print(f"Train sample image label: {sample_label}")
+
+    # 确保验证集图像张量是 FloatTensor 并且尺寸正确
     valid_image, valid_label = valid_ds[0]
+    assert isinstance(valid_image, torch.FloatTensor), "Validation image is not a FloatTensor"
+    assert valid_image.size(0) == 3, "Validation image: Expected 3 channels (RGB)"
+
+    # 检查验证集中第一张图像的类型和尺寸
     print(f"Validation sample image shape: {valid_image.size()}")
     print(f"Validation sample image type: {type(valid_image)}")
     print(f"Validation sample image label: {valid_label}")
-
-    # 确保验证集图像张量是 FloatTensor 并且尺寸正确
-    assert isinstance(valid_image, torch.FloatTensor), "Validation image is not a FloatTensor"
-    assert valid_image.size(0) == 3, "Validation image: Expected 3 channels (RGB)"
 
     # 检查训练数据加载器的批次
     for images, labels in training_loader:
@@ -87,9 +93,14 @@ def checkDataset(train_ds, valid_ds, training_loader, validation_loader, num_sam
         # 从验证加载器中取样本展示
         valid_samples, valid_labels = next(iter(validation_loader))
         show_images(valid_samples[:num_samples_to_show], valid_labels[:num_samples_to_show], "Validation Samples")
-    
+
     return
+
 
 # 使用示例
 # 调用该函数来检查你的数据集格式
 # check_dataset_format(train_ds, valid_ds, training_loader, validation_loader)
+if __name__ == '__main__':
+    train_ds, valid_ds = getClaTrainValidData(data_folder_path=os.path.join(os.pardir, 'data'), image_format='Tensor')
+    train_loader, valid_loader = DataLoader(train_ds), DataLoader(valid_ds)
+    checkDataset(train_ds, valid_ds, train_loader, valid_loader)

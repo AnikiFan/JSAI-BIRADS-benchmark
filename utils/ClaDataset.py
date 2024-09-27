@@ -117,7 +117,7 @@ class ClaCrossValidationData:
 
 def getClaTrainValidData(data_folder_path, valid_ratio=0.2, train_transform=None, valid_transform=None, BUS=True,
                          USG=True, image_format='PIL', seed=42):
-    table = make_table(data_folder_path=data_folder_path, official=True, BUS=BUS, USG=USG, seed=seed)
+    table = make_table(data_folder_path=data_folder_path, official_train=True, BUS=BUS, USG=USG, seed=seed)
     sep_point = int(table.shape[0] * valid_ratio)
     return (
         TableDataset(table.iloc[sep_point:, :], transform=train_transform, image_format=image_format),

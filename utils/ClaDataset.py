@@ -98,6 +98,9 @@ class ClaCrossValidationData:
     def __len__(self):
         return self.k_fold
 
+    def __iter__(self):
+        return self
+
     def __next__(self):
         if self.cur_valid_fold < self.k_fold:
             self.cur_valid_fold += 1

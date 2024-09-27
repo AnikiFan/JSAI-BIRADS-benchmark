@@ -10,19 +10,19 @@ def make_table(data_folder_path, official_train=True, BUS=True, USG=True, seed=4
     official_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'train')
     BUS_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'BUS', 'Images')
     USG_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'USG')
-    assert os.path.exists(official_data_path), "please run claTrainSetOrganize.py first!"
+    assert os.path.exists(official_data_path), "please use OfficialClaDataOrganizer first!"
     assert os.path.exists(BUS_data_path), "please run replace.ipynb first!"
     assert os.path.exists(USG_data_path), "please run process.ipynb first!"
     tables = []
-    table = pd.read_csv(os.path.join(official_data_path, 'ground_truth.csv'), index_col=0)
+    table = pd.read_csv(os.path.join(official_data_path, 'ground_truth.csv'))
     table.file_name = table.file_name.apply(lambda x: os.path.join(official_data_path, x))
     tables.append(table)
     if BUS:
-        table = pd.read_csv(os.path.join(BUS_data_path, 'ground_truth.csv'), index_col=0)
+        table = pd.read_csv(os.path.join(BUS_data_path, 'ground_truth.csv'))
         table.file_name = table.file_name.apply(lambda x: os.path.join(BUS_data_path, x))
         tables.append(table)
     if USG:
-        table = pd.read_csv(os.path.join(USG_data_path, 'ground_truth.csv'), index_col=0)
+        table = pd.read_csv(os.path.join(USG_data_path, 'ground_truth.csv'))
         table.file_name = table.file_name.apply(lambda x: os.path.join(USG_data_path, x))
         tables.append(table)
     table = pd.concat(tables, axis=0)

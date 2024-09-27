@@ -62,7 +62,7 @@ class OfficialClaDataOrganizer:
             label_tables.append(label_table)
         out = pd.concat(label_tables, axis=0).reset_index(drop=True)
         out.columns = ['file_name', 'label']
-        out.to_csv(os.path.join(self.dst, 'ground_truth.csv'))
+        out.to_csv(os.path.join(self.dst, 'ground_truth.csv'),index=False)
 
 
 if __name__ == '__main__':

@@ -2,13 +2,10 @@ import torch
 from collections import Counter
 import matplotlib.pyplot as plt
 import logging
-from ClaDataset import getClaTrainValidData
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import os
-from ClaDataset import ClaCrossValidationData
 
-logging.getLogger('matplotlib.font_manager').disabled = True
 
 
 def checkDataset(train_ds, valid_ds, training_loader, validation_loader, num_samples_to_show=4):
@@ -27,6 +24,7 @@ def checkDataset(train_ds, valid_ds, training_loader, validation_loader, num_sam
     """
 
     # 检查类别数量
+    logging.getLogger('matplotlib.font_manager').disabled = True
     num_classes = len(train_ds.classes)
     print(f"Detected number of classes: {num_classes}")
 

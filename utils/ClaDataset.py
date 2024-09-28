@@ -3,7 +3,7 @@ import warnings
 
 import pandas as pd
 import numpy as np
-from TableDataset import TableDataset
+from utils.TableDataset import TableDataset
 
 
 def make_table(data_folder_path, official_train=True, BUS=True, USG=True, *, seed=42):
@@ -118,12 +118,25 @@ class ClaCrossValidationData:
 
 def getClaTrainValidData(data_folder_path, valid_ratio=0.2, train_transform=None, valid_transform=None, BUS=True,
                          USG=True, image_format='PIL', *, seed=42, augmented_folder_list=None):
+    """
+    返回单折按照给定比例划分的训练集和验证集，用yield返回是为了可以和CV一样用for train_ds,valid_ds in dataset一样来获取
+    :param data_folder_path:
+    :param valid_ratio:
+    :param train_transform:
+    :param valid_transform:
+    :param BUS:
+    :param USG:
+    :param image_format:
+    :param seed:
+    :param augmented_folder_list:
+    :return:
+    """
     table = make_table(data_folder_path=data_folder_path, official_train=True, BUS=BUS, USG=USG, seed=seed)
     sep_point = int(table.shape[0] * valid_ratio)
     valid_table = table.iloc[:sep_point, :]
     train_table = table.iloc[sep_point:, :]
     if augmented_folder_list:
         train_table = pd.concat([train_table, split_augmented_image(valid_table, augmented_folder_list)])
-    return (
+    yield (
         TableDataset(train_table, transform=train_transform, image_format=image_format),
         TableDataset(valid_table, transform=valid_transform, image_format=image_format))

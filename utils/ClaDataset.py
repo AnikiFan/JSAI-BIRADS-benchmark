@@ -63,12 +63,12 @@ def split_augmented_image(valid_set, augmented_folder_list):
             lambda x: os.path.join(augmented_folder, x))
         augmented_ground_truths.append(augmented_ground_truth)
     augmented_image_table = pd.concat(augmented_ground_truths, axis=0)
-    mask = ~augmented_image_table.file_name.str.split(os.sep).str[-1].isin(taboo_list)
+    mask = ~augmented_image_table.file_name.str.split(os.sep).str[-1].replace(r'\s*\(\d+\)\s*(?=\.\w+)', '').isin(taboo_list)
     mixup_mask = augmented_image_table.file_name.apply(
         lambda file_name: True if '__mixup__' not in file_name else
         not file_name[:-4].split('__mixup__')[0] in taboo_list and
-        not file_name[:-4].split('__mixup__')[1] in taboo_list)
-    return augmented_image_table.loc[mask, :]
+        not file_name[:-4].split('__mixup__')[1].replace(r'\s*\(\d+\)\s*(?=\.\w+)', '') in taboo_list)
+    return augmented_image_table.loc[mask&mixup_mask, :]
 
 
 class ClaCrossValidationData:

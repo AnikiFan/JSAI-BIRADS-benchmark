@@ -9,12 +9,12 @@ from utils.PILResize import PILResize
 @dataclass
 class DefaultTrainTransformConfig:
     _target_: str = "torchvision.transforms.Compose"
-    transforms:List[Any] = field(default_factory= lambda:[MyCropConfig(),PILResizeConfig()])
+    transforms:List[Any] = field(default_factory= lambda:[MyCropConfig(),ResizeConfig()])
 
 @dataclass
 class DefaultValidTransformConfig:
     _target_: str = "torchvision.transforms.Compose"
-    transforms:List[Any] = field(default_factory= lambda:[MyCropConfig(),PILResizeConfig()])
+    transforms:List[Any] = field(default_factory= lambda:[MyCropConfig(),ResizeConfig()])
 
 @dataclass
 class ToTensorConfig:
@@ -26,10 +26,12 @@ class MyCropConfig:
 
 @dataclass
 class ResizeConfig:
-    _target_: str = "torchvision.transforms.ToTensor"
-    size: Tuple[int] = (400,400)
+    _target_: str = "torchvision.transforms.Resize"
+    size: List[int] = field(default_factory=lambda:[256,256])
+    _convert_:str="all"
 
 @dataclass
 class PILResizeConfig:
     _target_: str = "utils.PILResize.PILResize"
-    size: Tuple[int] = (128,128)
+    size: List[int] = field(default_factory=lambda:[128,128])
+    _convert_:str="all"

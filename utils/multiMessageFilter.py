@@ -17,7 +17,7 @@ class MultiMessageFilter(logging.Filter):
 
     def filter(self, record):
         # 如果消息与任意一个过滤消息匹配，则过滤掉
-        return not any(record.getMessage().startswith(msg) for msg in MultiMessageFilter.filtered_messages)
+        return not any(msg in record.getMessage() for msg in MultiMessageFilter.filtered_messages)
 
     def setup(self):
         # 创建 logger

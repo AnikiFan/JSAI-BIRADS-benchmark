@@ -9,7 +9,7 @@ class PILResize(object):
                                  图像的较小边将被调整到这个数值，保持宽高比。
             interpolation (int, 可选)：期望的插值方法。默认是Image.BILINEAR。
         """
-        # assert isinstance(size, (int, tuple)), "size应该是整数或tuple类型"
+        # assert isinstance(size, (int, tuple)), f"size's type should be int or tuple, but get {type(size)}"
         self.size = size
         self.interpolation = interpolation
 

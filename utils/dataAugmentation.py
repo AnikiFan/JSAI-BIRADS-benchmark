@@ -69,7 +69,7 @@ class MixUp:
         self.data_folder_path = data_folder_path
         self.table = make_table(data_folder_path=data_folder_path, official_train=official_train, BUS=BUS, USG=USG)
         if not ratio:
-            ratio = np.ones(self.table.label.nunique())
+            ratio = np.ones(self.table.label.nunique(),dtype=np.int_)
         if not isinstance(ratio, np.ndarray):
             ratio = np.array(ratio)
         self.table = make_ratio_table(self.table, ratio)
@@ -155,19 +155,20 @@ class Preprocess:
 
 
 if __name__ == '__main__':
-    MixUp(0.4).process_image()
+    ratio = [2,1,3,4,5,6]
+    MixUp(0.4,ratio=ratio).process_image()
 
     transform = A.Compose([A.Rotate(limit=10, always_apply=True), A.HorizontalFlip(always_apply=True)])
-    Preprocess(transform).process_image()
+    Preprocess(transform,ratio=ratio).process_image()
 
     transform = A.Compose([A.Rotate(limit=10, always_apply=True)])
-    Preprocess(transform).process_image()
+    Preprocess(transform,ratio=ratio).process_image()
 
     transform = A.Compose([A.RandomBrightnessContrast(always_apply=True)])
-    Preprocess(transform).process_image()
+    Preprocess(transform,ratio=ratio).process_image()
 
     transform = A.Compose([A.Perspective(scale=(0.05, 0.1), always_apply=True)])
-    Preprocess(transform).process_image()
+    Preprocess(transform,ratio=ratio).process_image()
 
     transform = A.Compose([A.ElasticTransform(alpha=1, sigma=50, always_apply=True)])
-    Preprocess(transform).process_image()
+    Preprocess(transform,ratio=ratio).process_image()

@@ -25,7 +25,7 @@ class OfficialClaDataOrganizer:
         with open(os.path.join(base_path, 'labels', file_name), 'r') as file:
             content = file.readlines()
             if len(content) != 1:
-                warn(f"multiple label:{os.path.join(base_path, 'labels', file_name)}")
+                warn(f"invalid label num:{os.path.join(base_path, 'labels', file_name)}")
                 return False
             if len(content[0].split()) != 5:
                 warn(f"invalid label:{os.path.join(base_path, 'labels', file_name)}")

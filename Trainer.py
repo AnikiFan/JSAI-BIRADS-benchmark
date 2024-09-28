@@ -1,3 +1,5 @@
+import shutil
+
 import numpy as np
 from tqdm import tqdm
 import torch
@@ -24,6 +26,7 @@ class Trainer:
             (self.cfg.train.num_classes, self.cfg.train.num_classes))
         self.train_transform = instantiate(self.cfg.train_transform)
         self.valid_transform = instantiate(self.cfg.valid_transform)
+        self.best_vloss, self.best_vf1, self.best_vaccuracy, self.best_vconfusion_matrix = 1_000_000., None, None, None
 
     def train(self):
         for train_ds, valid_ds in instantiate(self.cfg.dataset, train_transform=self.train_transform,
@@ -61,43 +64,36 @@ class Trainer:
         :param num_class: 类别数量
         :param tb_writer: TensorBoard 写入器
         '''
-        running_loss, running_accuracy, running_f1 = 0., 0., 0.
-        last_loss, last_accuracy, last_f1 = 0., 0., 0.
+        outputs, labels = [], []
+        frequency = self.cfg.train.info_show_frequency
 
         model.train(True)
 
-        for i, data in enumerate(tqdm(train_loader, desc=f"Epoch {epoch_index}")):
-            inputs, labels = data
+        for i, data in enumerate(tqdm(train_loader, desc=f"Epoch {epoch_index}"), start=1):
+            input, label = data
+            input = input.to(self.cfg.train.device)
+            label = label.to(self.cfg.train.device)
             optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = self.loss_fn(outputs, labels)
+            output = model(input)
+            outputs.append(output)
+            labels.append(label)
+            loss = self.loss_fn(output, label)
             loss.backward()
-
-            running_accuracy += multiclass_accuracy(outputs, labels).tolist()
-            running_f1 += multiclass_f1_score(outputs, labels, average='macro',
-                                              num_classes=self.cfg.dataset.num_classes).tolist()
-
             optimizer.step()
-
-            running_loss += loss.item()
-            frequency = self.cfg.train.info_show_frequency
-            is_last_batch = (i == len(train_loader) - 1)
-            if (i % frequency == frequency - 1) or is_last_batch:
+            if i % frequency == 0:
                 # 计算实际的批次数
-                batch_count = frequency if not is_last_batch else (i % frequency + 1)
-                last_loss = running_loss / batch_count
-                last_f1 = running_f1 / batch_count
-                last_accuracy = running_accuracy / batch_count
+                outputs, labels = torch.cat(outputs, dim=0), torch.cat(labels, dim=0)
+                loss = self.loss_fn(input=outputs, target=labels) / frequency
+                f1 = multiclass_f1_score(input=outputs, target=labels) / frequency
+                accuracy = multiclass_accuracy(input=outputs, target=labels) / frequency
 
-                tb_x = epoch_index * len(train_loader) + i + 1
-                tb_writer.add_scalar('Loss/train', last_loss, tb_x)
-                tb_writer.add_scalar('Accuracy/train', last_accuracy, tb_x)
-                tb_writer.add_scalar('F1/train', last_f1, tb_x)
-                tb_writer.add_scalar('Accuracy/train', last_accuracy, tb_x)
-
-                running_loss, running_accuracy, running_f1 = 0., 0., 0.
-
-        return last_loss, last_accuracy, last_f1
+                tb_x = epoch_index * len(train_loader) + i
+                tb_writer.add_scalar('Loss/train', loss, tb_x)
+                tb_writer.add_scalar('Accuracy/train', accuracy, tb_x)
+                tb_writer.add_scalar('F1/train', f1, tb_x)
+                outputs, labels = [], []
+        # 为了避免指标出现大幅波动，不对尾部剩余的一小部分计算指标
+        return loss, accuracy, f1
 
     def make_writer_title(self):
         """
@@ -116,8 +112,9 @@ class Trainer:
         :param valid_loader:
         :return: 该折训练中，在单个验证集上达到的最佳的指标
         """
+        best_loss,best_f1,best_accuracy,best_confusion_matrix = 1_000_000.,None,None,None
         model = instantiate(self.cfg.model)
-        optimizer = instantiate(self.cfg.optimizer, params=model.parameters())
+        optimizer = instantiate(self.cfg.optimizer, params=model.parameters())()
         writer = SummaryWriter(os.path.join('runs', self.make_writer_title()))
 
         model.to(torch.device(self.cfg.train.device))
@@ -125,7 +122,6 @@ class Trainer:
         # 定义检查点路径
         checkPoint_path = HydraConfig.get().runtime.output_dir
         early_stopping = instantiate(self.cfg.train.early_stopping)
-        best_vloss, best_vf1, best_vaccuracy, best_confusion_matrix = 1_000_000., None, None, None
         for epoch in range(1, self.cfg.train.epoch_num + 1):
             # 训练一个epoch，获取在上面的指标
             avg_loss, avg_accuracy, avg_f1 = self.train_one_epoch(model=model, train_loader=train_loader,
@@ -133,15 +129,16 @@ class Trainer:
                                                                   tb_writer=writer)
             model.eval()
             with torch.no_grad():
-                valid_outcomes = [(vlabel, model(vinputs)) for vinputs, vlabel in valid_loader]
+                valid_outcomes = [(vlabel.to(self.cfg.train.device), model(vinputs.to(self.cfg.train.device))) for
+                                  vinputs, vlabel in valid_loader]
 
             ground_truth = torch.cat([pair[0] for pair in valid_outcomes], dim=0)
             prediction = torch.cat([pair[1] for pair in valid_outcomes], dim=0)
             avg_vloss = self.loss_fn(prediction, ground_truth)
-            avg_vaccuracy = multiclass_accuracy(prediction, ground_truth).tolist()
-            avg_vf1 = multiclass_f1_score(prediction, ground_truth, average='macro',
+            avg_vaccuracy = multiclass_accuracy(input=prediction, target=ground_truth).tolist()
+            avg_vf1 = multiclass_f1_score(input=prediction, target=ground_truth, average='macro',
                                           num_classes=self.cfg.train.num_classes).tolist()
-            confusion_matrix = multiclass_confusion_matrix(prediction, ground_truth,
+            confusion_matrix = multiclass_confusion_matrix(input=prediction, target=ground_truth,
                                                            num_classes=self.cfg.train.num_classes)
             info('LOSS      train {} valid {}'.format(avg_loss, avg_vloss))
             info('ACCURACY  train {} valid {}'.format(avg_accuracy, avg_vaccuracy))
@@ -164,8 +161,10 @@ class Trainer:
             if early_stopping.early_stop:
                 info("Early stopping triggered!")
                 break
-            if avg_vloss < best_vloss:
-                best_vloss, best_vf1, best_vaccuracy, best_confusion_matrix = avg_vloss, avg_vf1, avg_vaccuracy, confusion_matrix
+            if avg_vloss < best_loss:
+                best_loss, best_f1, best_accuracy,best_confusion_matrix = avg_vloss, avg_vf1, avg_vaccuracy, confusion_matrix
+            if avg_vloss < self.best_vloss:
+                self.best_vloss, self.best_vf1, self.best_vaccuracy, self.best_vconfusion_matrix = avg_vloss, avg_vf1, avg_vaccuracy, confusion_matrix
                 info(f"\n=> Validation loss improved to {avg_vloss:.6f} - saving best model\n")
 
                 # 保存checkpoint（包括epoch，model_state_dict，optimizer_state_dict，best_vloss，但仅在best时保存）
@@ -174,10 +173,12 @@ class Trainer:
                     'epoch': epoch,
                     'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
-                    'best_vloss': best_vloss
+                    'best_vloss': self.best_vloss
                 }
-                os.makedirs(os.path.join(checkPoint_path, 'resume_checkpoint'), exist_ok=True)
+                if os.path.exists(os.path.join(checkPoint_path, 'resume_checkpoint')):
+                    shutil.rmtree(os.path.join(checkPoint_path, 'resume_checkpoint'))
+                os.makedirs(os.path.join(checkPoint_path, 'resume_checkpoint'))
                 save_checkpoint(checkpoint, checkPoint_path, filename=os.path.
                                 join('resume_checkpoint', f'epoch{epoch}_vloss{avg_vloss:.4f}_f1{avg_vf1:.4f}.pth'))
             epoch_number += 1
-        return best_vloss, best_vf1, best_vaccuracy, best_confusion_matrix
+        return best_loss, best_f1, best_accuracy, best_confusion_matrix

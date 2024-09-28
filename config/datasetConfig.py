@@ -7,3 +7,4 @@ import os
 class DefaultDatasetConfig:
     _target_:str="utils.ClaDataset.getClaTrainValidData"
     data_folder_path:Path=Path(os.path.join(os.curdir,'data'))
+    image_format:str="Tensor"

@@ -7,9 +7,6 @@ from hydra.core.hydra_config import OmegaConf
 @main(version_base=None, config_name="config")
 def main(cfg:Config):
     trainer = Trainer(cfg)
-    print(OmegaConf.to_yaml(cfg))
-    return
-
     trainer.train()
 
 if __name__ == '__main__':

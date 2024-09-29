@@ -14,6 +14,7 @@ from torch.utils.tensorboard import SummaryWriter
 from utils.ClaDataset import ClaCrossValidationData, getClaTrainValidData
 from torch.utils.data import DataLoader
 from utils.time_logger import time_logger
+from typing import *
 
 
 class Trainer:
@@ -22,8 +23,8 @@ class Trainer:
         self.loss_fn = instantiate(cfg.train.loss_function)
         self.optimizer = instantiate(cfg)
         self.cur_fold = 1
-        self.loss, self.f1_score, self.accuracy, self.confusion_matrix = 0, 0, 0, np.zeros(
-            (self.cfg.train.num_classes, self.cfg.train.num_classes))
+        self.loss, self.f1_score, self.accuracy, self.confusion_matrix = 0, 0, 0, torch.zeros(
+            (self.cfg.train.num_classes, self.cfg.train.num_classes), dtype=torch.int, device=self.cfg.train.device)
         self.train_transform = instantiate(self.cfg.train_transform)
         self.valid_transform = instantiate(self.cfg.valid_transform)
         self.best_vloss, self.best_vf1, self.best_vaccuracy, self.best_vconfusion_matrix = 1_000_000., None, None, None
@@ -55,7 +56,8 @@ class Trainer:
             info(f'F1                   :{self.accuracy}')
             info(f'confusion matrix:\n{str(self.confusion_matrix)}')
 
-    def train_one_epoch(self, *, model, train_loader, optimizer, epoch_index, tb_writer):
+    def train_one_epoch(self, *, model, train_loader: DataLoader, optimizer, epoch_index: int,
+                        tb_writer: SummaryWriter) -> Tuple[float, float, float]:
         '''
         训练一个 epoch
         :param model: 模型
@@ -95,7 +97,7 @@ class Trainer:
         # 为了避免指标出现大幅波动，不对尾部剩余的一小部分计算指标
         return loss, accuracy, f1
 
-    def make_writer_title(self):
+    def make_writer_title(self) -> str:
         """
         制作tensorboard的标题
         :return:
@@ -105,14 +107,15 @@ class Trainer:
                                   'fold']))
 
     @time_logger
-    def train_one_fold(self, train_loader, valid_loader):
+    def train_one_fold(self, train_loader: DataLoader, valid_loader: DataLoader) -> Tuple[
+        float, float, float, torch.Tensor]:
         """
         训练一折
         :param train_loader:
         :param valid_loader:
         :return: 该折训练中，在单个验证集上达到的最佳的指标
         """
-        best_loss,best_f1,best_accuracy,best_confusion_matrix = 1_000_000.,None,None,None
+        best_loss, best_f1, best_accuracy, best_confusion_matrix = 1_000_000., None, None, None
         model = instantiate(self.cfg.model)
         optimizer = instantiate(self.cfg.optimizer, params=model.parameters())()
         writer = SummaryWriter(os.path.join('runs', self.make_writer_title()))
@@ -157,12 +160,8 @@ class Trainer:
             writer.flush()
 
             # 检查早停条件
-            early_stopping(avg_vloss)
-            if early_stopping.early_stop:
-                info("Early stopping triggered!")
-                break
             if avg_vloss < best_loss:
-                best_loss, best_f1, best_accuracy,best_confusion_matrix = avg_vloss, avg_vf1, avg_vaccuracy, confusion_matrix
+                best_loss, best_f1, best_accuracy, best_confusion_matrix = avg_vloss, avg_vf1, avg_vaccuracy, confusion_matrix
             if avg_vloss < self.best_vloss:
                 self.best_vloss, self.best_vf1, self.best_vaccuracy, self.best_vconfusion_matrix = avg_vloss, avg_vf1, avg_vaccuracy, confusion_matrix
                 info(f"\n=> Validation loss improved to {avg_vloss:.6f} - saving best model\n")
@@ -180,5 +179,12 @@ class Trainer:
                 os.makedirs(os.path.join(checkPoint_path, 'resume_checkpoint'))
                 save_checkpoint(checkpoint, checkPoint_path, filename=os.path.
                                 join('resume_checkpoint', f'epoch{epoch}_vloss{avg_vloss:.4f}_f1{avg_vf1:.4f}.pth'))
+
+            early_stopping(avg_vloss)
+            if early_stopping.early_stop:
+                info("Early stopping triggered!")
+                break
+
             epoch_number += 1
+
         return best_loss, best_f1, best_accuracy, best_confusion_matrix

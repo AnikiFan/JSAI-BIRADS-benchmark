@@ -2,6 +2,7 @@ import os
 import cv2
 import shutil
 import random
+import math
 import numpy as np
 import albumentations as A
 from tqdm import tqdm
@@ -76,7 +77,7 @@ def apply_augmentations(image, label, augmentations, image_base_name, images_dst
         aug_label_path = os.path.join(labels_dst_path, aug_label_file)
         save_image_and_label(aug_image, label, aug_image_path, aug_label_path)
 
-        # 输出增强信息
+        # 输出增强信息（可选）
         # print(f"已增强图像: {aug_image_file} 使用增广策略: {aug.__class__.__name__}")
 
 def perform_mixup(image, label, class_names, class_to_images, src_root, images_dst_path, labels_dst_path, image_base_name, i, mixup_alpha):
@@ -129,8 +130,57 @@ def perform_mixup(image, label, class_names, class_to_images, src_root, images_d
     with open(mixup_label_path, 'w', encoding='utf-8') as f:
         f.write(f"{label} {lam}\n{mix_label} {1 - lam}")
 
-    # 输出 Mixup 信息
+    # 输出 Mixup 信息（可选）
     # print(f"已进行 Mixup 增强: {mixup_image_file} 混合类别: {label} 和 {mix_label} 权重: {lam:.2f}/{1 - lam:.2f}")
+
+def compute_target_counts(class_proportions, max_images_per_class):
+    """
+    根据类别比例和最大图像数计算每个类别的目标图像数量。
+
+    Args:
+        class_proportions (dict): 每个类别的比例。
+        max_images_per_class (dict): 每个类别的最大图像数。
+
+    Returns:
+        target_counts (dict): 每个类别的目标图像数量。
+    """
+    # 计算可能的总图像数量，确保不超过任何类别的最大限制
+    n_total_list = [max_images_per_class[class_name] / p for class_name, p in class_proportions.items()]
+    N_total = min(n_total_list)
+
+    # 根据比例计算每个类别的目标图像数量
+    target_counts = {class_name: int(p * N_total) for class_name, p in class_proportions.items()}
+
+    # 确保目标数量不超过每个类别的最大限制
+    for class_name in target_counts:
+        if target_counts[class_name] > max_images_per_class[class_name]:
+            target_counts[class_name] = max_images_per_class[class_name]
+
+    return target_counts
+
+def calculate_class_aug_times(class_to_images, target_counts):
+    """
+    计算每个类别需要的增强次数，以达到目标图像数量。
+
+    Args:
+        class_to_images (dict): 类别到图像文件列表的映射。
+        target_counts (dict): 每个类别的目标图像数量。
+
+    Returns:
+        class_aug_times (dict): 每个类别需要的增强次数。
+    """
+    class_aug_times = {}
+    for class_name, target_count in target_counts.items():
+        original_count = len(class_to_images[class_name])
+        if target_count > original_count:
+            # 计算需要增加的图像数量
+            needed_aug_images = target_count - original_count
+            # 计算每张图片需要增强的次数，向上取整
+            aug_times = math.ceil(needed_aug_images / original_count)
+            class_aug_times[class_name] = aug_times
+        else:
+            class_aug_times[class_name] = 0  # 不需要增强
+    return class_aug_times
 
 def process_image(image_file, class_name, src_root, dst_root, augmentations, class_aug_times, class_names, class_to_images, use_mixup, mixup_alpha):
     """
@@ -171,7 +221,7 @@ def process_image(image_file, class_name, src_root, dst_root, augmentations, cla
     if image is None:
         return  # 跳过无法读取的图像
 
-    # 输出当前处理的图像
+    # 输出当前处理的图像（可选）
     # print(f"正在处理图像: {image_file} 类别: {class_name}")
 
     # 定义统一的尺寸
@@ -186,16 +236,16 @@ def process_image(image_file, class_name, src_root, dst_root, augmentations, cla
     aug_label_path = os.path.join(labels_dst_path, os.path.splitext(image_file)[0] + '.txt')
     save_image_and_label(image, label, aug_image_path, aug_label_path)
 
-    # 输出原始图像保存信息
+    # 输出原始图像保存信息（可选）
     # print(f"已保存原始图像: {image_file} 和标签: {os.path.splitext(image_file)[0] + '.txt'}")
 
     # 获取图像文件的基础名称
     image_base_name = os.path.splitext(image_file)[0]
 
-    # 获取当前类别的增广次数
-    aug_times = class_aug_times.get(class_name, 1)
+    # 获取当前类别的增强次数
+    aug_times = class_aug_times.get(class_name, 0)
 
-    # 对图像进行多次增广
+    # 对图像进行多次增强
     for i in range(aug_times):
         # 应用常规增广
         apply_augmentations(image, label, augmentations, image_base_name, images_dst_path, labels_dst_path, i)
@@ -204,19 +254,19 @@ def process_image(image_file, class_name, src_root, dst_root, augmentations, cla
         if use_mixup:
             perform_mixup(image, label, class_names, class_to_images, src_root, images_dst_path, labels_dst_path, image_base_name, i, mixup_alpha)
 
-def create_augmented_dataset(src_root, dst_root, class_aug_times, augmentations, use_mixup=False, mixup_alpha=0.4):
+def create_augmented_dataset(src_root, dst_root, class_proportions, max_images_per_class, augmentations, use_mixup=False, mixup_alpha=0.4):
     """
     创建增广后的数据集。
 
     Args:
         src_root (str): 源数据集的根目录。
         dst_root (str): 增广后数据集的根目录。
-        class_aug_times (dict): 每个类别的增广次数。
+        class_proportions (dict): 每个类别的比例。
+        max_images_per_class (dict): 每个类别的最大图像数。
         augmentations (list): 增广策略列表。
         use_mixup (bool): 是否启用 Mixup 增广。
         mixup_alpha (float): Mixup 中 Beta 分布的参数。
     """
-    
     # 创建目标根目录
     if not os.path.exists(dst_root):
         os.makedirs(dst_root)
@@ -236,6 +286,24 @@ def create_augmented_dataset(src_root, dst_root, class_aug_times, augmentations,
         image_files = [f for f in os.listdir(images_src_path) if f.lower().endswith(('.jpg', '.png', '.jpeg'))]
         class_to_images[class_name] = image_files
 
+    # 统计各类别的图片数量
+    class_counts = {class_name: len(images) for class_name, images in class_to_images.items()}
+    print("原始各类别图片数量：")
+    for class_name, count in class_counts.items():
+        print(f"  {class_name}: {count}")
+
+    # 计算每个类别的目标图像数量
+    target_counts = compute_target_counts(class_proportions, max_images_per_class)
+    print("\n各类别的目标图像数量（基于比例和最大限制）：")
+    for class_name, count in target_counts.items():
+        print(f"  {class_name}: {count}")
+
+    # 计算每个类别需要的增强次数
+    class_aug_times = calculate_class_aug_times(class_to_images, target_counts)
+    print("\n各类别需要的增强次数：")
+    for class_name, aug_times in class_aug_times.items():
+        print(f"  {class_name}: {aug_times} 次")
+
     # 遍历每个类别文件夹
     for class_name in class_names:
         images_src_path = os.path.join(src_root, class_name, 'images')
@@ -248,30 +316,42 @@ def create_augmented_dataset(src_root, dst_root, class_aug_times, augmentations,
                 class_to_images, use_mixup, mixup_alpha
             )
 
-    print('数据增广完成！增广后的数据集保存在：', dst_root)
+    print('\n数据增广完成！增广后的数据集保存在：', dst_root)
 
 def main():
     # 源数据集路径（原始数据集）
     src_root = '/Users/huiyangzheng/Desktop/Project/Competition/GCAIAEC2024/AIC/TDS-Net/data/乳腺分类训练数据集/train_split_0.9'
 
     # 目标数据集路径（增广后的数据集）
-    dst_root = '/Users/huiyangzheng/Desktop/Project/Competition/GCAIAEC2024/AIC/TDS-Net/data/乳腺分类训练数据集/train_split_0.9_augmented_demo'
+    dst_root = '/Users/huiyangzheng/Desktop/Project/Competition/GCAIAEC2024/AIC/TDS-Net/data/乳腺分类训练数据集/train_split_0.9_augmented2'
 
-    # 原数据集各类别数量：
+    # 原数据集各类别数量（用于参考）
     # 2类: 463
     # 3类: 878
     # 4A类: 448
     # 4B类: 295
     # 4C类: 251
     # 5类: 138
-    # 定义每个类别的增广次数，针对少数类别进行更多增广
-    class_aug_times = {
-        '2类': 2,   # 463
-        '3类': 1,   # 878
-        '4A类': 3,  # 448
-        '4B类': 4,  # 295
-        '4C类': 5,  # 251
-        '5类': 6    # 138
+
+    # 定义各类别的比例（比例和应为1.0）
+    class_proportions = {
+        '2类': 0.1,   # 10%
+        '3类': 0.3,   # 30%
+        '4A类': 0.2,  # 20%
+        '4B类': 0.2,  # 20%
+        '4C类': 0.1,  # 10%
+        '5类': 0.1    # 10%
+    }
+
+    # 定义每个类别的最大图像数量
+    max = 5000
+    max_images_per_class = {
+        '2类': max, 
+        '3类': max, 
+        '4A类': max, 
+        '4B类': max, 
+        '4C类': max, 
+        '5类': max
     }
 
     # 定义增广策略列表，包含尺寸调整和多种增广方法
@@ -286,11 +366,6 @@ def main():
             A.HorizontalFlip(p=1.0),
         ]),
 
-        # 垂直翻转
-        # A.Compose([
-        #     A.VerticalFlip(p=1.0),
-        # ]),
-
         # 随机旋转一定角度
         A.Compose([
             A.Rotate(limit=10, p=1.0),
@@ -300,26 +375,6 @@ def main():
         A.Compose([
             A.RandomBrightnessContrast(p=1.0),
         ]),
-
-        # # 高斯噪声
-        # A.Compose([
-        #     A.GaussNoise(var_limit=(10.0, 50.0), p=1.0),
-        # ]),
-
-        # 仿射变换
-        # A.Compose([
-        #     A.Affine(scale=(0.9, 1.1), translate_percent=(0.1, 0.1), rotate=(-15, 15), shear=(-10, 10), p=1.0),
-        # ]),
-
-        # 颜色抖动，乳腺超声影像为灰度图，颜色抖动对图像无实际意义，建议移除。
-        # A.Compose([
-        #     A.ColorJitter(p=1.0),
-        # ]),
-
-        # 随机擦除
-        # A.Compose([
-        #     A.CoarseDropout(max_holes=8, max_height=16, max_width=16, fill_value=0, p=1.0),
-        # ]),
 
         # 透视变换
         A.Compose([
@@ -336,7 +391,7 @@ def main():
     use_mixup = True
     mixup_alpha = 0.4  # Beta 分布的参数，控制混合比例
 
-    create_augmented_dataset(src_root, dst_root, class_aug_times, augmentations, use_mixup, mixup_alpha)
+    create_augmented_dataset(src_root, dst_root, class_proportions, max_images_per_class, augmentations, use_mixup, mixup_alpha)
 
 if __name__ == '__main__':
     main()

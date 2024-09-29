@@ -2,9 +2,12 @@ from dataclasses import dataclass, field
 from omegaconf import MISSING
 from pathlib import Path
 from models.UnetClassifer.unet import UnetClassifier
+
 """
 模型配置，用于直接实例化模型，所以不能有除模型实例化所需参数以外的配置项
 """
+
+
 @dataclass
 class DefaultModelConfig:
     """
@@ -15,7 +18,7 @@ class DefaultModelConfig:
     需要在运行的py文件中import可调用对象
     """
     _target_: str = "models.UnetClassifer.unet.UnetClassifier"
-    num_classes: int=6
-    in_channels: int=3
-    backbone: str="resnet50"
-    pretrained : bool = True
+    num_classes: int = 6
+    in_channels: int = 3
+    backbone: str = "resnet50"
+    pretrained: bool = True

@@ -24,6 +24,8 @@ class TableDataset(VisionDataset):
         elif image_format == 'ndarray':
             self.reader = TableDataset._ndarray_reader
         self.classes = self.table.label.unique()
+        assert hasattr(self.table,"label"),"传入的表格应该有 label 列！"
+        assert hasattr(self.table,"file_name"),"传入的表格应该有 file_name 列！"
         self.labels = self.table.label
         self.transform = transform
         self.idx = 0

@@ -1,14 +1,11 @@
 import os
-import warnings
-
 import pandas as pd
 import numpy as np
 from logging import warning
-
 import torchvision.transforms
-
 from utils.TableDataset import TableDataset
 from typing import *
+import re
 
 
 def make_table(data_folder_path: str, official_train: bool = True, BUS: bool = True, USG: bool = True, *,
@@ -62,21 +59,23 @@ def split_augmented_image(valid_dataset: pd.DataFrame,
     :param augmented_folder_list: 增强后的图像所在文件夹
     :return: 可以加入训练集的图像组成的dataframe
     """
-    taboo_list = valid_dataset.file_name.str.split(os.sep).str[-1]
+    taboo_list = valid_dataset.file_name.str.split(os.sep).str[-1].tolist()
+    assert 'file_name' in valid_dataset.columns, 'valid dataset should have column "file_name"'
+    assert 'label' in valid_dataset.columns, 'valid dataset should have column "label"'
     augmented_ground_truths = []
     if not augmented_folder_list:
         warning("empty augmented folder list !")
         return pd.DataFrame()
     for augmented_folder in augmented_folder_list:
         if not os.path.exists(augmented_folder):
-            warnings.warn(f"augmented image folder {augmented_folder} doesn't exist!")
+            warning(f"augmented image folder {augmented_folder} doesn't exist!")
             continue
         augmented_ground_truth = pd.read_csv(os.path.join(augmented_folder, "ground_truth.csv"))
         augmented_ground_truth.file_name = augmented_ground_truth.file_name.apply(
             lambda x: os.path.join(augmented_folder, x))
         augmented_ground_truths.append(augmented_ground_truth)
     augmented_image_table = pd.concat(augmented_ground_truths, axis=0)
-    mask = ~augmented_image_table.file_name.apply(in_valid)
+    mask = ~augmented_image_table.file_name.apply(lambda x: in_valid(x, taboo_list))
     return augmented_image_table.loc[mask, :]
 
 
@@ -87,7 +86,8 @@ def in_valid(file_name: str, valid_list: List[str]) -> bool:
     :param valid_list: 由验证集中的图像的文件名，包含后缀名，不包含完整路径，组成的列表
     :return:
     """
-    file_name = file_name.split(os.sep)[-1].replace(r'\s*\(\d+\)\s*(?=\.\w+)', '')  # 获取文件名，去除(d)
+    file_name = file_name.split(os.sep)[-1]
+    file_name = re.sub(r'\s*\(\d+\)\s*(?=\.\w+)', '', file_name)  # 获取文件名，去除(d)
     if '__mixup__' not in file_name:
         return file_name in valid_list
     file_name1, file_name2 = file_name[:-4].split('__mixup__')
@@ -121,6 +121,7 @@ class ClaCrossValidationData:
         self.train_transform = train_transform
         self.valid_transform = valid_transform
         self.augmented_folder_list = augmented_folder_list
+        self.seed = seed
 
     def __len__(self):
         return self.k_fold
@@ -136,7 +137,9 @@ class ClaCrossValidationData:
             train_table = pd.concat([self.table.iloc[:self.sep_point[self.cur_valid_fold - 1], :],
                                      self.table.iloc[self.sep_point[self.cur_valid_fold]:, :]])
             if self.augmented_folder_list:
-                train_table = pd.concat([train_table, split_augmented_image(valid_table, self.augmented_folder_list)])
+                train_table = pd.concat([train_table,
+                                         split_augmented_image(valid_table, self.augmented_folder_list).sample(frac=1,
+                                                                                                               random_state=self.seed)])
             train_dataset = TableDataset(train_table, transform=self.train_transform, image_format=self.image_format)
             valid_dataset = TableDataset(valid_table, transform=self.valid_transform, image_format=self.image_format)
             return train_dataset, valid_dataset
@@ -147,7 +150,7 @@ def getClaTrainValidData(data_folder_path: str, valid_ratio: float = 0.2,
                          train_transform: Optional[torchvision.transforms.Compose] = None,
                          valid_transform: Optional[torchvision.transforms.Compose] = None, official_train: bool = True,
                          BUS: bool = True, USG: bool = True, image_format: str = 'PIL', *, seed: int = 42,
-                         augmented_folder_list: Optional[List[str]] = None)->Tuple[TableDataset,TableDataset]:
+                         augmented_folder_list: Optional[List[str]] = None) -> Tuple[TableDataset, TableDataset]:
     """
     返回单折按照给定比例划分的训练集和验证集，用yield返回是为了可以和CV一样用for train_ds,valid_ds in dataset一样来获取
     :param data_folder_path:
@@ -166,7 +169,8 @@ def getClaTrainValidData(data_folder_path: str, valid_ratio: float = 0.2,
     valid_table = table.iloc[:sep_point, :]
     train_table = table.iloc[sep_point:, :]
     if augmented_folder_list:
-        train_table = pd.concat([train_table, split_augmented_image(valid_table, augmented_folder_list)])
+        train_table = pd.concat(
+            [train_table, split_augmented_image(valid_table, augmented_folder_list).sample(frac=1, random_state=seed)])
     yield (
         TableDataset(train_table, transform=train_transform, image_format=image_format),
         TableDataset(valid_table, transform=valid_transform, image_format=image_format))

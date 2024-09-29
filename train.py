@@ -2,7 +2,6 @@ from utils.multiMessageFilter import MultiMessageFilter  # ! 把MultiMessageFilt
 from config.config import init_config, Config
 from Trainer import Trainer
 from hydra import main
-from hydra.core.hydra_config import OmegaConf
 
 @main(version_base=None, config_name="config")
 def main(cfg:Config):

@@ -1,5 +1,4 @@
 import shutil
-
 import numpy as np
 from tqdm import tqdm
 import torch
@@ -15,6 +14,7 @@ from utils.ClaDataset import ClaCrossValidationData, getClaTrainValidData
 from torch.utils.data import DataLoader
 from utils.time_logger import time_logger
 from typing import *
+from hydra import main
 
 
 class Trainer:

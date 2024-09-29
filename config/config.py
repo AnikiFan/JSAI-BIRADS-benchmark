@@ -16,7 +16,7 @@ defaults = [
     {"model": "default"},
     {"dataset": "default"},
     {"optimizer": "default"},
-    {"env": "default"},
+    {"env": "fx"},
     {"train_transform": "default"},
     {"valid_transform": "default"}
 ]
@@ -40,11 +40,21 @@ def init_config():
     :return:
     """
     cs = ConfigStore.instance()
+
     cs.store(group='train', name="default", node=DefaultTrainConfig)
+
     cs.store(group='model', name="default", node=DefaultModelConfig)
-    cs.store(group='dataset', name="default", node=DefaultDatasetConfig)
+
+    cs.store(group='dataset', name="default", node=SingleFoldDatasetConfig)
+
     cs.store(group='optimizer', name="default", node=DefaultOptimizerConfig)
-    cs.store(group='env', name="default", node=DefaultEnvConfig)
+
+    cs.store(group='env', name="fx", node=FXEnvConfig)
+    cs.store(group='env', name="zhy", node=ZHYEnvConfig)
+    cs.store(group='env', name="yzl", node=YZLEnvConfig)
+
     cs.store(group='train_transform', name="default", node=DefaultTrainTransformConfig)
+
     cs.store(group='valid_transform', name="default", node=DefaultValidTransformConfig)
+
     cs.store(name="config", node=Config)

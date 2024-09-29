@@ -39,7 +39,7 @@ def make_table(data_folder_path, official_train=True, BUS=True, USG=True, *, see
     idx = np.arange(len(table))
     np.random.default_rng(seed).shuffle(idx)
     table = table.iloc[idx, :]
-    return table
+    return table.reset_index(drop=True)
 
 
 def split_augmented_image(valid_set, augmented_folder_list):

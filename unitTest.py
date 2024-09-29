@@ -7,35 +7,339 @@ from PIL.Image import Image
 from torch import Tensor
 from numpy import ndarray
 from torchvision.transforms import Compose, RandomCrop, RandomHorizontalFlip
-from utils.ClaDataset import make_table, getClaTrainValidData
+from utils.ClaDataset import make_table, getClaTrainValidData, in_valid, split_augmented_image, ClaCrossValidationData
 from utils.TableDataset import TableDataset
+from unittest.mock import mock_open, patch
+
+
+class CrossValidationTestCase(unittest.TestCase):
+    data_folder_path = os.path.join(os.curdir, 'data')
+    k_fold = 5
+
+    def test_len_without_augment(self):
+        """
+        不引入数据增广数据集的情况下，测试返回数据集的长度
+        :return:
+        """
+        cla_cross_validation_dataset = ClaCrossValidationData(data_folder_path=self.data_folder_path,
+                                                              k_fold=self.k_fold)
+        for train_dataset, valid_dataset in cla_cross_validation_dataset:
+            self.assertAlmostEqual(1 / self.k_fold, len(valid_dataset) / (len(valid_dataset) + len(train_dataset)),
+                                   delta=0.01)
+
+    def test_leakage_without_augment(self):
+        """
+        不引入数据增广数据集的情况下，测试是否发生信息泄露
+        :return:
+        """
+        cla_cross_validation_dataset = ClaCrossValidationData(data_folder_path=self.data_folder_path,
+                                                              k_fold=self.k_fold)
+        for train_dataset, valid_dataset in cla_cross_validation_dataset:
+            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
+            self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: in_valid(x, valid_list))))
+
+    def test_overlap_without_augment(self):
+        """
+        不引入数据增广数据集的情况下，测试各折的验证集之间是否存在重叠的情况
+        :return:
+        """
+        cla_cross_validation_dataset = ClaCrossValidationData(data_folder_path=self.data_folder_path,
+                                                              k_fold=self.k_fold)
+        first = True
+        for train_dataset, valid_dataset in cla_cross_validation_dataset:
+            if first:
+                valid_datasets = valid_dataset.table.file_name
+                first = False
+                continue
+            valid_datasets = np.intersect1d(valid_datasets, valid_dataset.table.file_name)
+        self.assertEqual(0, len(valid_datasets))
+
+    def test_len_with_mixup_augment(self):
+        """
+        引入数据增广数据集的情况下，测试返回数据集的长度
+        k折交叉验证，能够采用为训练集的由mixup额外生成的图片数量的期望为s*n*(k-1)^2/k^2，方差是s*n*(k-1)^2/k^3
+        要求实际能够加入训练集的
+        :return:
+        """
+        cla_cross_validation_dataset_with_augment = ClaCrossValidationData(data_folder_path=self.data_folder_path,
+                                                                           k_fold=self.k_fold,
+                                                                           augmented_folder_list=[
+                                                                               os.path.join(os.curdir, 'data',
+                                                                                            'breast', 'cla',
+                                                                                            'augmented',
+                                                                                            'Mixup,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)')])
+        cla_cross_validation_dataset_without_augment = ClaCrossValidationData(data_folder_path=self.data_folder_path,
+                                                                              k_fold=self.k_fold)
+        num = 9824  # 增广后得到的mixup图片数量
+        for train_dataset_with_augment, valid_dataset_with_augment in cla_cross_validation_dataset_with_augment:
+            train_dataset_without_augment, valid_dataset_without_augment = next(
+                cla_cross_validation_dataset_without_augment)
+            self.assertGreater(len(train_dataset_with_augment) - len(train_dataset_without_augment),
+                               (0.64 - 0.128 * 2) * 1.5 * len(train_dataset_without_augment))
+            self.assertLess(len(train_dataset_with_augment) - len(train_dataset_without_augment),
+                            (0.64 + 0.128 * 2) * 1.5 * len(train_dataset_without_augment))
+
+    def test_leakage_with_mixup_augment(self):
+        """
+        引入数据增广数据集的情况下，测试是否发生信息泄露
+        :return:
+        """
+        cla_cross_validation_dataset_with_augmented = ClaCrossValidationData(data_folder_path=self.data_folder_path,
+                                                                             k_fold=self.k_fold,
+                                                                             augmented_folder_list=[
+                                                                                 os.path.join(os.curdir, 'data',
+                                                                                              'breast', 'cla',
+                                                                                              'augmented',
+                                                                                              'Mixup,ratio=(2,1,3,4,5,6)')])
+        cla_cross_validation_dataset_without_augmented = ClaCrossValidationData(data_folder_path=self.data_folder_path,
+                                                                                k_fold=self.k_fold)
+        for train_dataset, valid_dataset in cla_cross_validation_dataset_with_augmented:
+            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
+            self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: in_valid(x, valid_list))))
+
+    def test_overlap_with_mixup_augment(self):
+        """
+        引入数据增广数据集的情况下，测试各折的验证集之间是否存在重叠的情况
+        :return:
+        """
+        cla_cross_validation_dataset = ClaCrossValidationData(data_folder_path=self.data_folder_path,
+                                                              k_fold=self.k_fold,
+                                                              augmented_folder_list=[os.path.join(os.curdir, 'data',
+                                                                                                  'breast', 'cla',
+                                                                                                  'augmented',
+                                                                                                  'Mixup,ratio=(2,1,3,4,5,6)')])
+        first = True
+        for train_dataset, valid_dataset in cla_cross_validation_dataset:
+            if first:
+                valid_datasets = valid_dataset.table.file_name
+                first = False
+                continue
+            valid_datasets = np.intersect1d(valid_datasets, valid_dataset.table.file_name)
+        self.assertEqual(0, len(valid_datasets))
+
+    def test_overlap_without_augment(self):
+        """
+        不引入数据增广数据集的情况下，测试各折的验证集之间是否存在重叠的情况
+        :return:
+        """
+        cla_cross_validation_dataset = ClaCrossValidationData(data_folder_path=self.data_folder_path,
+                                                              k_fold=self.k_fold)
+        first = True
+        for train_dataset, valid_dataset in cla_cross_validation_dataset:
+            if first:
+                valid_datasets = valid_dataset.table.file_name
+                first = False
+                continue
+            valid_datasets = np.intersect1d(valid_datasets, valid_dataset.table.file_name)
+        self.assertEqual(0, len(valid_datasets))
+
+    def test_len_with_normal_augment(self):
+        """
+        引入数据增广数据集的情况下，测试返回数据集的长度
+        k折交叉验证，能够采用为训练集的由mixup额外生成的图片数量的期望为s*n*(k-1)^2/k^2，方差是s*n*(k-1)^2/k^3
+        要求实际能够加入训练集的
+        :return:
+        """
+        cla_cross_validation_dataset_with_augment = ClaCrossValidationData(data_folder_path=self.data_folder_path,
+                                                                           k_fold=self.k_fold,
+                                                                           augmented_folder_list=[
+                                                                               os.path.join(os.curdir, 'data',
+                                                                                            'breast', 'cla',
+                                                                                            'augmented',
+                                                                                            'Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)')])
+        cla_cross_validation_dataset_without_augment = ClaCrossValidationData(data_folder_path=self.data_folder_path,
+                                                                              k_fold=self.k_fold)
+        num = 9824  # 增广后得到的mixup图片数量
+        for train_dataset_with_augment, valid_dataset_with_augment in cla_cross_validation_dataset_with_augment:
+            train_dataset_without_augment, valid_dataset_without_augment = next(
+                cla_cross_validation_dataset_without_augment)
+            self.assertAlmostEqual(len(train_dataset_with_augment) - len(train_dataset_without_augment),
+                                   len(train_dataset_without_augment))
+
+    def test_leakage_with_mixup_augment(self):
+        """
+        引入数据增广数据集的情况下，测试是否发生信息泄露
+        :return:
+        """
+        cla_cross_validation_dataset_with_augmented = ClaCrossValidationData(data_folder_path=self.data_folder_path,
+                                                                             k_fold=self.k_fold,
+                                                                             augmented_folder_list=[
+                                                                                 os.path.join(os.curdir, 'data',
+                                                                                              'breast', 'cla',
+                                                                                              'augmented',
+                                                                                              'Rotate,ratio=(2,1,3,4,5,6)')])
+        cla_cross_validation_dataset_without_augmented = ClaCrossValidationData(data_folder_path=self.data_folder_path,
+                                                                                k_fold=self.k_fold)
+        for train_dataset, valid_dataset in cla_cross_validation_dataset_with_augmented:
+            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
+            self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: in_valid(x, valid_list))))
+
+    def test_overlap_with_normal_augment(self):
+        """
+        引入数据增广数据集的情况下，测试各折的验证集之间是否存在重叠的情况
+        :return:
+        """
+        cla_cross_validation_dataset = ClaCrossValidationData(data_folder_path=self.data_folder_path,
+                                                              k_fold=self.k_fold,
+                                                              augmented_folder_list=[os.path.join(os.curdir, 'data',
+                                                                                                  'breast', 'cla',
+                                                                                                  'augmented',
+                                                                                                  'Rotate,ratio=(2,1,3,4,5,6)')])
+        first = True
+        for train_dataset, valid_dataset in cla_cross_validation_dataset:
+            if first:
+                valid_datasets = valid_dataset.table.file_name
+                first = False
+                continue
+            valid_datasets = np.intersect1d(valid_datasets, valid_dataset.table.file_name)
+        self.assertEqual(0, len(valid_datasets))
+
+
+class InValidTestCase(unittest.TestCase):
+    valid_list = [
+        "0086.jpg",
+        "0087.jpg",
+        "0088.jpg",
+        "hcjz_birads3_0056_0004.jpg",
+        "hcjz_birads3_01170_0001.jpg",
+        "hcjz_birads5_0002_0006.jpg",
+        "sec_0035.jpg",
+        "sec_0036.jpg",
+        "sec_0037.jpg",
+        "thi_0127.jpg",
+        "thi_0128.jpg",
+        "thi_0129.jpg"
+    ]
+    in_valid_list = [
+        "0086(1).jpg",
+        "0087(2).jpg",
+        "0088(3).jpg",
+        "hcjz_birads3_0056_0004(1).jpg",
+        "hcjz_birads3_01170_0001(2).jpg",
+        "hcjz_birads5_0002_0006(3).jpg",
+        "sec_0035(1).jpg",
+        "sec_0036(2).jpg",
+        "sec_0037(3).jpg",
+        "thi_0127(4).jpg",
+        "thi_0128(5).jpg",
+        "thi_0129(6).jpg",
+        "0086.jpg__mixup__hcjz_birads3_0056_0004.jpg(1).jpg",
+        "0087.jpg__mixup__thi_0128.jpg(1).jpg",
+        "0087.jpg__mixup__mock_image.jpg(1).jpg",
+        "mock_image.jpg__mixup__0087.jpg(1).jpg"
+    ]
+    in_valid_list = list(map(lambda x: os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented', x), in_valid_list))
+    not_in_valid_list = [
+        "0096(1).jpg",
+        "0097(2).jpg",
+        "0098(4).jpg",
+        "hcjz_birads3_0056_0009(1).jpg",
+        "hcjz_birads3_01170_0009(1).jpg",
+        "hcjz_birads5_0002_0009(1).jpg",
+        "thi_0147(1).jpg",
+        "thi_0148(1).jpg",
+        "thi_0149(1).jpg",
+        "hcjz_birads3_0056_0009.jpg__mixup__thi_0149.jpg(1).jpg"
+    ]
+    not_in_valid_list = list(
+        map(lambda x: os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented', x), not_in_valid_list))
+
+    def test_in_valid(self):
+        """
+        测试能否正确识别出不能添加至训练集的图像
+        :return:
+        """
+        for file_name in self.in_valid_list:
+            self.assertTrue(in_valid(file_name, self.valid_list), file_name)
+
+    def test_not_in_valid(self):
+        """
+        测试能否正确识别出能添加至训练集的图像
+        :return:
+        """
+        for file_name in self.not_in_valid_list:
+            self.assertFalse(in_valid(file_name, self.valid_list), file_name)
 
 
 class SplitAugmentedImageTestCase(unittest.TestCase):
     num_classes = 6
-    valid_file_name = [
-        os.path.join(os.pardir,os.pardir,"mock_path","a.jpg"),
-        os.path.join(os.pardir,os.pardir,"mock_path","b.jpg"),
-        os.path.join(os.pardir,os.pardir,"mock_path","c.jpg"),
-        os.path.join(os.pardir,os.pardir,"mock_path","d.jpg"),
-        os.path.join(os.pardir,os.pardir,"mock_path","e.jpg"),
+    valid_list = [
+        "0086.jpg",
+        "0087.jpg",
+        "0088.jpg",
+        "hcjz_birads3_0056_0004.jpg",
+        "hcjz_birads3_01170_0001.jpg",
+        "hcjz_birads5_0002_0006.jpg",
+        "sec_0035.jpg",
+        "sec_0036.jpg",
+        "sec_0037.jpg",
+        "thi_0127.jpg",
+        "thi_0128.jpg",
+        "thi_0129.jpg"
     ]
-    augmented_file_name = [
-        "a(1).jpg",
-        "c(5).jpg",
-        "e(3).jpg"
+    valid_list = list(map(lambda x: os.path.join(os.curdir, 'data', 'breast', 'cla', 'train', x), valid_list))
+    in_valid_list = [
+        "0086(1).jpg",
+        "0087(2).jpg",
+        "0088(3).jpg",
+        "hcjz_birads3_0056_0004(1).jpg",
+        "hcjz_birads3_01170_0001(2).jpg",
+        "hcjz_birads5_0002_0006(3).jpg",
+        "sec_0035(1).jpg",
+        "sec_0036(2).jpg",
+        "sec_0037(3).jpg",
+        "thi_0127(4).jpg",
+        "thi_0128(5).jpg",
+        "thi_0129(6).jpg",
+        "0086.jpg__mixup__hcjz_birads3_0056_0004.jpg(1).jpg",
+        "0087.jpg__mixup__thi_0128.jpg(1).jpg",
+        "0087.jpg__mixup__mock_image.jpg(1).jpg",
+        "mock_image.jpg__mixup__0087.jpg(1).jpg"
     ]
-    labels = np.random.randint(low=0, high=num_classes, size=len(valid_file_name))
-    mock_valid_set = pd.DataFrame({
-        "file_name": valid_file_name,
-        "label": labels
-    })
-    mock_augmented_set = pd.DataFrame({
-        "file_name": augmented_file_name,
-        "label": labels
-    })
-    def test_no_mixup_case:
+    not_in_valid_list = [
+        "0096(1).jpg",
+        "0097(2).jpg",
+        "0098(4).jpg",
+        "hcjz_birads3_0056_0009(1).jpg",
+        "hcjz_birads3_01170_0009(1).jpg",
+        "hcjz_birads5_0002_0009(1).jpg",
+        "thi_0147(1).jpg",
+        "thi_0148(1).jpg",
+        "thi_0149(1).jpg",
+        "hcjz_birads3_0056_0009.jpg__mixup__thi_0149.jpg(1).jpg"
+    ]
+    mock_valid_dataset = pd.DataFrame({'file_name': valid_list})
+    mock_valid_dataset['label'] = 0
+    mock_augmented_ground_truth = pd.DataFrame({'file_name': in_valid_list + not_in_valid_list})
+    mock_augmented_ground_truth['label'] = 0
+    mock_augmented_ground_truth = mock_augmented_ground_truth.sample(frac=1).reset_index(drop=True)
 
+    @patch('pandas.read_csv')
+    def test_in_valid(self, mock_read_csv):
+        """
+        测试由test_split_augmented_image返回的图像中，没有不可以加入训练集的
+        :param mock_read_csv:
+        :return:
+        """
+        mock_read_csv.return_value = self.mock_augmented_ground_truth.copy()
+        not_in_valid_augmented_image = split_augmented_image(self.mock_valid_dataset, [
+            os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented')])
+        self.assertEqual(0, len(np.intersect1d(not_in_valid_augmented_image.file_name, self.not_in_valid_list)))
+
+    @patch('pandas.read_csv')
+    def test_not_in_valid(self, mock_read_csv):
+        """
+        测试由test_split_augmented_image返回的图像中，包含了所有可以加入训练集的图像
+        :param mock_read_csv:
+        :return:
+        """
+        mock_read_csv.return_value = self.mock_augmented_ground_truth.copy()
+        not_in_valid_augmented_image = split_augmented_image(self.mock_valid_dataset, [
+            os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented')])
+        self.assertEqual(
+            set([os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented', x) for x in self.not_in_valid_list]),
+            set(not_in_valid_augmented_image.file_name.tolist()))
+        self.assertEqual(len(self.not_in_valid_list), len(not_in_valid_augmented_image.values))
 
 
 class GetClaTrainValidDataTestCase(unittest.TestCase):

@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from omegaconf import MISSING
 from pathlib import Path
-from utils.ClaDataset import getClaTrainValidData
+from utils.ClaDataset import getClaTrainValidData,ClaCrossValidationData
 import os
 """
 数据集配置，用于直接实例化数据集，所以不能有数据集所需的参数以外的配置项
@@ -10,6 +10,6 @@ import os
 """
 @dataclass
 class DefaultDatasetConfig:
-    _target_:str="utils.ClaDataset.getClaTrainValidData"
+    _target_:str="utils.ClaDataset.ClaCrossValidationData"
     data_folder_path:Path=Path(os.path.join(os.curdir,'data'))
     image_format:str="Tensor"

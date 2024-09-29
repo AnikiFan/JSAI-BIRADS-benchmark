@@ -5,7 +5,9 @@ from typing import *
 from torchvision.transforms import Compose,ToTensor
 from utils.MyBlock.MyCrop import MyCrop
 from utils.PILResize import PILResize
-
+"""
+图像变换配置
+"""
 @dataclass
 class DefaultTrainTransformConfig:
     _target_: str = "torchvision.transforms.Compose"

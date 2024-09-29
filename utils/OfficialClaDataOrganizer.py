@@ -22,6 +22,13 @@ class OfficialClaDataOrganizer:
 
     @staticmethod
     def check_label(ground_truth, base_path, file_name):
+        """
+        给定样本名称，判断文本标签是否合法，这里需要满足1.只有一行；2.有五个用空格相隔的数字；3.与文件夹对应的标签一致
+        :param ground_truth:
+        :param base_path:
+        :param file_name:
+        :return:
+        """
         with open(os.path.join(base_path, 'labels', file_name), 'r') as file:
             content = file.readlines()
             if len(content) != 1:
@@ -37,6 +44,13 @@ class OfficialClaDataOrganizer:
 
     @staticmethod
     def move_image(image_path, label_name, dst):
+        """
+        给定图像名称，不包含后缀名，将对应的jpg和png格式复制到指定文件夹中
+        :param image_path:
+        :param label_name:
+        :param dst:
+        :return:
+        """
         png_suffix = label_name.replace('txt', 'png')
         jpg_suffix = label_name.replace('txt', 'jpg')
         if os.path.exists(os.path.join(image_path, png_suffix)):
@@ -47,6 +61,11 @@ class OfficialClaDataOrganizer:
             warn(f"image {image_path + label_name.replace('.txt')} doesn't exist!")
 
     def organize(self):
+        """
+        各文件夹的label按照文件夹名称字典序赋值，从0开始
+        以合法的txt标签文件来进一步搜索对应图片
+        :return:
+        """
         if os.path.exists(self.dst):
             shutil.rmtree(self.dst)
         os.makedirs(self.dst)

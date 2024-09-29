@@ -3,6 +3,9 @@ from omegaconf import MISSING
 from pathlib import Path
 from utils.tools import getDevice
 from utils.earlyStopping import EarlyStopping
+"""
+训练过程配置，例如损失函数，早停等参数设置
+"""
 
 @dataclass
 class LossFunction:

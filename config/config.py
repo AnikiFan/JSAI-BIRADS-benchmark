@@ -14,7 +14,7 @@ from typing import *
 defaults = [
     {"train": "default"},
     {"model": "default"},
-    {"dataset": "default"},
+    {"dataset": "single"},
     {"optimizer": "default"},
     {"env": "fx"},
     {"train_transform": "default"},
@@ -45,7 +45,8 @@ def init_config():
 
     cs.store(group='model', name="default", node=DefaultModelConfig)
 
-    cs.store(group='dataset', name="default", node=SingleFoldDatasetConfig)
+    cs.store(group='dataset', name="single", node=SingleFoldDatasetConfig)
+    cs.store(group='dataset', name="multiple", node=CrossValidationDatasetConfig)
 
     cs.store(group='optimizer', name="default", node=DefaultOptimizerConfig)
 

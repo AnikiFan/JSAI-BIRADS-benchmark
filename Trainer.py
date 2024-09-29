@@ -21,24 +21,24 @@ class Trainer:
     def __init__(self, cfg: Config):
         self.cfg: Config = cfg
         self.loss_fn = instantiate(cfg.train.loss_function)
-        self.optimizer = instantiate(cfg)
         self.cur_fold = 1
         self.loss, self.f1_score, self.accuracy, self.confusion_matrix = 0, 0, 0, torch.zeros(
-            (self.cfg.train.num_classes, self.cfg.train.num_classes), dtype=torch.int, device=self.cfg.train.device)
+            (self.cfg.train.num_classes, self.cfg.train.num_classes), dtype=torch.int, device=self.cfg.env.device)
         self.train_transform = instantiate(self.cfg.train_transform)
         self.valid_transform = instantiate(self.cfg.valid_transform)
         self.best_vloss, self.best_vf1, self.best_vaccuracy, self.best_vconfusion_matrix = 1_000_000., None, None, None
 
     def train(self):
-        for train_ds, valid_ds in instantiate(self.cfg.dataset, train_transform=self.train_transform,
+        for train_ds, valid_ds in instantiate(self.cfg.dataset, data_folder_path=self.cfg.env.data_folder_path,
+                                              train_transform=self.train_transform,
                                               valid_transform=self.valid_transform):
             loss, f1_score, accuracy, confusion_matrix = self.train_one_fold(
                 DataLoader(train_ds, batch_size=self.cfg.train.batch_size, shuffle=True, pin_memory=True,
                            drop_last=False, num_workers=self.cfg.train.num_workers,
-                           pin_memory_device=self.cfg.train.device),
+                           pin_memory_device=self.cfg.env.device),
                 DataLoader(valid_ds, batch_size=self.cfg.train.batch_size, shuffle=True, pin_memory=True,
                            drop_last=False, num_workers=self.cfg.train.num_workers,
-                           pin_memory_device=self.cfg.train.device)
+                           pin_memory_device=self.cfg.env.device)
             )
             self.loss += loss
             self.f1_score += f1_score
@@ -67,14 +67,13 @@ class Trainer:
         :param tb_writer: TensorBoard 写入器
         '''
         outputs, labels = [], []
-        frequency = self.cfg.train.info_show_frequency
 
         model.train(True)
 
         for i, data in enumerate(tqdm(train_loader, desc=f"Epoch {epoch_index}"), start=1):
             input, label = data
-            input = input.to(self.cfg.train.device)
-            label = label.to(self.cfg.train.device)
+            input = input.to(self.cfg.env.device)
+            label = label.to(self.cfg.env.device)
             optimizer.zero_grad()
             output = model(input)
             outputs.append(output)
@@ -82,12 +81,12 @@ class Trainer:
             loss = self.loss_fn(output, label)
             loss.backward()
             optimizer.step()
-            if i % frequency == 0:
+            if i % self.cfg.train.info_frequency == 0:
                 # 计算实际的批次数
                 outputs, labels = torch.cat(outputs, dim=0), torch.cat(labels, dim=0)
-                loss = self.loss_fn(input=outputs, target=labels) / frequency
-                f1 = multiclass_f1_score(input=outputs, target=labels) / frequency
-                accuracy = multiclass_accuracy(input=outputs, target=labels) / frequency
+                loss = self.loss_fn(input=outputs, target=labels) / self.cfg.train.info_frequency
+                f1 = multiclass_f1_score(input=outputs, target=labels) / self.cfg.train.info_frequency
+                accuracy = multiclass_accuracy(input=outputs, target=labels) / self.cfg.train.info_frequency
 
                 tb_x = epoch_index * len(train_loader) + i
                 tb_writer.add_scalar('Loss/train', loss, tb_x)
@@ -117,10 +116,10 @@ class Trainer:
         """
         best_loss, best_f1, best_accuracy, best_confusion_matrix = 1_000_000., None, None, None
         model = instantiate(self.cfg.model)
-        optimizer = instantiate(self.cfg.optimizer, params=model.parameters())()
+        optimizer = instantiate(self.cfg.optimizer, params=model.parameters())
         writer = SummaryWriter(os.path.join('runs', self.make_writer_title()))
 
-        model.to(torch.device(self.cfg.train.device))
+        model.to(torch.device(self.cfg.env.device))
         epoch_number = 0
         # 定义检查点路径
         checkPoint_path = HydraConfig.get().runtime.output_dir
@@ -132,7 +131,7 @@ class Trainer:
                                                                   tb_writer=writer)
             model.eval()
             with torch.no_grad():
-                valid_outcomes = [(vlabel.to(self.cfg.train.device), model(vinputs.to(self.cfg.train.device))) for
+                valid_outcomes = [(vlabel.to(self.cfg.env.device), model(vinputs.to(self.cfg.env.device))) for
                                   vinputs, vlabel in valid_loader]
 
             ground_truth = torch.cat([pair[0] for pair in valid_outcomes], dim=0)

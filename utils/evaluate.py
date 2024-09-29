@@ -72,7 +72,6 @@ def plot_confusion_matrix_plotly(df, true_label_col='category', pred_label_col='
     df (pd.DataFrame): 包含预测结果的数据框。
     true_label_col (str): 真实标签的列名。
     pred_label_col (str): 预测标签的列名。
-    figsize (tuple): 图像大小（未使用，但保留参数以保持接口一致）。
     
     返回:
     None
@@ -105,6 +104,115 @@ def plot_confusion_matrix_plotly(df, true_label_col='category', pred_label_col='
     
     fig.show()
 
+def plot_normalized_confusion_matrix_plotly(df, true_label_col='category', pred_label_col='predicted_category'):
+    """
+    绘制归一化的混淆矩阵热力图。
+    
+    参数:
+    df (pd.DataFrame): 包含预测结果的数据框。
+    true_label_col (str): 真实标签的列名。
+    pred_label_col (str): 预测标签的列名。
+    
+    返回:
+    None
+    """
+    y_true = df[true_label_col]
+    y_pred = df[pred_label_col]
+
+    cm = confusion_matrix(y_true, y_pred, normalize='true')
+    labels = sorted(df[true_label_col].unique())
+
+    cm_df = pd.DataFrame(cm, index=labels, columns=labels)
+
+    fig = px.imshow(
+        cm_df,
+        text_auto='.2f',
+        labels=dict(x="预测类别", y="真实类别", color="归一化计数"),
+        x=labels,
+        y=labels,
+        color_continuous_scale='Blues'
+    )
+
+    fig.update_layout(
+        title='归一化混淆矩阵',
+        xaxis_title='预测类别',
+        yaxis_title='真实类别',
+        yaxis=dict(scaleanchor="x", scaleratio=1),
+        xaxis=dict(constrain='domain')
+    )
+
+    fig.show()
+
+def plot_classification_metrics(df, true_label_col='category', pred_label_col='predicted_category'):
+    """
+    绘制每个类别的精确率、召回率和F1分数的柱状图。
+    
+    参数:
+    df (pd.DataFrame): 包含预测结果的数据框。
+    true_label_col (str): 真实标签的列名。
+    pred_label_col (str): 预测标签的列名。
+    
+    返回:
+    None
+    """
+    y_true = df[true_label_col]
+    y_pred = df[pred_label_col]
+    
+    report = classification_report(y_true, y_pred, output_dict=True, zero_division=0)
+    report_df = pd.DataFrame(report).transpose()
+    report_df = report_df.drop(['accuracy', 'macro avg', 'weighted avg'])
+    
+    metrics = ['precision', 'recall', 'f1-score']
+    fig = go.Figure()
+    for metric in metrics:
+        fig.add_trace(go.Bar(
+            x=report_df.index,
+            y=report_df[metric],
+            name=metric
+        ))
+    
+    fig.update_layout(
+        title='每个类别的评估指标',
+        xaxis_title='类别',
+        yaxis_title='指标值',
+        barmode='group'
+    )
+    
+    fig.show()
+
+def plot_class_distribution(df, true_label_col='category', pred_label_col='predicted_category'):
+    """
+    绘制真实类别和预测类别的分布柱状图。
+    
+    参数:
+    df (pd.DataFrame): 包含预测结果的数据框。
+    true_label_col (str): 真实标签的列名。
+    pred_label_col (str): 预测标签的列名。
+    
+    返回:
+    None
+    """
+    true_counts = df[true_label_col].value_counts().sort_index()
+    pred_counts = df[pred_label_col].value_counts().sort_index()
+    labels = sorted(set(df[true_label_col]) | set(df[pred_label_col]))
+
+    true_values = [true_counts.get(label, 0) for label in labels]
+    pred_values = [pred_counts.get(label, 0) for label in labels]
+
+    fig = go.Figure(data=[
+        go.Bar(name='真实类别', x=labels, y=true_values),
+        go.Bar(name='预测类别', x=labels, y=pred_values)
+    ])
+
+    fig.update_layout(
+        barmode='group',
+        title='类别分布',
+        xaxis_title='类别',
+        yaxis_title='计数'
+    )
+
+    fig.show()
+
 def evaluate_predictions(csv_path):
     """
     读取预测结果CSV并计算所有评估指标。
@@ -130,6 +238,15 @@ def evaluate_predictions(csv_path):
     
     # 绘制混淆矩阵
     plot_confusion_matrix_plotly(df)
+    
+    # 绘制归一化混淆矩阵
+    plot_normalized_confusion_matrix_plotly(df)
+    
+    # 绘制每个类别的评估指标
+    plot_classification_metrics(df)
+    
+    # 绘制类别分布
+    plot_class_distribution(df)
 
 if __name__ == "__main__":
     csv_file = 'predictions.csv'  # 请将此处替换为您的CSV文件路径

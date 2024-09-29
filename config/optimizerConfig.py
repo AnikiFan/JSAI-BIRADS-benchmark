@@ -4,6 +4,10 @@ from pathlib import Path
 from utils.tools import getDevice
 from torch.optim import SGD
 from typing import *
+"""
+优化器配置，用于直接实例化优化器
+模型参数利用_partial_在应用时传入
+"""
 
 @dataclass
 class DefaultOptimizerConfig:

@@ -1,6 +1,11 @@
 import time
 import logging
 def time_logger(func):
+    """
+    用于计时的装饰器，被装饰函数开始时和结束时，会用info函数打印当前时间，同时结束时还会打印用时
+    :param func:
+    :return:
+    """
     def wrapper(*args, **kwargs):
         start_time = time.time()
         start_time_readable = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time))

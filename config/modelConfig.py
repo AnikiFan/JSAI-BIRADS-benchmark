@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from omegaconf import MISSING
 from pathlib import Path
 from models.UnetClassifer.unet import UnetClassifier
+from models.model4compare.AlexNet import AlexNet
 
 """
 模型配置，用于直接实例化模型，所以不能有除模型实例化所需参数以外的配置项
@@ -22,3 +23,8 @@ class DefaultModelConfig:
     in_channels: int = 3
     backbone: str = "resnet50"
     pretrained: bool = True
+
+@dataclass
+class AlexNetModelConfig:
+    _target_:str = "models.model4compare.AlexNet.AlexNet"
+    num_classes: int = 10

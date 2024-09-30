@@ -12,9 +12,9 @@ import hydra
 from typing import *
 
 defaults = [
-    {"train": "default"},
-    {"model": "default"},
-    {"dataset": "single"},
+    {"train": "sanity_check"},
+    {"model": "sanity_check"},
+    {"dataset": "sanity_check"},
     {"optimizer": "default"},
     {"env": "fx"},
     {"train_transform": "default"},
@@ -42,11 +42,14 @@ def init_config():
     cs = ConfigStore.instance()
 
     cs.store(group='train', name="default", node=DefaultTrainConfig)
+    cs.store(group='train', name="sanity_check", node=FashionMNISTTrainConfig)
 
     cs.store(group='model', name="default", node=DefaultModelConfig)
+    cs.store(group='model', name="sanity_check", node=AlexNetModelConfig)
 
     cs.store(group='dataset', name="single", node=SingleFoldDatasetConfig)
     cs.store(group='dataset', name="multiple", node=CrossValidationDatasetConfig)
+    cs.store(group='dataset', name="sanity_check", node=FashionMNISTDatasetConfig)
 
     cs.store(group='optimizer', name="default", node=DefaultOptimizerConfig)
 

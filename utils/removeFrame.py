@@ -1,5 +1,6 @@
 import numpy as np
 from logging import debug
+from typing import *
 def removeFrame(x:np.ndarray)->Tuple[int,int,int,int]:
     """
     对张量进行裁剪。

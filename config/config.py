@@ -32,6 +32,7 @@ class Config:
     env: Any = MISSING
     train_transform: Any = MISSING
     valid_transform: Any = MISSING
+# TODO: 为了适配多特征识别任务，可能需要将指标评价方法也加入配置中
 
 
 def init_config():

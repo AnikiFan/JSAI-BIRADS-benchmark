@@ -85,8 +85,8 @@ class Trainer:
                 # 计算实际的批次数
                 outputs, labels = torch.cat(outputs, dim=0), torch.cat(labels, dim=0)
                 loss = self.loss_fn(input=outputs, target=labels) / self.cfg.train.info_frequency
-                f1 = multiclass_f1_score(input=outputs, target=labels) / self.cfg.train.info_frequency
-                accuracy = multiclass_accuracy(input=outputs, target=labels) / self.cfg.train.info_frequency
+                f1 = multiclass_f1_score(input=outputs, target=labels)
+                accuracy = multiclass_accuracy(input=outputs, target=labels)
 
                 tb_x = epoch_index * len(train_loader) + i
                 tb_writer.add_scalar('Loss/train', loss, tb_x)

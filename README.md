@@ -1,35 +1,65 @@
+from hydra.core.config_store import ConfigStore
+
+# 训练框架说明
+
+## 概述
+
+本训练框架主要由三部分组成：
+
+1. hydra超参数配置
+2. Trainer类
+3. TableDataset类
+
+### hydra超参数配置
+
+为了使用由hydra库配置的参数，需要在程序运行之初调用以下语句
+
+```python
+cs = ConfigStore.instance()
+cs.store(name="config",node=Config)
+```
+
+为了在某个函数中使用Config中存储的超参数，要使用hydra.main装饰器
+```python
+import hydra
+@hydra.main(version_base=None,config_name="config")
+def foo(cfg:Config):
+  pass
+```
+
+```python
+cs.store(group='train', name="default", node=DefaultTrainConfig)
+cs.store(group='model', name="default", node=DefaultModelConfig)
+cs.store(group='dataset', name="multiple", node=CrossValidationDatasetConfig)
+cs.store(group='optimizer', name="default", node=DefaultOptimizerConfig)
+cs.store(group='env', name="fx", node=FXEnvConfig)
+cs.store(group='train_transform', name="default", node=DefaultTrainTransformConfig)
+cs.store(group='valid_transform', name="default", node=DefaultValidTransformConfig)
+```
+
+本框架将超参数分为以下类
+
+1. 环境配置
+> cpu，gpu，路径等相关配置
+2. 训练配置
+> epoch数、早停等相关配置
+3. 数据集配置
+> num_classes等用于实例化数据集类的参数配置
+4. 模型配置
+> 用于实例化model类的参数配置
+5. 优化器配置
+> 用于实例化优化器的参数配置
+6. 训练集变换配置
+> 用于实例化训练集所用变换的参数配置
+7. 验证集变换配置
+> 用于实例化验证集所用变换的参数配置
+
+
+
 # tensorboard使用方法
 
 ```commandline
 tensorboard --logdir=./runs
-```
-
-# TDS-Net网络结构
-
-```
-      input:1
-        |
-        |
-   FeatureBlock:64
-       |
-       |------cb1:64
-       |      /|
-7*64  db1   /  |
-       |  /    |
-512    |       |
-7*128 db2     cb2:128
-       |------/|
-1024   |       |
-7*128 db3     cb3:128
-       |------/|
-1024   |       |
-7*128 db4     cb4:128
-       |      /
-       |    /
-   Classifier:1
-       |
-       |
-     output
 ```
 
 # 仓库目录结构

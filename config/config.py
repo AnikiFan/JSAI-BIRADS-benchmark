@@ -39,6 +39,7 @@ def init_config():
     初始化配置
     :return:
     """
+    # 初始化
     cs = ConfigStore.instance()
 
     cs.store(group='train', name="default", node=DefaultTrainConfig)
@@ -61,4 +62,5 @@ def init_config():
 
     cs.store(group='valid_transform', name="default", node=DefaultValidTransformConfig)
 
+    # 初始化
     cs.store(name="config", node=Config)

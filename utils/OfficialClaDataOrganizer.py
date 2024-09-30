@@ -11,6 +11,7 @@ class OfficialClaDataOrganizer:
     同时带有筛出不符合规范的label.txt的功能
     用于汇总图像至一个文件夹中，并形成ground_truth.csv
     """
+
     def __init__(self, src, dst):
         """
         注意，这里按照字典序为各个文件夹中的图像赋予label，例如2类赋0，3类赋1，4a类赋2
@@ -60,20 +61,26 @@ class OfficialClaDataOrganizer:
         else:
             warn(f"image {image_path + label_name.replace('.txt')} doesn't exist!")
 
-    def organize(self):
+    def organize(self, ignore):
         """
         各文件夹的label按照文件夹名称字典序赋值，从0开始
         以合法的txt标签文件来进一步搜索对应图片
+        :param ignore: 是否要检验txt标签文件的合法性
         :return:
         """
         if os.path.exists(self.dst):
             shutil.rmtree(self.dst)
         os.makedirs(self.dst)
         label_tables = []
-        for label, folder in tqdm(enumerate(os.listdir(self.src)),total=len(os.listdir(self.src))):
-            valid_labels = list(filter(lambda x: OfficialClaDataOrganizer.check_label(label + 1, os.path.join(self.src, folder), x),
-                                       os.listdir(os.path.join(self.src, folder, 'labels'))))
-            list(map(lambda x:OfficialClaDataOrganizer.move_image(os.path.join(self.src, folder, 'images'), x, self.dst), valid_labels))
+        for label, folder in tqdm(enumerate(os.listdir(self.src)), total=len(os.listdir(self.src))):
+            if ignore:
+                valid_labels = os.listdir(os.path.join(self.src, folder, 'labels'))
+            if not ignore:
+                valid_labels = list(
+                    filter(lambda x: OfficialClaDataOrganizer.check_label(label + 1, os.path.join(self.src, folder), x),
+                           os.listdir(os.path.join(self.src, folder, 'labels'))))
+            list(map(lambda x: OfficialClaDataOrganizer.move_image(os.path.join(self.src, folder, 'images'), x,
+                                                                   self.dst), valid_labels))
             file_names = list(map(lambda x: x.replace('txt', 'png') if os.path.exists(
                 os.path.join(self.dst, x.replace('txt', 'png'))) else x.replace('txt', 'jpg'), valid_labels))
             label_table = pd.DataFrame({'file_name': file_names})
@@ -81,15 +88,13 @@ class OfficialClaDataOrganizer:
             label_tables.append(label_table)
         out = pd.concat(label_tables, axis=0).reset_index(drop=True)
         out.columns = ['file_name', 'label']
-        out.to_csv(os.path.join(self.dst, 'ground_truth.csv'),index=False)
+        out.to_csv(os.path.join(self.dst, 'ground_truth.csv'), index=False)
 
 
 if __name__ == '__main__':
     src = os.path.join(os.pardir, 'data', 'breast', 'cla', 'official_test')
     dst = os.path.join(os.pardir, 'data', 'breast', 'cla', 'test')
-    OfficialClaDataOrganizer(src,dst).organize()
+    OfficialClaDataOrganizer(src, dst).organize(ignore=True)
     src = os.path.join(os.pardir, 'data', 'breast', 'cla', 'official_train')
     dst = os.path.join(os.pardir, 'data', 'breast', 'cla', 'train')
-    OfficialClaDataOrganizer(src,dst).organize()
-
-
+    OfficialClaDataOrganizer(src, dst).organize(ignore=False)

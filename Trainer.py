@@ -28,7 +28,7 @@ class Trainer:
         self.valid_transform = instantiate(self.cfg.valid_transform)
         self.best_vloss, self.best_vf1, self.best_vaccuracy, self.best_vconfusion_matrix = 1_000_000., None, None, None
 
-    def train(self):
+    def train(self)->None:
         for train_ds, valid_ds in instantiate(self.cfg.dataset, data_folder_path=self.cfg.env.data_folder_path,
                                               train_transform=self.train_transform,
                                               valid_transform=self.valid_transform):

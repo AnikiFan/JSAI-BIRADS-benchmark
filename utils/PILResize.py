@@ -1,4 +1,5 @@
 from PIL import Image
+from typing import *
 
 class PILResize(object):
     def __init__(self, size, interpolation=Image.BILINEAR):
@@ -13,7 +14,7 @@ class PILResize(object):
         self.size = size
         self.interpolation = interpolation
 
-    def __call__(self, img):
+    def __call__(self, img:Image)->Image:
         """
         参数：
             img (PIL Image)：需要调整大小的图像。

@@ -12,7 +12,7 @@ class OfficialClaDataOrganizer:
     用于汇总图像至一个文件夹中，并形成ground_truth.csv
     """
 
-    def __init__(self, src, dst):
+    def __init__(self, src:str, dst:str):
         """
         注意，这里按照字典序为各个文件夹中的图像赋予label，例如2类赋0，3类赋1，4a类赋2
         :param src: 2类，3类……文件夹所在目录
@@ -22,7 +22,7 @@ class OfficialClaDataOrganizer:
         self.dst = dst
 
     @staticmethod
-    def check_label(ground_truth, base_path, file_name):
+    def check_label(ground_truth:int, base_path:str, file_name:str)->bool:
         """
         给定样本名称，判断文本标签是否合法，这里需要满足1.只有一行；2.有五个用空格相隔的数字；3.与文件夹对应的标签一致
         :param ground_truth:
@@ -44,7 +44,7 @@ class OfficialClaDataOrganizer:
         return True
 
     @staticmethod
-    def move_image(image_path, label_name, dst):
+    def move_image(image_path:str, label_name:str, dst:str)->None:
         """
         给定图像名称，不包含后缀名，将对应的jpg和png格式复制到指定文件夹中
         :param image_path:
@@ -61,7 +61,7 @@ class OfficialClaDataOrganizer:
         else:
             warn(f"image {image_path + label_name.replace('.txt')} doesn't exist!")
 
-    def organize(self, ignore):
+    def organize(self, ignore:bool)->None:
         """
         各文件夹的label按照文件夹名称字典序赋值，从0开始
         以合法的txt标签文件来进一步搜索对应图片

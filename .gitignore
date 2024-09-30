@@ -16,3 +16,4 @@ checkPoint/*
 .jupyter/*
 *.DS_Store
 *.json
+*.iml

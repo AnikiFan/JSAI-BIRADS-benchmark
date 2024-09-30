@@ -63,14 +63,14 @@ class TableDataset(VisionDataset):
         """
         return np.array(Image.open(image_path).convert('RGB'))
 
-    def __len__(self):
+    def __len__(self)->int:
         """
         返回样本个数
         :return:
         """
         return self.table.shape[0]
 
-    def __getitem__(self, item: int):
+    def __getitem__(self, item: int)->Tuple[Any,Any]:
         """
         指定下标，从0开始，返回对应的图像和label
         :param item:
@@ -87,7 +87,7 @@ class TableDataset(VisionDataset):
         """
         return self
 
-    def __next__(self):
+    def __next__(self)->Optional[Tuple[Any,Any]]:
         """
         使该类支持迭代器方式的使用
         :return:

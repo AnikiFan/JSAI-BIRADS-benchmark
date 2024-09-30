@@ -1,6 +1,6 @@
 import numpy as np
 from logging import debug
-def removeFrame(x):
+def removeFrame(x:np.ndarray)->Tuple[int,int,int,int]:
     """
     对张量进行裁剪。
     :param x: 输入ndarray，形状为 (C, H, W)

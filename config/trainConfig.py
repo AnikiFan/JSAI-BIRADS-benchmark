@@ -32,3 +32,7 @@ class DefaultTrainConfig(ClaTrainConfig):
     info_frequency: int = 100
     early_stopping: EarlyStopping = field(default_factory=EarlyStopping)
     loss_function: LossFunction = field(default_factory=LossFunction)
+
+@dataclass
+class FashionMNISTTrainConfig(DefaultTrainConfig):
+    num_classes:int =  10

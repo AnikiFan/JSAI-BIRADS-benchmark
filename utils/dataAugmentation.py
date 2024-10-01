@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import pandas as pd
 import albumentations as A
-from ClaDataset import make_table
+from BreastDataset import make_table
 import re
 from warnings import warn
 

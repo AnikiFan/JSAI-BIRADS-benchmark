@@ -10,7 +10,7 @@ from logging import info
 import os
 from utils.tools import save_checkpoint
 from torch.utils.tensorboard import SummaryWriter
-from utils.ClaDataset import ClaCrossValidationData, getClaTrainValidData
+from utils.BreastDataset import BreastCrossValidationData, getBreastTrainValidData
 from torch.utils.data import DataLoader
 from utils.time_logger import time_logger
 from typing import *

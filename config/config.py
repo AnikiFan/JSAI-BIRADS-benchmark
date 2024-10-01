@@ -17,8 +17,8 @@ from typing import *
 class Config:
     defaults: List[Any] = field(default_factory=lambda: [
         {"train": "default"},
-        {"model": "linear_sanity_check"},
-        {"dataset": "mnist"},
+        {"model": "pretrained_resnet"},
+        {"dataset": "single"},
         {"optimizer": "SGD"},
         {"env": "fx"},
         {"train_transform": "default"},
@@ -39,9 +39,6 @@ class Config:
     schedular: Any = MISSING
 
 
-# TODO: 为了适配多特征识别任务，可能需要将指标评价方法也加入配置中
-
-
 def init_config():
     """
     初始化配置
@@ -58,6 +55,7 @@ def init_config():
     cs.store(group='model', name="VGG", node=VGGModelConfig)
     cs.store(group='model', name="linear_sanity_check", node=LinearSanityCheckerModelConfig)
     cs.store(group='model', name="conv_sanity_check", node=ConvSanityCheckerModelConfig)
+    cs.store(group='model', name="pretrained_resnet", node=PretrainedResNetModelConfig)
     cs.store(group='model', name="default", node=DefaultModelConfig)
 
     cs.store(group='dataset', name="fashion_mnist", node=FashionMNISTDatasetConfig)
@@ -80,4 +78,4 @@ def init_config():
     cs.store(group='schedular', name="dummy", node=DummySchedularConfig)
 
     # 初始化
-    cs.store(name="config", node=Config)
+    cs.store(name="my_config", node=Config)

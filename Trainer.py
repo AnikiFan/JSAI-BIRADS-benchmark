@@ -52,7 +52,7 @@ class Trainer:
             self.loss /= fold_num
             self.f1_score /= fold_num
             self.accuracy /= fold_num
-            info(f"\n***************** {fold_num} folds' summary *****************")
+            info(f"***************** {fold_num} folds' summary *****************")
             info(f'LOSS                 :{self.loss:.10f}')
             info(f'ACCURACY             :{self.f1_score:.10f}')
             info(f'F1                   :{self.accuracy:.10f}')
@@ -153,7 +153,7 @@ class Trainer:
                                   num_classes=self.cfg.dataset.num_classes).item()
             confusion_matrix = instantiate(self.cfg.train.confusion_matrix, input=prediction, target=target,
                                            num_classes=self.cfg.dataset.num_classes)
-            info(f"\n----------------- Epoch {epoch} Summary -----------------")
+            info(f"----------------- Epoch {epoch} Summary -----------------")
             info('LOSS      train {:.10f} valid {:.10f}'.format(avg_loss, avg_vloss))
             info('ACCURACY  train {:.10f} valid {:.10f}'.format(avg_accuracy, avg_vaccuracy))
             info('F1        train {:.10f} valid {:.10f}'.format(avg_f1, avg_vf1))
@@ -178,7 +178,7 @@ class Trainer:
                 self.best_vloss, self.best_vf1, self.best_vaccuracy, self.best_vconfusion_matrix = avg_vloss, avg_vf1, avg_vaccuracy, confusion_matrix
                 info(f"\n############################################################\n"
                      f"# Validation loss improved to {avg_vloss:.6f} - saving best model #\n"
-                     f"############################################################\n")
+                     f"############################################################")
                 # 保存checkpoint（包括epoch，model_state_dict，optimizer_state_dict，best_vloss，但仅在best时保存）
                 # 保存断点重训所需的信息（需要包括epoch，model_state_dict，optimizer_state_dict，best_vloss）
                 # 只保留一份最佳指标对应的参数

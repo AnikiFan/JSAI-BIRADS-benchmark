@@ -7,6 +7,8 @@ from models.model4compare.GoogleNet import GoogleNet
 from models.model4compare.NiN import NiN
 from models.model4compare.VGG import VGG
 from models.model4compare.SanityChecker import LinearSanityChecker,ConvSanityChecker
+from models.model4compare.ResNet18 import ResNet18
+from torch.hub import load
 from typing import *
 
 """
@@ -60,4 +62,10 @@ class LinearSanityCheckerModelConfig:
 @dataclass
 class ConvSanityCheckerModelConfig:
     _target_: str = "models.model4compare.SanityChecker.ConvSanityChecker"
+    lr:float=0.001
+
+@dataclass
+class PretrainedResNetModelConfig:
+    _target_:str="models.model4compare.ResNet18.ResNet18"
+    num_classes:int=MISSING
     lr:float=0.001

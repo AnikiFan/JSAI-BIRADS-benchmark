@@ -18,7 +18,7 @@ class Config:
     defaults: List[Any] = field(default_factory=lambda: [
         {"train": "default"},
         {"model": "pretrained_resnet"},
-        {"dataset": "single"},
+        {"dataset": "mnist"},
         {"optimizer": "SGD"},
         {"env": "fx"},
         {"train_transform": "default"},

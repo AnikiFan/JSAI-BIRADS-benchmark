@@ -6,11 +6,13 @@ from hydra import main
 from hydra.utils import instantiate
 import torch
 from utils.TableDataset import TableDataset
-
+from tqdm import tqdm
+from omegaconf import OmegaConf
+from torch.utils.data import DataLoader
 
 class Tester:
     num_cla_testA = 671
-    def __init__(self, data_folder_path,check_point_folder_path):
+    def __init__(self,cfg:Config, data_folder_path:str,check_point_folder_path:str):
         """
         实例化该类之前，需要先运行OfficialClaDataOrganizer.py
         并将cla_order.csv放入test文件夹中
@@ -35,33 +37,32 @@ class Tester:
         self.ground_truth['id'] = np.arange(1,len(self.ground_truth)+1,1)
         self.ground_truth.set_index(keys="id",inplace=True,drop=True)
         self.cla_pre = self.ground_truth.copy()
-        self.ground_truth.file_name =self.ground_truth.file_name.apply(lambda x: os.path.join(self.data_folder_path,'breast','cla','test')+x)
-        self.data_loader = TableDataset(self.ground_truth[["file_name",'label']])
+        self.ground_truth.file_name =self.ground_truth.file_name.apply(lambda x: os.path.join(self.data_folder_path,'breast','cla','test',x))
+        self.data_loader = DataLoader(TableDataset(self.ground_truth[["file_name",'label']],image_format='Tensor'),shuffle=False,batch_size=1)
         self.cla_pre.label = -1
-        init_config()
+        self.cfg = cfg
 
 
     def test(self):
-        @main(version_base=None,config_path=os.path.join(self.data_folder_path, '.hydra'))
-        def get_config(cfg:Config):
-            return cfg
-        cfg = get_config()
-        checkpoint = torch.load(self.check_point_folder_path,weights_only=True)
-        model = instantiate(cfg.model,num_classes=cfg.dataset.num_classes.num_classes).to(cfg.env.device)
+        checkpoint = torch.load(os.path.join(self.check_point_folder_path,"model.pth"),weights_only=True)
+        model = instantiate(self.cfg.model,num_classes=self.cfg.dataset.num_classes).to(self.cfg.env.device)
         model.load_state_dict(checkpoint['model_state_dict'])
         model.eval()
         id = 1
-        for image,label in self.data_loader:
-            self.cla_pre.loc[id,"label"] = model(image.to(cfg.env.device)).argmax().item()
+        for image,label in tqdm(self.data_loader):
+            self.cla_pre.loc[id,"label"] = model(image.to(self.cfg.env.device)).argmax().item()
             id += 1
         os.makedirs(os.path.join(self.check_point_folder_path,"submit"),exist_ok=True)
-        self.ground_truth.reset_index(drop=True).loc[:,["id","label"]].to_csv(os.path.join(self.check_point_folder_path,"submit","cla_gt.csv"),index=False)
-        self.cla_pre.reset_index(drop=True).loc[:,["id","label"]].to_csv(os.path.join(self.check_point_folder_path,"submit","cla_pre.csv"),index=False)
+        self.ground_truth.reset_index(drop=False).loc[:,["id","label"]].to_csv(os.path.join(self.check_point_folder_path,"submit","cla_gt.csv"),index=False)
+        self.cla_pre.reset_index(drop=False).loc[:,["id","label"]].to_csv(os.path.join(self.check_point_folder_path,"submit","cla_pre.csv"),index=False)
         self.cla_order.to_csv(os.path.join(self.check_point_folder_path,"submit","cla_order.csv"),index=False)
 
+checkpoint_path = os.path.join(os.pardir,"outputs","2024-10-01","21-39-37")
 
+@main(version_base=None, config_name="config",config_path=os.path.join(checkpoint_path,".hydra"))
+def test(cfg:Config):
+    print(OmegaConf.to_yaml(cfg))
+    Tester(cfg,os.path.join(os.pardir,"data"),checkpoint_path).test()
 
-
-
-if __name__ == '__main__':
-    Tester(os.path.join(os.pardir,'data'),os.curdir)
+init_config()
+test()

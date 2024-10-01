@@ -108,7 +108,7 @@ class Unet(nn.Module):
 
 
 class PretrainedClassifier(nn.Module):
-    def __init__(self, num_classes=10,in_channels = 3, pretrained=False, backbone='vgg'):
+    def __init__(self, num_classes=10,in_channels = 3, pretrained=False, backbone='vgg',**kwargs):
         super(PretrainedClassifier, self).__init__()
         # 使用已有的Unet作为基础
         self.unet = Unet(num_classes=num_classes, in_channels=in_channels,pretrained=pretrained, backbone=backbone)
@@ -142,7 +142,7 @@ class PretrainedClassifier(nn.Module):
 
 # day9.25
 class UnetClassifier(Unet):
-    def __init__(self, in_channels, num_classes, pretrained=False, backbone='vgg'):
+    def __init__(self, in_channels, num_classes, pretrained=False, backbone='vgg',**kwargs):
         super(UnetClassifier, self).__init__(in_channels, num_classes, pretrained, backbone)
         
         # 分类层

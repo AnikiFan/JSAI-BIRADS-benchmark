@@ -6,7 +6,7 @@ import torchvision.transforms
 from utils.TableDataset import TableDataset
 from typing import *
 import re
-
+from logging import debug
 
 def make_table(data_folder_path: str, official_train: bool = True, BUS: bool = True, USG: bool = True, *,
                seed: int = 42) -> pd.DataFrame:
@@ -140,6 +140,12 @@ class ClaCrossValidationData:
                 train_table = pd.concat([train_table,
                                          split_augmented_image(valid_table, self.augmented_folder_list).sample(frac=1,
                                                                                                                random_state=self.seed)])
+            debug(f"fold {self.cur_valid_fold-1} sample distribution:")
+            debug(f"train:")
+            debug(train_table.label.value_counts())
+            debug(f"valid:")
+            debug(valid_table.label.value_counts())
+            debug(f"num_train:{len(train_table)}, num_valid:{len(valid_table)}")
             train_dataset = TableDataset(train_table, transform=self.train_transform, image_format=self.image_format)
             valid_dataset = TableDataset(valid_table, transform=self.valid_transform, image_format=self.image_format)
             return train_dataset, valid_dataset
@@ -171,6 +177,12 @@ def getClaTrainValidData(data_folder_path: str, valid_ratio: float = 0.2,
     if augmented_folder_list:
         train_table = pd.concat(
             [train_table, split_augmented_image(valid_table, augmented_folder_list).sample(frac=1, random_state=seed)])
+    debug(f"single fold sample distribution:")
+    debug(f"train:")
+    debug(train_table.label.value_counts())
+    debug(f"valid:")
+    debug(valid_table.label.value_counts())
+    debug(f"num_train:{len(train_table)}, num_valid:{len(valid_table)}")
     yield (
         TableDataset(train_table, transform=train_transform, image_format=image_format),
         TableDataset(valid_table, transform=valid_transform, image_format=image_format))

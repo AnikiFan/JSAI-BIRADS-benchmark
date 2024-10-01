@@ -23,7 +23,7 @@ class Trainer:
         self.loss_fn = instantiate(cfg.train.loss_function)
         self.cur_fold = 1
         self.loss, self.f1_score, self.accuracy, self.confusion_matrix = 0, 0, 0, torch.zeros(
-            (self.cfg.train.num_classes, self.cfg.train.num_classes), dtype=torch.int, device=self.cfg.env.device)
+            (self.cfg.dataset.num_classes, self.cfg.dataset.num_classes), dtype=torch.int, device=self.cfg.env.device)
         self.train_transform = instantiate(self.cfg.train_transform)
         self.valid_transform = instantiate(self.cfg.valid_transform)
         self.best_vloss, self.best_vf1, self.best_vaccuracy, self.best_vconfusion_matrix = 1_000_000., None, None, None
@@ -66,7 +66,7 @@ class Trainer:
         :param num_class: 类别数量
         :param tb_writer: TensorBoard 写入器
         '''
-        outputs, labels = [], []
+        # outputs, labels = [], []
 
         model.train(True)
 
@@ -87,7 +87,7 @@ class Trainer:
                 loss = self.loss_fn(input=outputs, target=labels) / self.cfg.train.info_frequency
                 f1 = multiclass_f1_score(input=outputs, target=labels)
                 accuracy = multiclass_accuracy(input=outputs, target=labels)
-
+                #
                 tb_x = epoch_index * len(train_loader) + i
                 tb_writer.add_scalar('Loss/train', loss, tb_x)
                 tb_writer.add_scalar('Accuracy/train', accuracy, tb_x)
@@ -115,7 +115,7 @@ class Trainer:
         :return: 该折训练中，在单个验证集上达到的最佳的指标
         """
         best_loss, best_f1, best_accuracy, best_confusion_matrix = 1_000_000., None, None, None
-        model = instantiate(self.cfg.model)
+        model = instantiate(self.cfg.model,num_classes=self.cfg.dataset.num_classes)
         optimizer = instantiate(self.cfg.optimizer, params=model.parameters())
         writer = SummaryWriter(os.path.join('runs', self.make_writer_title()))
 
@@ -139,9 +139,9 @@ class Trainer:
             avg_vloss = self.loss_fn(prediction, ground_truth)
             avg_vaccuracy = multiclass_accuracy(input=prediction, target=ground_truth).tolist()
             avg_vf1 = multiclass_f1_score(input=prediction, target=ground_truth, average='macro',
-                                          num_classes=self.cfg.train.num_classes).tolist()
+                                          num_classes=self.cfg.dataset.num_classes).tolist()
             confusion_matrix = multiclass_confusion_matrix(input=prediction, target=ground_truth,
-                                                           num_classes=self.cfg.train.num_classes)
+                                                           num_classes=self.cfg.dataset.num_classes)
             info('LOSS      train {} valid {}'.format(avg_loss, avg_vloss))
             info('ACCURACY  train {} valid {}'.format(avg_accuracy, avg_vaccuracy))
             info('F1        train {} valid {}'.format(avg_f1, avg_vf1))

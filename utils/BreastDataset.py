@@ -23,11 +23,11 @@ def make_table(data_folder_path: str, official_train: bool = True, BUS: bool = T
     official_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'train')
     BUS_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'BUS', 'Images')
     USG_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'USG')
-    fea_official_data_path = os.path.join(data_folder_path, 'breas', 'fea', 'official_train', 'image')
+    fea_official_data_path = os.path.join(data_folder_path, 'breast', 'fea', 'official_train', 'images')
     assert os.path.exists(official_data_path), "please use OfficialClaDataOrganizer first!"
     assert os.path.exists(BUS_data_path), "please run replace.ipynb first!"
     assert os.path.exists(USG_data_path), "please run process.ipynb first!"
-    assert os.path.exists(fea_official_data_path), "please run OfficialClaDataOrganizer first!"
+    assert os.path.exists(fea_official_data_path), "please run OfficialFeaDataOrganizer first!"
     if fea_official_train:
         assert not (official_train or BUS or USG), "不能同时选择cla数据和fea数据"
     tables = []

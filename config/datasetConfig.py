@@ -12,23 +12,25 @@ from data.FashionMNIST.MyFashionMNIST import MyFashionMNIST
 
 
 @dataclass
-class DatasetConfig:
+class ClaDatasetConfig:
     data_folder_path: Path = Path()
     image_format: str = "Tensor"
+    num_classes: int = 6
 
 
 @dataclass
-class SingleFoldDatasetConfig(DatasetConfig):
+class SingleFoldDatasetConfig(ClaDatasetConfig):
     _target_: str = "utils.ClaDataset.getClaTrainValidData"
 
 
 @dataclass
-class CrossValidationDatasetConfig(DatasetConfig):
+class CrossValidationDatasetConfig(ClaDatasetConfig):
     _target_: str = "utils.ClaDataset.ClaCrossValidationData"
 
 @dataclass
 class FashionMNISTDatasetConfig:
     _target_: str = "data.FashionMNIST.MyFashionMNIST.MyFashionMNIST"
+    num_classes: int = 10
 
 
 

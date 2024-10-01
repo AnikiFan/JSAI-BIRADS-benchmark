@@ -99,7 +99,7 @@ class ClaCrossValidationData:
                  train_transform: Optional[torchvision.transforms.Compose] = None,
                  valid_transform: Optional[torchvision.transforms.Compose] = None, image_format: str = 'PIL',
                  official_train: bool = True, BUS: bool = True, USG: bool = True, *, seed: int = 42,
-                 augmented_folder_list: Optional[List[str]] = None):
+                 augmented_folder_list: Optional[List[str]] = None,**kwargs):
         """
         初始化返回k折叫交叉验证数据集的迭代器
         :param data_folder_path:
@@ -150,7 +150,7 @@ def getClaTrainValidData(data_folder_path: str, valid_ratio: float = 0.2,
                          train_transform: Optional[torchvision.transforms.Compose] = None,
                          valid_transform: Optional[torchvision.transforms.Compose] = None, official_train: bool = True,
                          BUS: bool = True, USG: bool = True, image_format: str = 'PIL', *, seed: int = 42,
-                         augmented_folder_list: Optional[List[str]] = None) -> Optional[Tuple[TableDataset, TableDataset]]:
+                         augmented_folder_list: Optional[List[str]] = None,**kwargs) -> Optional[Tuple[TableDataset, TableDataset]]:
     """
     返回单折按照给定比例划分的训练集和验证集，用yield返回是为了可以和CV一样用for train_ds,valid_ds in dataset一样来获取
     :param data_folder_path:

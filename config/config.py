@@ -12,10 +12,10 @@ import hydra
 from typing import *
 
 defaults = [
-    {"train": "sanity_check"},
-    {"model": "sanity_check"},
-    {"dataset": "sanity_check"},
-    {"optimizer": "default"},
+    {"train": "default"},
+    {"model": "google_net"},
+    {"dataset": "fashion_mnist"},
+    {"optimizer": "SGD"},
     {"env": "fx"},
     {"train_transform": "default"},
     {"valid_transform": "default"}
@@ -44,16 +44,18 @@ def init_config():
     cs = ConfigStore.instance()
 
     cs.store(group='train', name="default", node=DefaultTrainConfig)
-    cs.store(group='train', name="sanity_check", node=FashionMNISTTrainConfig)
 
+    cs.store(group='model', name="alex_net", node=AlexNetModelConfig)
+    cs.store(group='model', name="google_net", node=GoogleNetModelConfig)
+    cs.store(group='model', name="NiN", node=NiNModelConfig)
+    cs.store(group='model', name="VGG", node=VGGModelConfig)
     cs.store(group='model', name="default", node=DefaultModelConfig)
-    cs.store(group='model', name="sanity_check", node=AlexNetModelConfig)
 
+    cs.store(group='dataset', name="fashion_mnist", node=FashionMNISTDatasetConfig)
     cs.store(group='dataset', name="single", node=SingleFoldDatasetConfig)
     cs.store(group='dataset', name="multiple", node=CrossValidationDatasetConfig)
-    cs.store(group='dataset', name="sanity_check", node=FashionMNISTDatasetConfig)
 
-    cs.store(group='optimizer', name="default", node=DefaultOptimizerConfig)
+    cs.store(group='optimizer', name="SGD", node=SGDOptimizerConfig)
 
     cs.store(group='env', name="fx", node=FXEnvConfig)
     cs.store(group='env', name="zhy", node=ZHYEnvConfig)

@@ -3,6 +3,10 @@ from omegaconf import MISSING
 from pathlib import Path
 from models.UnetClassifer.unet import UnetClassifier
 from models.model4compare.AlexNet import AlexNet
+from models.model4compare.GoogleNet import GoogleNet
+from models.model4compare.NiN import NiN
+from models.model4compare.VGG import VGG
+from typing import *
 
 """
 模型配置，用于直接实例化模型，所以不能有除模型实例化所需参数以外的配置项
@@ -19,7 +23,6 @@ class DefaultModelConfig:
     需要在运行的py文件中import可调用对象
     """
     _target_: str = "models.UnetClassifer.unet.UnetClassifier"
-    num_classes: int = 6
     in_channels: int = 3
     backbone: str = "resnet50"
     pretrained: bool = True
@@ -27,4 +30,19 @@ class DefaultModelConfig:
 @dataclass
 class AlexNetModelConfig:
     _target_:str = "models.model4compare.AlexNet.AlexNet"
-    num_classes: int = 10
+
+
+@dataclass
+class GoogleNetModelConfig:
+    _target_: str = "models.model4compare.GoogleNet.GoogleNet"
+
+
+@dataclass
+class NiNModelConfig:
+    _target_: str = "models.model4compare.NiN.NiN"
+
+
+@dataclass
+class VGGModelConfig:
+    _target_: str = "models.model4compare.VGG.VGG"
+    arch:List[List[int]] = field(default_factory=lambda:[[1, 64], [1, 128], [2, 256], [2, 512], [2, 512]])

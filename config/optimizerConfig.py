@@ -12,7 +12,7 @@ from typing import *
 
 
 @dataclass
-class DefaultOptimizerConfig:
+class SGDOptimizerConfig:
     """
     传入params，这里设置的[]只是为了避免报错
     """

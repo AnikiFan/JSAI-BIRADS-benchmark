@@ -17,8 +17,8 @@ from typing import *
 class Config:
     defaults: List[Any] = field(default_factory=lambda: [
         {"train": "default"},
-        {"model": "pretrained_resnet"},
-        {"dataset": "mnist"},
+        {"model": "alex_net"},
+        {"dataset": "multiple"},
         {"optimizer": "SGD"},
         {"env": "fx"},
         {"train_transform": "default"},

@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from omegaconf import MISSING
 from pathlib import Path
-from utils.ClaDataset import getClaTrainValidData, ClaCrossValidationData
+from utils.BreastDataset import getBreastTrainValidData, BreastCrossValidationData
 import os
 from data.FashionMNIST.MyFashionMNIST import MyFashionMNIST
 from data.MNIST.MyMNIST import MyMNIST
@@ -22,12 +22,12 @@ class ClaDatasetConfig:
 
 @dataclass
 class SingleFoldDatasetConfig(ClaDatasetConfig):
-    _target_: str = "utils.ClaDataset.getClaTrainValidData"
+    _target_: str = "utils.BreastDataset.getBreastTrainValidData"
 
 
 @dataclass
 class CrossValidationDatasetConfig(ClaDatasetConfig):
-    _target_: str = "utils.ClaDataset.ClaCrossValidationData"
+    _target_: str = "utils.BreastDataset.BreastCrossValidationData"
 
 @dataclass
 class FashionMNISTDatasetConfig:

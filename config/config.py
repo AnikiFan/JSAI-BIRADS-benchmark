@@ -8,6 +8,7 @@ from .modelConfig import *
 from .optimizerConfig import *
 from .envConfig import *
 from .transformConfig import *
+from .schedularConfig import *
 import hydra
 from typing import *
 
@@ -16,16 +17,17 @@ from typing import *
 class Config:
     defaults: List[Any] = field(default_factory=lambda: [
         {"train": "default"},
-        {"model": "VGG"},
+        {"model": "linear_sanity_check"},
         {"dataset": "mnist"},
         {"optimizer": "SGD"},
         {"env": "fx"},
         {"train_transform": "default"},
         {"valid_transform": "default"},
+        {"schedular": "exponential"},
 
-        # 彩色日志插件
-        {"override hydra/job_logging": "colorlog"},
-        {"override hydra/hydra_logging": "colorlog"}
+        # 彩色日志插件，会导致无法自动保存日志
+        # {"override hydra/job_logging": "colorlog"},
+        # {"override hydra/hydra_logging": "colorlog"}
     ])
     train: Any = MISSING
     model: Any = MISSING
@@ -34,6 +36,7 @@ class Config:
     env: Any = MISSING
     train_transform: Any = MISSING
     valid_transform: Any = MISSING
+    schedular: Any = MISSING
 
 
 # TODO: 为了适配多特征识别任务，可能需要将指标评价方法也加入配置中
@@ -72,6 +75,9 @@ def init_config():
     cs.store(group='train_transform', name="default", node=DefaultTrainTransformConfig)
 
     cs.store(group='valid_transform', name="default", node=DefaultValidTransformConfig)
+
+    cs.store(group='schedular', name="exponential", node=ExponentialLRConfig)
+    cs.store(group='schedular', name="dummy", node=DummySchedularConfig)
 
     # 初始化
     cs.store(name="config", node=Config)

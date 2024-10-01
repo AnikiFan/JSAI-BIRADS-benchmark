@@ -27,6 +27,7 @@ class DefaultModelConfig:
     in_channels: int = 3
     backbone: str = "resnet50"
     pretrained: bool = True
+    lr:float=0.001
 
 @dataclass
 class AlexNetModelConfig:
@@ -44,7 +45,6 @@ class GoogleNetModelConfig:
 class NiNModelConfig:
     _target_: str = "models.model4compare.NiN.NiN"
     lr:float=0.01
-
 
 @dataclass
 class VGGModelConfig:

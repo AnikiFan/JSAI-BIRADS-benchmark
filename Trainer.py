@@ -86,8 +86,8 @@ class Trainer:
             loss = self.loss_fn(outputs, labels)
             loss.backward()
 
-            # running_accuracy += multiclass_accuracy(outputs, labels).tolist()
-            # running_f1 += multiclass_f1_score(outputs, labels, average='macro', num_classes=self.cfg.dataset.num_classes).tolist()
+            running_accuracy += multiclass_accuracy(outputs, labels).tolist()
+            running_f1 += multiclass_f1_score(outputs, labels, average='macro', num_classes=self.cfg.dataset.num_classes).tolist()
 
             optimizer.step()
 

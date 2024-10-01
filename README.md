@@ -55,7 +55,16 @@ node参数将配置树中的结点与python中的类关联起来，这些类要�
 
 ***要注意的是，上面的代码中，node=后跟的是python中的类的名字，而group,name传入的是字符串，而hydra库所接受到的信息只有那些字符串，与我们起的类名没有关系***
 
-***只有使用cs.store进行定义的配置才能够使用，光写对应的类是没有用的***
+***只有使用cs.store进行初始化的配置才能够使用，光写对应的类是没有用的***
+
+```python
+# Using the type
+cs.store(name="config1", node=MySQLConfig)
+# Using an instance, overriding some default values
+cs.store(name="config2", node=MySQLConfig(host="test.db", port=3307))
+```
+第一种方式将config1与MySQLConfig类中定义的配置相关联。第二种方式则用`host="test.db"`和`port=3307`来进行覆盖，对学习率等参数进行微调的话第二种方式比较方便，
+不用重复设置多个类。
 
 当我们想在某个函数中使用配置的参数时，需要用`@hydra.main`进行装饰：
 
@@ -125,10 +134,10 @@ class AlexNetModelConfig:
     num_classes: int = 10
 ```
 用`cs.store(group='model',name='sanity_check')`，然后修改defaults，在程序中可以用`instantiate(cfg.model)`来获取该对象。`_target_`是在AlexNetModelConfig类所在文件import
- AlexNet的路径，num_classes是实例化AlexNet所需要的参数。如果类中有'_target_'项，hydra库就会把其它的配置项都用于实例化该类，所以，不能缺少实例化所需的参数，如果必须包含额外的信息，例如dataset配置中，
+ AlexNet的路径，num_classes是实例化AlexNet所需要的参数。如果类中有'_target_'项，hydra库就会把该类下面的其它的成员都作为用于实例化该类的参数，所以，该类的成员必须包含实例化所需的所有参数，如果必须包含额外的信息，例如dataset配置中，
 想要包含num_classes信息，但是实例化时又用不到num_classes参数，可以在定义类时，使用`**kwargs`来接受额外的关键字参数，如果是第三方库中的类，可以自行包装一下。
 
-如果实例化所需要的参数要在运行时才能获取，例如optimizer的params，需要运行时从model获取。则可以在定义配置时，用符合要求的数据暂时代替，在程序中调用`instantiate`函数时以关键字的形式传入。
+如果实例化所需要的参数要在运行时才能获取，例如optimizer的params，需要运行时从model获取。则可以在定义配置时，用`omegaconf.MISSING`代替，在程序中调用`instantiate`函数时以关键字的形式传入。
 
 ### 配置继承
 
@@ -147,7 +156,7 @@ class FXEnvConfig(EnvConfig):
 
 ### 配置中的类型
 
-配置中可以使用`str,int,float,Path`类，同时也支持自定义的类（要用field函数）和`list`：
+配置中可以使用`str,int,float,Path`类，同时也支持自定义的类和`list`（要用`field`函数）：
 
 ```python
 @dataclass
@@ -161,7 +170,7 @@ class DefaultTrainConfig(ClaTrainConfig):
     loss_function: LossFunction = field(default_factory=LossFunction)
 ```
 
-要注意的是，不支持`tuple`，并且，类型为`list`的是，最好指定`_convert_="all"`，来确保配置生成的参数是`list`，否则会是hydra库自定义的类。
+要注意的是，不支持`tuple`，并且，类型为`list`时，最好指定`_convert_="all"`，来确保配置生成的参数是`list`，否则会是hydra库自定义的类。
 ```python
 @dataclass
 class ResizeConfig:
@@ -215,7 +224,7 @@ Trainer类用于执行不同配置的训练任务。训练任务中所用到的�
                            pin_memory_device=self.cfg.env.device)
             )
 ```
-数据集在此处被实例化，唯一的要求是数据集类是迭代器类型，每次迭代返回训练集和验证集，并且训练集和验证集能够用于实例化`DataLoader`类(因此要求label应该是一个整体，不能拆分开来)。
+数据集在此处被实例化，唯一的要求是数据集类是迭代器类型，每次迭代返回训练集和验证集，并且训练集和验证集能够用于实例化`DataLoader`类(因此要求数据集类中存储的是input,label对)。
 如果不需要`data_folder_path`等参数，可以在参数列表中写上`**kwargs`来接收多余的关键字参数。
 
 ### 模型
@@ -317,7 +326,7 @@ class Trainer:
             loss.backward()
             optimizer.step()
 ```
-在此使用，需要能够根据模型的输出和label进行计算
+在此使用，需要能够根据`model`的返回的`output`和`dataset`返回的`label`进行计算
 
 ### 图像变换
 
@@ -362,15 +371,15 @@ file_name，存储的是各图像的文件名，带后缀名，另一列是label
 ### `ClaDataset.py`
 
 核心是`make_table`函数，用处是将训练所需要的图像所在文件夹中的`ground_truth.csv`集中起来，
-传给`TableDataset``
+传给`TableDataset`
 
 `getClaTrainValidDataset`和`ClaCrossValidation`分别用于单折和多折交叉验证所需的数据集。
 目前主要正对分类任务进行设计，若要扩展到特征识别任务，只需更改`make_table`函数即可，增加特征识别的数据集对应选项。
 
-`getClaTrainValidDataset`和`ClaCrossValidation`还支持图像增广数据，需要传入增广数据所在文件夹的list。
-`splitAugmentedImage`会根据包含在验证集中的文件集的文件名来筛选出可以加入训练集的增广后的图像，避免数据泄露。
+`getClaTrainValidDataset`和`ClaCrossValidation`还支持图像增广数据，需要传入由所用增广数据所在文件夹组成的list。
+`splitAugmentedImage`会根据包含在验证集中的图像文件名来筛选出可以加入训练集的增广后的图像，避免数据泄露。
 
-***这里的验证集划分比例都没有考虑增广后的数据，所以若引入很多增广后的数据，验证集的比例会远小于1/5***
+***这里的验证集划分比例都没有考虑增广后的数据，所以若引入很多增广后的数据，验证集的比例会远小于指定的比例***
 
 # tensorboard使用方法
 

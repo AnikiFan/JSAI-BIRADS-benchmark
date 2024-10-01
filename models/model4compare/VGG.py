@@ -12,7 +12,7 @@ def vgg_block(num_convs, out_channels):
 
 
 class VGG(nn.Module):
-    def __init__(self, arch, num_classes=10):
+    def __init__(self, arch, num_classes=10,**kwargs):
         super().__init__()
         conv_blks = []
         for (num_convs, out_channels) in arch:

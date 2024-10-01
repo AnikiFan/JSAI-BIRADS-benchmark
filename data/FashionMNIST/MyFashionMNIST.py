@@ -15,6 +15,6 @@ class MyFashionMNIST:
         if not self.finish:
             self.finish = True
             return (
-            FashionMNIST(self.root, train=True, download=True, transform=Compose([Resize((224, 224)), ToTensor()])),
-            FashionMNIST(self.root, train=False, download=True, transform=Compose([Resize((224, 224)), ToTensor()])))
+            FashionMNIST(self.root, train=True, download=True, transform=Compose([Resize((128, 128)), ToTensor()])),
+            FashionMNIST(self.root, train=False, download=True, transform=Compose([Resize((128, 128)), ToTensor()])))
         raise StopIteration

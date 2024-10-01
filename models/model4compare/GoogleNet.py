@@ -29,7 +29,7 @@ class Inception(nn.Module):
 
 
 class GoogleNet(nn.Module):
-    def __init__(self, num_classes=10):
+    def __init__(self, num_classes=10,**kwargs):
         super(GoogleNet, self).__init__()
         self.net = nn.Sequential(self.b1(), self.b2(), self.b3(), self.b4(),
                                  self.b5(), nn.LazyLinear(num_classes))

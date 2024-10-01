@@ -11,20 +11,22 @@ from .transformConfig import *
 import hydra
 from typing import *
 
-defaults = [
-    {"train": "default"},
-    {"model": "google_net"},
-    {"dataset": "fashion_mnist"},
-    {"optimizer": "SGD"},
-    {"env": "fx"},
-    {"train_transform": "default"},
-    {"valid_transform": "default"}
-]
-
 
 @dataclass
 class Config:
-    defaults: List[Any] = field(default_factory=lambda: defaults)
+    defaults: List[Any] = field(default_factory=lambda: [
+        {"train": "default"},
+        {"model": "VGG"},
+        {"dataset": "mnist"},
+        {"optimizer": "SGD"},
+        {"env": "fx"},
+        {"train_transform": "default"},
+        {"valid_transform": "default"},
+
+        # 彩色日志插件
+        {"override hydra/job_logging": "colorlog"},
+        {"override hydra/hydra_logging": "colorlog"}
+    ])
     train: Any = MISSING
     model: Any = MISSING
     dataset: Any = MISSING
@@ -32,6 +34,8 @@ class Config:
     env: Any = MISSING
     train_transform: Any = MISSING
     valid_transform: Any = MISSING
+
+
 # TODO: 为了适配多特征识别任务，可能需要将指标评价方法也加入配置中
 
 
@@ -49,9 +53,13 @@ def init_config():
     cs.store(group='model', name="google_net", node=GoogleNetModelConfig)
     cs.store(group='model', name="NiN", node=NiNModelConfig)
     cs.store(group='model', name="VGG", node=VGGModelConfig)
+    cs.store(group='model', name="linear_sanity_check", node=LinearSanityCheckerModelConfig)
+    cs.store(group='model', name="conv_sanity_check", node=ConvSanityCheckerModelConfig)
     cs.store(group='model', name="default", node=DefaultModelConfig)
 
     cs.store(group='dataset', name="fashion_mnist", node=FashionMNISTDatasetConfig)
+    cs.store(group='dataset', name="mnist", node=MNISTDatasetConfig)
+    cs.store(group='dataset', name="cifar10", node=CIFAR10DatasetConfig)
     cs.store(group='dataset', name="single", node=SingleFoldDatasetConfig)
     cs.store(group='dataset', name="multiple", node=CrossValidationDatasetConfig)
 

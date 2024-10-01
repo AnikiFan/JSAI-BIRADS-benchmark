@@ -17,5 +17,4 @@ class SGDOptimizerConfig:
     传入params，这里设置的[]只是为了避免报错
     """
     _target_: str = "torch.optim.SGD"
-    lr: float = 0.1
-    params: Any = field(default_factory=lambda: [])
+    params:Any=MISSING

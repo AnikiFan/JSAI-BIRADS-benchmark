@@ -6,6 +6,7 @@ from models.model4compare.AlexNet import AlexNet
 from models.model4compare.GoogleNet import GoogleNet
 from models.model4compare.NiN import NiN
 from models.model4compare.VGG import VGG
+from models.model4compare.SanityChecker import LinearSanityChecker,ConvSanityChecker
 from typing import *
 
 """
@@ -30,19 +31,33 @@ class DefaultModelConfig:
 @dataclass
 class AlexNetModelConfig:
     _target_:str = "models.model4compare.AlexNet.AlexNet"
+    lr:float=0.001
 
 
 @dataclass
 class GoogleNetModelConfig:
     _target_: str = "models.model4compare.GoogleNet.GoogleNet"
+    lr:float=0.1
 
 
 @dataclass
 class NiNModelConfig:
     _target_: str = "models.model4compare.NiN.NiN"
+    lr:float=0.01
 
 
 @dataclass
 class VGGModelConfig:
     _target_: str = "models.model4compare.VGG.VGG"
+    lr:float=0.01
     arch:List[List[int]] = field(default_factory=lambda:[[1, 64], [1, 128], [2, 256], [2, 512], [2, 512]])
+
+@dataclass
+class LinearSanityCheckerModelConfig:
+    _target_: str = "models.model4compare.SanityChecker.LinearSanityChecker"
+    lr:float=0.001
+
+@dataclass
+class ConvSanityCheckerModelConfig:
+    _target_: str = "models.model4compare.SanityChecker.ConvSanityChecker"
+    lr:float=0.001

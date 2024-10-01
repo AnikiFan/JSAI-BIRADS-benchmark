@@ -1,9 +1,13 @@
 import torch
 from torch import nn
 
+def init_cnn(module):
+    """Initialize weights for CNNs."""
+    if type(module) == nn.Linear or type(module) == nn.Conv2d:
+        nn.init.xavier_uniform_(module.weight)
 
 class AlexNet(nn.Module):
-    def __init__(self, num_classes=10):
+    def __init__(self, num_classes=10,**kwargs):
         super().__init__()
         self.net = nn.Sequential(
             nn.LazyConv2d(96, kernel_size=11, stride=4, padding=1),

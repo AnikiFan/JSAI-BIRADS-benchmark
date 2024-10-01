@@ -66,44 +66,66 @@ class Trainer:
         :param num_class: 类别数量
         :param tb_writer: TensorBoard 写入器
         '''
-        # outputs, labels = [], []
+        running_loss = 0.
+        running_accuracy = 0.
+        running_f1 = 0.
+        last_loss = 0.
+        last_accuracy = 0.
+        last_f1 = 0.
 
         model.train(True)
 
-        for i, data in enumerate(tqdm(train_loader, desc=f"Epoch {epoch_index}"), start=1):
-            input, label = data
-            input = input.to(self.cfg.env.device)
-            label = label.to(self.cfg.env.device)
+        for i, data in enumerate(tqdm(train_loader, desc=f"Epoch {epoch_index}")):
+            inputs, labels = data
+            if self.cfg.env.device != "cpu":
+                inputs = inputs.to(torch.device(self.cfg.env.device))
+                labels = labels.to(torch.device(self.cfg.env.device))
+
             optimizer.zero_grad()
-            output = model(input)
-            outputs.append(output)
-            labels.append(label)
-            loss = self.loss_fn(output, label)
+            outputs = model(inputs)
+            loss = self.loss_fn(outputs, labels)
             loss.backward()
+
+            # running_accuracy += multiclass_accuracy(outputs, labels).tolist()
+            # running_f1 += multiclass_f1_score(outputs, labels, average='macro', num_classes=self.cfg.dataset.num_classes).tolist()
+
             optimizer.step()
-            if i % self.cfg.train.info_frequency == 0:
+
+            running_loss += loss.item()
+            frequency = self.cfg.train.info_frequency
+            is_last_batch = (i == len(train_loader) - 1)
+            if (i % frequency == frequency - 1) or is_last_batch:
                 # 计算实际的批次数
-                outputs, labels = torch.cat(outputs, dim=0), torch.cat(labels, dim=0)
-                loss = self.loss_fn(input=outputs, target=labels) / self.cfg.train.info_frequency
-                f1 = multiclass_f1_score(input=outputs, target=labels)
-                accuracy = multiclass_accuracy(input=outputs, target=labels)
-                #
-                tb_x = epoch_index * len(train_loader) + i
-                tb_writer.add_scalar('Loss/train', loss, tb_x)
-                tb_writer.add_scalar('Accuracy/train', accuracy, tb_x)
-                tb_writer.add_scalar('F1/train', f1, tb_x)
-                outputs, labels = [], []
-        # 为了避免指标出现大幅波动，不对尾部剩余的一小部分计算指标
-        return loss, accuracy, f1
+                batch_count = frequency if not is_last_batch else (i % frequency + 1)
+                last_loss = running_loss / batch_count
+                last_accuracy = running_accuracy / batch_count
+                last_f1 = running_f1 / batch_count
+                last_accuracy = running_accuracy / batch_count
+
+                tb_x = epoch_index * len(train_loader) + i + 1
+                tb_writer.add_scalar('Loss/train', last_loss, tb_x)
+                tb_writer.add_scalar('Accuracy/train', last_accuracy, tb_x)
+                tb_writer.add_scalar('F1/train', last_f1, tb_x)
+                tb_writer.add_scalar('Accuracy/train', last_accuracy, tb_x)
+
+                running_loss = 0.
+                running_accuracy = 0.
+                running_f1 = 0.
+
+        return last_loss, last_accuracy, last_f1
 
     def make_writer_title(self) -> str:
         """
         制作tensorboard的标题
         :return:
         """
-        return '_'.join(map(str, [self.cfg.model._target_, self.cfg.optimizer.lr,
+        return '_'.join(map(str, [self.cfg.model._target_, self.cfg.model.lr,
                                   '-'.join(HydraConfig.get().runtime.output_dir.split(os.sep)[-2:]), self.cur_fold,
                                   'fold']))
+    @staticmethod
+    def init_weights(m):
+        if type(m) == torch.nn.Linear or type(m) == torch.nn.Conv2d:
+            torch.nn.init.xavier_uniform_(m.weight)
 
     @time_logger
     def train_one_fold(self, train_loader: DataLoader, valid_loader: DataLoader) -> Tuple[
@@ -115,7 +137,9 @@ class Trainer:
         :return: 该折训练中，在单个验证集上达到的最佳的指标
         """
         best_loss, best_f1, best_accuracy, best_confusion_matrix = 1_000_000., None, None, None
-        model = instantiate(self.cfg.model,num_classes=self.cfg.dataset.num_classes)
+        model = instantiate(self.cfg.model,num_classes=self.cfg.dataset.num_classes).to(self.cfg.env.device)
+        model.forward(next(iter(train_loader))[0].to(self.cfg.env.device))
+        model.apply(Trainer.init_weights)
         optimizer = instantiate(self.cfg.optimizer, params=model.parameters())
         writer = SummaryWriter(os.path.join('runs', self.make_writer_title()))
 

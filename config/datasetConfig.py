@@ -4,6 +4,8 @@ from pathlib import Path
 from utils.ClaDataset import getClaTrainValidData, ClaCrossValidationData
 import os
 from data.FashionMNIST.MyFashionMNIST import MyFashionMNIST
+from data.MNIST.MyMNIST import MyMNIST
+from data.CIFAR10.MyCIFAR10 import MyCIFAR10
 
 """
 数据集配置，用于直接实例化数据集，所以不能有数据集所需的参数以外的配置项
@@ -13,7 +15,7 @@ from data.FashionMNIST.MyFashionMNIST import MyFashionMNIST
 
 @dataclass
 class ClaDatasetConfig:
-    data_folder_path: Path = Path()
+    data_folder_path: Path = MISSING
     image_format: str = "Tensor"
     num_classes: int = 6
 
@@ -32,5 +34,13 @@ class FashionMNISTDatasetConfig:
     _target_: str = "data.FashionMNIST.MyFashionMNIST.MyFashionMNIST"
     num_classes: int = 10
 
+@dataclass
+class MNISTDatasetConfig:
+    _target_: str = "data.MNIST.MyMNIST.MyMNIST"
+    num_classes: int = 10
 
+@dataclass
+class CIFAR10DatasetConfig:
+    _target_: str = "data.CIFAR10.MyCIFAR10.MyCIFAR10"
+    num_classes: int = 10
 

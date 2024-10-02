@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from logging import warning
 import torchvision.transforms
-from TableDataset import TableDataset
+from utils.TableDataset import TableDataset
 from typing import *
 import re
 from logging import debug

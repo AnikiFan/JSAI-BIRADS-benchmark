@@ -1,13 +1,13 @@
 from dataclasses import dataclass, field
 from omegaconf import MISSING
 from hydra.core.config_store import ConfigStore
-from config.trainConfig import *
-from config.datasetConfig import *
-from config.modelConfig import *
-from config.optimizerConfig import *
-from config.envConfig import *
-from config.transformConfig import *
-from config.schedularConfig import *
+from .trainConfig import *
+from .datasetConfig import *
+from .modelConfig import *
+from .optimizerConfig import *
+from .envConfig import *
+from .transformConfig import *
+from .schedularConfig import *
 from typing import *
 
 

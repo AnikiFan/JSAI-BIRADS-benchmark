@@ -21,6 +21,8 @@ class OfficialFeaDataOrganizer:
         self.src = src
         if os.path.exists(os.path.join(self.src, "images","ground_truth.csv")):
             os.remove(os.path.join(self.src, "images","ground_truth.csv"))
+        if os.path.exists(os.path.join(self.src, "images", "fea_order.csv")):
+            os.remove(os.path.join(self.src, "images", "fea_order.csv"))
         self.images = os.listdir(os.path.join(self.src, "images"))
 
     def check(self, file_name):
@@ -53,7 +55,7 @@ class OfficialFeaDataOrganizer:
             with open(label_file, "r") as f:
                 content = f.readline()[0]
                 labels.append(content.split(' ')[0])
-        return ','.join(labels)
+        return ''.join(labels)
 
     def organize(self, ignore):
         if not ignore:

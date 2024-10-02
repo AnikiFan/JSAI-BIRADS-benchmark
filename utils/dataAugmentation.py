@@ -6,8 +6,7 @@ import albumentations as A
 from BreastDataset import make_table
 import re
 from warnings import warn
-
-from sipbuild import Option
+from typing import *
 
 
 def remove_nested_parentheses(s: str)->str:
@@ -17,7 +16,7 @@ def remove_nested_parentheses(s: str)->str:
     return s
 
 
-def make_fingerprint(transform: A.Compose, ratio: Tuple[float])->Tuple[str,str]:
+def make_fingerprint(transform: A.Compose, ratio: Optional[Tuple[float]])->Tuple[str,str]:
     """
     根据变换创建标识名称，一短一长，短的用于文件夹，长的写入txt中
     :param transform: 一个Aalbumentations的Compose对象！这里利用了该对象的str表示方法首尾两行为括号的特性！
@@ -28,10 +27,12 @@ def make_fingerprint(transform: A.Compose, ratio: Tuple[float])->Tuple[str,str]:
     full = fingerprint
     fingerprint = remove_nested_parentheses(fingerprint)
 
-    fingerprint += 'ratio=' + str(tuple(ratio))
+    if type(ratio)!=type(None):
+        fingerprint += 'ratio=' + str(tuple(ratio))
     fingerprint = re.sub(r'[<>:"/\\|?*]', '_', fingerprint).replace(' ', '').rstrip(',')
 
-    full += 'ratio=' + str(tuple(ratio))
+    if type(ratio)!=type(None):
+        full += 'ratio=' + str(tuple(ratio))
     full = re.sub(r'[<>:"/\\|?*]', '_', full).replace(' ', '').rstrip(',')
     return fingerprint, full
 
@@ -119,17 +120,25 @@ class MixUp:
 
 class Preprocess:
     def __init__(self, transform: A.Compose, ratio: Optional[Tuple[float]] = None,
-                 data_folder_path: str = os.path.join(os.pardir, 'data')):
+                 data_folder_path: str = os.path.join(os.pardir, 'data'), official_train: bool = True, BUS: bool = True,
+                 USG: bool = True,fea_official_train:bool=False):
         self.transform = transform
         self.data_folder_path = data_folder_path
-        self.table = make_table(data_folder_path=self.data_folder_path, official_train=True, BUS=True, USG=True)
+        self.table = make_table(data_folder_path=self.data_folder_path, official_train=official_train, BUS=BUS, USG=USG,fea_official_train=fea_official_train)
         if not ratio:
             ratio = np.ones(self.table.label.nunique())
         if not isinstance(ratio, np.ndarray):
             ratio = np.array(ratio)
+        if fea_official_train:
+            self.task = 'fea'
+            ratio = None
+        else:
+            self.task = "cla"
+        
         self.short_description, self.full_description = make_fingerprint(transform, ratio)
-        self.table = make_ratio_table(self.table, ratio)
-        self.dst_folder = os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', self.short_description)
+        if not fea_official_train:
+            self.table = make_ratio_table(self.table, ratio)
+        self.dst_folder = os.path.join(self.data_folder_path, 'breast', self.task, 'augmented', self.short_description)
         self.ratio = ratio
 
     def read_transform_write(self, row)->str:
@@ -150,28 +159,35 @@ class Preprocess:
             warn(f"{self.short_description} already exists! stop augment")
             return
         os.makedirs(self.dst_folder)
-        self.table.file_name = self.table.apply(self.read_transform_write, axis=1)
-        self.table.drop(["no"], axis=1, inplace=True)
+        if self.task == 'cla':
+            self.table.file_name = self.table.apply(self.read_transform_write, axis=1)
+            self.table.drop(["no"], axis=1, inplace=True)
+        else:
+            self.table.file_name.apply(lambda x:cv2.imwrite(os.path.join(self.dst_folder,x),np.array(self.transform(image=cv2.imread(filename=x)['image']))))
         self.table.to_csv(os.path.join(self.dst_folder, 'ground_truth.csv'), index=False)
         with open(os.path.join(self.dst_folder, 'README.txt'), 'w') as file:
             file.write(self.full_description)
 
 
 if __name__ == '__main__':
-    ratio = [2, 1, 3, 4, 5, 6]
-    MixUp(0.4, ratio=ratio).process_image()
-
-    transform = A.Compose([A.Rotate(limit=10, always_apply=True), A.HorizontalFlip(always_apply=True)])
-    Preprocess(transform, ratio=ratio).process_image()
-
     transform = A.Compose([A.Rotate(limit=10, always_apply=True)])
-    Preprocess(transform, ratio=ratio).process_image()
+    Preprocess(transform,official_train=False,BUS=False,USG=False,fea_official_train=True).process_image()
 
-    transform = A.Compose([A.RandomBrightnessContrast(always_apply=True)])
-    Preprocess(transform, ratio=ratio).process_image()
+    # ratio = [2, 1, 3, 4, 5, 6]
+    # MixUp(0.4, ratio=ratio).process_image()
 
-    transform = A.Compose([A.Perspective(scale=(0.05, 0.1), always_apply=True)])
-    Preprocess(transform, ratio=ratio).process_image()
+    # transform = A.Compose([A.Rotate(limit=10, always_apply=True), A.HorizontalFlip(always_apply=True)])
+    # Preprocess(transform, ratio=ratio).process_image()
 
-    transform = A.Compose([A.ElasticTransform(alpha=1, sigma=50, always_apply=True)])
-    Preprocess(transform, ratio=ratio).process_image()
+    # transform = A.Compose([A.Rotate(limit=10, always_apply=True)])
+    # Preprocess(transform, ratio=ratio).process_image()
+
+    # transform = A.Compose([A.RandomBrightnessContrast(always_apply=True)])
+    # Preprocess(transform, ratio=ratio).process_image()
+
+    # transform = A.Compose([A.Perspective(scale=(0.05, 0.1), always_apply=True)])
+    # Preprocess(transform, ratio=ratio).process_image()
+
+    # transform = A.Compose([A.ElasticTransform(alpha=1, sigma=50, always_apply=True)])
+    # Preprocess(transform, ratio=ratio).process_image()
+

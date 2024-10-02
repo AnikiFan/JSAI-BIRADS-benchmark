@@ -1,11 +1,6 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from omegaconf import MISSING
-from pathlib import Path
-from utils.tools import getDevice
-from torch.optim import SGD
 from typing import *
-from torch.optim.lr_scheduler import ExponentialLR
-from utils.schedular import DummyScheduler
 
 """
 用于实例化lr_schedular的配置
@@ -21,4 +16,7 @@ class ExponentialLRConfig:
 
 @dataclass
 class DummySchedularConfig:
+    """
+    不对lr有任何调整的schedular
+    """
     _target_: str = "utils.schedular.DummyScheduler"

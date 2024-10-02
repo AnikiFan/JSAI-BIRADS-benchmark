@@ -20,12 +20,15 @@ class ClaDatasetConfig:
     image_format: str = "Tensor"
     num_classes: int = 6
 
-
 @dataclass
-class SingleFoldDatasetConfig(ClaDatasetConfig):
-    _target_: str = "utils.BreastDataset.getBreastTrainValidData"
+class ClaAugmentedDatasetConfig:
     augmented_folder_list: List[Path] = field(
         default_factory=lambda:[os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'Mixup,ratio=(2,1,3,4,5,6)')])
+ 
+
+@dataclass
+class SingleFoldDatasetConfig(ClaDatasetConfig,ClaAugmentedDatasetConfig):
+    _target_: str = "utils.BreastDataset.getBreastTrainValidData"
     _convert_: str = "all"
 
 

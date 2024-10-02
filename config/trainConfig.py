@@ -2,12 +2,7 @@ from dataclasses import dataclass, field
 from omegaconf import MISSING
 from pathlib import Path
 from typing import *
-from utils.tools import getDevice
 from utils.earlyStopping import EarlyStopping
-from torcheval.metrics.functional import multiclass_f1_score, multiclass_accuracy, multiclass_confusion_matrix, \
-    multilabel_accuracy
-from utils.metrics import multilabel_confusion_matrix, multilabel_f1_score
-from torch import Tensor
 
 """
 训练过程配置，例如损失函数，早停等参数设置

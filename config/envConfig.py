@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from omegaconf import MISSING
 from pathlib import Path
 import os
 from utils.tools import getDevice
@@ -12,7 +11,7 @@ from utils.tools import getDevice
 @dataclass
 class EnvConfig:
     device: str = getDevice()
-    pin_memory: bool = getDevice() == "cuda"
+    pin_memory: bool = True
 
 
 @dataclass

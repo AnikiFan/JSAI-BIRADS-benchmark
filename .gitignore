@@ -17,3 +17,8 @@ checkPoint/*
 *.json
 *.iml
 *.pth
+outputs/*
+*.csv
+*.CSV
+*.xlsx
+*.ipynb

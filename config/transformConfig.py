@@ -1,10 +1,5 @@
 from dataclasses import dataclass, field
-from omegaconf import MISSING
-from pathlib import Path
 from typing import *
-from torchvision.transforms import Compose, ToTensor
-from utils.MyBlock.MyCrop import MyCrop
-from utils.PILResize import PILResize
 
 """
 图像变换配置

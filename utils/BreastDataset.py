@@ -44,7 +44,7 @@ def make_table(data_folder_path: str, official_train: bool = True, BUS: bool = T
         table.file_name = table.file_name.apply(lambda x: os.path.join(USG_data_path, x))
         tables.append(table)
     if fea_official_train:
-        table = pd.read_csv(os.path.join(USG_data_path, 'ground_truth.csv'))
+        table = pd.read_csv(os.path.join(fea_official_data_path, 'ground_truth.csv'),dtype=str)
         table.file_name = table.file_name.apply(lambda x: os.path.join(fea_official_data_path, x))
         tables.append(table)
     assert len(tables), "No selected dataset!"

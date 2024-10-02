@@ -163,7 +163,7 @@ class Preprocess:
             self.table.file_name = self.table.apply(self.read_transform_write, axis=1)
             self.table.drop(["no"], axis=1, inplace=True)
         else:
-            self.table.file_name.apply(lambda x:cv2.imwrite(os.path.join(self.dst_folder,x),np.array(self.transform(image=cv2.imread(filename=x)['image']))))
+            self.table.file_name.apply(lambda x:cv2.imwrite(os.path.join(self.dst_folder,x.split(os.sep)[-1]),np.array(self.transform(image=cv2.imread(filename=x))['image'])))
         self.table.to_csv(os.path.join(self.dst_folder, 'ground_truth.csv'), index=False)
         with open(os.path.join(self.dst_folder, 'README.txt'), 'w') as file:
             file.write(self.full_description)
@@ -173,7 +173,7 @@ if __name__ == '__main__':
     transform = A.Compose([A.Rotate(limit=10, always_apply=True)])
     Preprocess(transform,official_train=False,BUS=False,USG=False,fea_official_train=True).process_image()
 
-    # ratio = [2, 1, 3, 4, 5, 6]
+    ratio = [2, 1, 3, 4, 5, 6]
     # MixUp(0.4, ratio=ratio).process_image()
 
     # transform = A.Compose([A.Rotate(limit=10, always_apply=True), A.HorizontalFlip(always_apply=True)])
@@ -184,6 +184,10 @@ if __name__ == '__main__':
 
     # transform = A.Compose([A.RandomBrightnessContrast(always_apply=True)])
     # Preprocess(transform, ratio=ratio).process_image()
+
+    transform = A.Compose([A.VerticalFlip(always_apply=True)])
+    Preprocess(transform, ratio=ratio).process_image()
+
 
     # transform = A.Compose([A.Perspective(scale=(0.05, 0.1), always_apply=True)])
     # Preprocess(transform, ratio=ratio).process_image()

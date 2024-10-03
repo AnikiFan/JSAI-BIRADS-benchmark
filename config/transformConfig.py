@@ -9,13 +9,13 @@ from typing import *
 @dataclass
 class DefaultTrainTransformConfig:
     _target_: str = "torchvision.transforms.Compose"
-    transforms: List[Any] = field(default_factory=lambda: [MyCropConfig(), ResizeConfig()])
+    transforms: List[Any] = field(default_factory=lambda: [ ResizeConfig()])
 
 
 @dataclass
 class DefaultValidTransformConfig:
     _target_: str = "torchvision.transforms.Compose"
-    transforms: List[Any] = field(default_factory=lambda: [MyCropConfig(), ResizeConfig()])
+    transforms: List[Any] = field(default_factory=lambda: [ ResizeConfig()])
 
 
 @dataclass

@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from omegaconf import MISSING
 from hydra.core.config_store import ConfigStore
+from hydra.conf import HydraConf
 from .trainConfig import *
 from .datasetConfig import *
 from .modelConfig import *
@@ -36,9 +37,6 @@ class Config:
     valid_transform: Any = MISSING
     schedular: Any = MISSING
 
-    hydra:Any = field(default_factory=lambda:{
-        "verbose":True
-    })
 
 def init_config():
     """

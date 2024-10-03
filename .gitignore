@@ -22,3 +22,4 @@ outputs/*
 *.CSV
 *.xlsx
 *.ipynb
+*.xml

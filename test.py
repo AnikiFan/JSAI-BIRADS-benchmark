@@ -12,7 +12,6 @@ from torch.utils.data import DataLoader
 
 
 class Tester:
-    num_cla_testA = 671
     def __init__(self,task,cfg: Config,data_folder_path: str, check_point_folder_path: str):
         assert task in ['cla','fea'],"task should be either cla or fea!"
         assert os.path.exists(os.path.join(data_folder_path,os.pardir,'docs','cla_order.csv')),"cla_order.csv doesn't exist!"

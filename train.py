@@ -4,7 +4,7 @@ from utils.Trainer import Trainer
 from hydra import main
 from omegaconf import OmegaConf
 
-@main(version_base=None, config_name="my_config",config_path="config")
+@main(version_base=None, config_name="config",config_path="config")
 def main(cfg:Config):
     print(OmegaConf.to_yaml(cfg))
     trainer = Trainer(cfg)

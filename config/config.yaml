@@ -1,0 +1,5 @@
+defaults:
+  - my_config
+hydra:
+  verbose:
+    true

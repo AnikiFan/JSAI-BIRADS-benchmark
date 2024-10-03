@@ -15,8 +15,8 @@ from typing import *
 class Config:
     defaults: List[Any] = field(default_factory=lambda: [
         {"train": "default"},
-        {"model": "pretrained_resnet"},
-        {"dataset": "single"},
+        {"model": "linear_sanity_check"},
+        {"dataset": "mnist"},
         {"optimizer": "SGD"},
         {"env": "fx"},
         {"train_transform": "default"},
@@ -36,6 +36,9 @@ class Config:
     valid_transform: Any = MISSING
     schedular: Any = MISSING
 
+    hydra:Any = field(default_factory=lambda:{
+        "verbose":True
+    })
 
 def init_config():
     """

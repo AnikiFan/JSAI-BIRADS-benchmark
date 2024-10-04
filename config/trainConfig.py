@@ -68,12 +68,19 @@ class MultiLabelConfusionMatrix:
     input: Any = MISSING
     target: Any = MISSING
 
+@dataclass
+class ScoreOrientedConfig:
+    _target_:str="utils.ChooseStrategy.score_oriented"
+    loss:Any=MISSING
+    accuracy:Any=MISSING
+    f1_score:Any=MISSING
 
 @dataclass
 class MultiClassTrainConfig:
     accuracy:MultiClassAccuracy = field(default_factory=MultiClassAccuracy)
     f1_score:MultiClassF1Score = field(default_factory=MultiClassF1Score)
     confusion_matrix:MultiClassConfusionMatrix = field(default_factory=MultiClassConfusionMatrix)
+    choose_strategy:ScoreOrientedConfig = field(default_factory=ScoreOrientedConfig)
 
 
 @dataclass
@@ -81,6 +88,7 @@ class MultiLabelTrainConfig:
     accuracy: MultiLabelAccuracy = field(default_factory=MultiLabelAccuracy)
     f1_score: MultiLabelF1Score = field(default_factory=MultiLabelF1Score)
     confusion_matrix: MultiLabelConfusionMatrix = field(default_factory=MultiLabelConfusionMatrix)
+    choose_strategy:ScoreOrientedConfig = field(default_factory=ScoreOrientedConfig)
 
 @dataclass
 class DefaultTrainConfig(MultiClassTrainConfig):

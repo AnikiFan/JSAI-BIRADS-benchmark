@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import *
+from utils.MyCrop import MyCrop
 
 """
 图像变换配置
@@ -9,7 +10,7 @@ from typing import *
 @dataclass
 class DefaultTrainTransformConfig:
     _target_: str = "torchvision.transforms.Compose"
-    transforms: List[Any] = field(default_factory=lambda: [MyCropConfig(), ResizeConfig()])
+    transforms: List[Any] = field(default_factory=lambda: [ MyCropConfig(),ResizeConfig()])
 
 
 @dataclass
@@ -25,7 +26,7 @@ class ToTensorConfig:
 
 @dataclass
 class MyCropConfig:
-    _target_: str = "utils.MyBlock.MyCrop.MyCrop"
+    _target_: str = "utils.MyCrop.MyCrop"
 
 
 @dataclass

@@ -86,7 +86,7 @@ class MultiLabelTrainConfig:
 class DefaultTrainConfig(MultiClassTrainConfig):
     checkpoint_path: Path = MISSING
     epoch_num: int = 1000
-    num_workers: int = 2
+    num_workers: int = 4
     batch_size: int = 16
     info_frequency: int = 100
     early_stopping: EarlyStopping = field(default_factory=EarlyStopping)

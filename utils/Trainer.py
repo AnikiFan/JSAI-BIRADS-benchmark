@@ -57,6 +57,7 @@ class Trainer:
             info(f'ACCURACY             :{self.f1_score:.10f}')
             info(f'F1                   :{self.accuracy:.10f}')
             info(f'confusion matrix:\n{str(self.confusion_matrix)}')
+        return self.accuracy * 0.3 + self.f1_score * 0.2
 
     def train_one_epoch(self, *, model, train_loader: DataLoader, optimizer, epoch_index: int,
                         tb_writer: SummaryWriter) -> Tuple[float, float, float]:

@@ -8,6 +8,8 @@ model_*
 *.txt
 *.pyc
 runs/*
+multirun/*
+*.db
 __pycache__/*
 .idea/*
 checkPoint/*

@@ -6,9 +6,8 @@ from omegaconf import OmegaConf
 
 @main(version_base=None, config_name="config",config_path="config")
 def main(cfg:Config):
-    print(OmegaConf.to_yaml(cfg))
     trainer = Trainer(cfg)
-    trainer.train()
+    return trainer.train()
 
 if __name__ == '__main__':
     MultiMessageFilter().setup()

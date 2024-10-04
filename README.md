@@ -59,6 +59,15 @@ class FashionMNISTDatasetConfig:
  
 ```
 
+### 使用`optuna`进行调参
+
+在`\config\config.yaml`中的`hydra.sweeper`条目下对调参任务进行配置，重点是`params`项，详见`hydra`库文档中关于`optuna`的部分
+
+运行调参任务时，需要附带`--multirun`参数，即在命令行中使用`python train.py --multirun`
+
+### 使用`optuna-dashboard`对调参结果可视化
+
+首先在`python`环境中安装sqlite库和`optuna-dashboard`，并在`vscode`中安装`optuna-dashboard`插件，右键调参任务生成的`db`文件，点击`Open in optuna dashboard`
 
 # 仓库目录约定
 

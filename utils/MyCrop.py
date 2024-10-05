@@ -6,7 +6,7 @@ import torch
 import torchvision.transforms as T
 from torchvision.io import read_image
 import torchvision.transforms.functional as TF
-from ..removeFrame import removeFrame
+from utils.removeFrame import removeFrame
 from PIL import Image  # 加入PIL用于处理输入MyCrop是PIL Image而不是Tensor的情况
 
 debug = False

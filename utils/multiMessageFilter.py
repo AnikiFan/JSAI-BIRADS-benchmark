@@ -8,7 +8,9 @@ class MultiMessageFilter(logging.Filter):
         "b'tIME'",
         "iCCP",
         "Compression method",
-        "Warning: Some classes do not exist in the target. F1 scores for these classes will be cast to zeros.",
+        "Warning: Some classes",
+        "A new version",
+        "The reduce argument of torch.scatter"
     ]
 
     def __init__(self):
@@ -16,7 +18,7 @@ class MultiMessageFilter(logging.Filter):
 
     def filter(self, record):
         # 如果消息与任意一个过滤消息匹配，则过滤掉
-        return not any(record.getMessage().startswith(msg) for msg in MultiMessageFilter.filtered_messages)
+        return not any(msg in record.getMessage() for msg in MultiMessageFilter.filtered_messages)
 
     def setup(self):
         # 创建 logger

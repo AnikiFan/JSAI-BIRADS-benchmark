@@ -15,6 +15,7 @@ __pycache__/*
 checkPoint/*
 .ipynb_checkpoints/*
 .jupyter/*
+.history/*
 *.DS_Store
 *.json
 *.iml

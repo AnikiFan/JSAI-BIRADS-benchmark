@@ -72,7 +72,11 @@ class OfficialClaDataOrganizer:
             shutil.rmtree(self.dst)
         os.makedirs(self.dst)
         label_tables = []
-        for label, folder in tqdm(enumerate(os.listdir(self.src)), total=len(os.listdir(self.src))):
+        # 获取所有子目录，排除隐藏文件和非目录项
+        folders = [f for f in os.listdir(self.src) 
+                if os.path.isdir(os.path.join(self.src, f)) and not f.startswith('.')]
+        
+        for label, folder in tqdm(enumerate(folders), total=len(folders)):
             if ignore:
                 valid_labels = os.listdir(os.path.join(self.src, folder, 'labels'))
             if not ignore:

@@ -31,16 +31,21 @@ class Trainer:
         self.best_vloss, self.best_vf1, self.best_vaccuracy, self.best_vconfusion_matrix = 1_000_000., None, None, None
 
     def train(self) -> None:
+        # cuda外的设备设置了pin_memor_device会报错，但不知道为什么，因此多了下面检查
+        pin_memory_device = self.cfg.env.device if self.cfg.env.device.startswith('cuda') else ""
+
         for train_ds, valid_ds in instantiate(self.cfg.dataset, data_folder_path=self.cfg.env.data_folder_path,
                                               train_transform=self.train_transform,
                                               valid_transform=self.valid_transform):
+
+
             loss, f1_score, accuracy, confusion_matrix = self.train_one_fold(
-                DataLoader(train_ds, batch_size=self.cfg.train.batch_size, shuffle=True, pin_memory=True,
+                DataLoader(train_ds, batch_size=self.cfg.train.batch_size, shuffle=True, pin_memory=self.cfg.env.pin_memory,
                            drop_last=False, num_workers=self.cfg.train.num_workers,
-                           pin_memory_device=self.cfg.env.device),
-                DataLoader(valid_ds, batch_size=self.cfg.train.batch_size, shuffle=True, pin_memory=True,
+                           pin_memory_device=pin_memory_device),
+                DataLoader(valid_ds, batch_size=self.cfg.train.batch_size, shuffle=True, pin_memory=self.cfg.env.pin_memory,
                            drop_last=False, num_workers=self.cfg.train.num_workers,
-                           pin_memory_device=self.cfg.env.device)
+                           pin_memory_device=pin_memory_device)
             )
             self.loss += loss
             self.f1_score += f1_score

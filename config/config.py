@@ -66,7 +66,8 @@ def init_config():
     cs.store(group='optimizer', name="SGD", node=SGDOptimizerConfig)
 
     cs.store(group='env', name="fx", node=FXEnvConfig)
-    cs.store(group='env', name="zhy", node=ZHYEnvConfig)
+    cs.store(group='env', name="zhy_local", node=ZHYLocalEnvConfig)
+    cs.store(group='env', name="zhy_remote", node=ZhyRemoteEnvConfig)
     cs.store(group='env', name="yzl", node=YZLEnvConfig)
 
     cs.store(group='train_transform', name="default", node=DefaultTrainTransformConfig)

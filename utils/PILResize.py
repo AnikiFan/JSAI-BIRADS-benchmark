@@ -1,8 +1,8 @@
 from PIL import Image
-from typing import *
+from typing import Union, Tuple
 
-class PILResize(object):
-    def __init__(self, size, interpolation=Image.BILINEAR):
+class PILResize:
+    def __init__(self, size: Union[int, Tuple[int, int]], interpolation: int = Image.BILINEAR):
         """
         参数：
             size (int 或 tuple)：期望的输出尺寸。如果size是一个tuple，
@@ -10,11 +10,10 @@ class PILResize(object):
                                  图像的较小边将被调整到这个数值，保持宽高比。
             interpolation (int, 可选)：期望的插值方法。默认是Image.BILINEAR。
         """
-        # assert isinstance(size, (int, tuple)), f"size's type should be int or tuple, but get {type(size)}"
         self.size = size
         self.interpolation = interpolation
 
-    def __call__(self, img:Image)->Image:
+    def __call__(self, img: Image) -> Image:
         """
         参数：
             img (PIL Image)：需要调整大小的图像。
@@ -33,8 +32,3 @@ class PILResize(object):
 #     transforms.Normalize(mean=[0.485, 0.456, 0.406],
 #                          std=[0.229, 0.224, 0.225])
 # ])
-
-# # 现在你可以在数据集的transform中使用这个自定义的Resize
-# from torchvision.datasets import ImageFolder
-
-# dataset = ImageFolder(root='你的数据路径', transform=transform)

@@ -37,6 +37,7 @@ class ResizeConfig:
     """
     _target_: str = "torchvision.transforms.Resize"
     size: List[int] = field(default_factory=lambda: [256, 256])
+    antialias: bool = True # 显式设置为True，避免警告，抗锯齿
     _convert_: str = "all"
 
 

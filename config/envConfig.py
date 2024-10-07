@@ -21,7 +21,8 @@ class FXEnvConfig(EnvConfig):
 
 @dataclass
 class ZHYEnvConfig(EnvConfig):
-    pass
+    data_folder_path: Path = os.path.join(os.curdir, 'data')
+    # pass
 
 
 @dataclass

@@ -72,12 +72,12 @@ class OfficialClaDataOrganizer:
             shutil.rmtree(self.dst)
         os.makedirs(self.dst)
         label_tables = []
+        
         folders = os.listdir(self.src)
-        legal_folders = ["2类", "3类", "4类a", "4b类", "4c类", "5类"]
+        legal_folders = ["2类", "3类", "4A类", "4B类", "4C类", "5类"]
         folders = list(filter(lambda x: x in legal_folders, folders))
-        # 检查是否包含所有合法文件夹
-        assert len(folders) == len(legal_folders), "folders not match!"
-        print("organizing folders:", folders)
+        assert len(folders) == len(legal_folders), "folders not match! current folders:{}".format(folders) # 检查是否包含所有合法文件夹
+        
         for label, folder in tqdm(enumerate(folders), total=len(folders)):
             if ignore:
                 valid_labels = os.listdir(os.path.join(self.src, folder, 'labels'))

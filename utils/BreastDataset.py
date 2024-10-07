@@ -24,10 +24,10 @@ def make_table(data_folder_path: str, official_train: bool = True, BUS: bool = T
     BUS_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'BUS', 'Images')
     USG_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'USG')
     fea_official_data_path = os.path.join(data_folder_path, 'breast', 'fea', 'train')
-    assert os.path.exists(official_data_path), "please use OfficialClaDataOrganizer first!"
-    assert os.path.exists(BUS_data_path), "please run replace.ipynb first!"
-    assert os.path.exists(USG_data_path), "please run process.ipynb first!"
-    assert os.path.exists(fea_official_data_path), "please run OfficialFeaDataOrganizer first!"
+    assert os.path.exists(official_data_path), f"{official_data_path} does not exist! please use OfficialClaDataOrganizer first!"
+    assert os.path.exists(BUS_data_path), f"{BUS_data_path} does not exist! please run replace.ipynb first!"
+    assert os.path.exists(USG_data_path), f"{USG_data_path} does not exist! please run process.ipynb first!"
+    assert os.path.exists(fea_official_data_path), f"{fea_official_data_path} does not exist! please run OfficialFeaDataOrganizer first!"
     if fea_official_train:
         assert not (official_train or BUS or USG), "不能同时选择cla数据和fea数据"
     tables = []
@@ -168,8 +168,7 @@ def getBreastTrainValidData(data_folder_path: str, valid_ratio: float = 0.2,
                             official_train: bool = True,
                             BUS: bool = True, USG: bool = True, fea_official_train=False, image_format: str = 'PIL', *,
                             seed: int = 42,
-                            augmented_folder_list: Optional[List[str]] = None, **kwargs) -> Optional[
-    Tuple[TableDataset, TableDataset]]:
+                            augmented_folder_list: Optional[List[str]] = None, **kwargs) -> Optional[Tuple[TableDataset, TableDataset]]:
     """
     返回单折按照给定比例划分的训练集和验证集，用yield返回是为了可以和CV一样用for train_ds,valid_ds in dataset一样来获取
     :param data_folder_path:

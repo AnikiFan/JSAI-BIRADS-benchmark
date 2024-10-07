@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import pandas as pd
 import albumentations as A
-from BreastDataset import make_table
+from utils.BreastDataset import make_table
 import re
 from warnings import warn
 from typing import *
@@ -120,7 +120,7 @@ class MixUp:
 
 class Preprocess:
     def __init__(self, transform: A.Compose, ratio: Optional[Tuple[float]] = None,
-                 data_folder_path: str = os.path.join(os.pardir, 'data'), official_train: bool = True, BUS: bool = True,
+                 data_folder_path: str = os.path.join(os.getcwd(), 'data'), official_train: bool = True, BUS: bool = True,
                  USG: bool = True,fea_official_train:bool=False):
         self.transform = transform
         self.data_folder_path = data_folder_path

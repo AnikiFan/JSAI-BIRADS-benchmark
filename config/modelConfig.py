@@ -60,3 +60,15 @@ class PretrainedResNetModelConfig:
     _target_:str="models.model4compare.ResNet18.ResNet18"
     num_classes:int=MISSING
     lr:float=0.001
+
+
+@dataclass
+class ResNetClassifierModelConfig:
+    _target_:str="models.PretrainClassifer.resnet.ResNetClassifier"
+    num_classes:int=MISSING
+    pretrained:bool=True
+    freeze_backbone:bool=False
+    dropout:float=0.2
+    lr:float=0.001
+    
+

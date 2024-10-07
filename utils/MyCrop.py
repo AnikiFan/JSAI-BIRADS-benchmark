@@ -45,7 +45,8 @@ class MyCrop(nn.Module):
             # 直接处理张量
             top, left, h, w = removeFrame(x.numpy())
         else:
-            raise TypeError(f"Unsupported input type: {type(x)}")
+            if debug:
+                raise TypeError(f"Unsupported input type: {type(x)}")
         return TF.crop(x, top, left, h, w)
 
 

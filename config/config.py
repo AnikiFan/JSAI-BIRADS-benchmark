@@ -56,6 +56,7 @@ def init_config():
     cs.store(group='model', name="conv_sanity_check", node=ConvSanityCheckerModelConfig)
     cs.store(group='model', name="pretrained_resnet", node=PretrainedResNetModelConfig)
     cs.store(group='model', name="default", node=DefaultModelConfig)
+    cs.store(group='model', name="resnet_classifier", node=ResNetClassifierModelConfig)
 
     cs.store(group='dataset', name="fashion_mnist", node=FashionMNISTDatasetConfig)
     cs.store(group='dataset', name="mnist", node=MNISTDatasetConfig)

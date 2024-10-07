@@ -5,6 +5,8 @@
 1. 按照仓库目录约定来整理`data`文件夹，只需将`official_test`,`official_trian`,`BUS`,`USG`按照约定放入即可，其中`BUS`和`USG`是事先处理过的版本（微信群里有）
 2. 运行`\utils\OfficialClaDataOrganizer.py`,`\utils\OfficialFeaDataOrganizer.py`，来获取`train`和`test`数据集
 
+note:cla和fea似乎需要都准备好才能进行数据增强？
+
 ## 数据增强
 
 使用`\utils\dataAugmentations.py`。

@@ -19,7 +19,7 @@ class TableDataset(VisionDataset):
         :param transform:
         :param image_format:
         """
-        super().__init__()
+        super().__init__(root="")
         self.table = table
         if image_format == 'PIL':
             self.reader = TableDataset._PIL_reader

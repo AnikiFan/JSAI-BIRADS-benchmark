@@ -72,7 +72,13 @@ class OfficialClaDataOrganizer:
             shutil.rmtree(self.dst)
         os.makedirs(self.dst)
         label_tables = []
-        for label, folder in tqdm(enumerate(os.listdir(self.src)), total=len(os.listdir(self.src))):
+        folders = os.listdir(self.src)
+        legal_folders = ["2类", "3类", "4类a", "4b类", "4c类", "5类"]
+        folders = list(filter(lambda x: x in legal_folders, folders))
+        # 检查是否包含所有合法文件夹
+        assert len(folders) == len(legal_folders), "folders not match!"
+        print("organizing folders:", folders)
+        for label, folder in tqdm(enumerate(folders), total=len(folders)):
             if ignore:
                 valid_labels = os.listdir(os.path.join(self.src, folder, 'labels'))
             if not ignore:
@@ -92,9 +98,11 @@ class OfficialClaDataOrganizer:
 
 
 if __name__ == '__main__':
-    src = os.path.join(os.pardir, 'data', 'breast', 'cla', 'official_test')
-    dst = os.path.join(os.pardir, 'data', 'breast', 'cla', 'test')
+    pre_dir = os.path.join(os.getcwd(), 'data', 'breast', 'cla')
+    
+    src = os.path.join(pre_dir, 'official_test')
+    dst = os.path.join(pre_dir, 'test')
     OfficialClaDataOrganizer(src, dst).organize(ignore=True)
-    src = os.path.join(os.pardir, 'data', 'breast', 'cla', 'official_train')
-    dst = os.path.join(os.pardir, 'data', 'breast', 'cla', 'train')
+    src = os.path.join(pre_dir, 'official_train')
+    dst = os.path.join(pre_dir, 'train')
     OfficialClaDataOrganizer(src, dst).organize(ignore=False)

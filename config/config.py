@@ -47,6 +47,7 @@ def init_config():
     cs = ConfigStore.instance()
 
     cs.store(group='train', name="default", node=DefaultTrainConfig)
+    cs.store(group='train', name="remote", node=RemoteTrainConfig)
 
     cs.store(group='model', name="alex_net", node=AlexNetModelConfig)
     cs.store(group='model', name="google_net", node=GoogleNetModelConfig)

@@ -26,9 +26,11 @@ class ZHYLocalEnvConfig(EnvConfig):
     device: str = 'cpu'
     pin_memory: bool = False
     
+@dataclass
 class ZhyRemoteEnvConfig(EnvConfig):
     data_folder_path: Path = os.path.join(os.curdir, 'data')
-    
+    # device: str = 'cuda'
+    # pin_memory: bool = True
 
 
 @dataclass

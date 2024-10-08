@@ -82,6 +82,7 @@ class MixUp:
         self.short_description, self.full_description = make_fingerprint(self, ratio)
         self.dst_folder = os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{1}")
         self.ratio = ratio
+        tqdm.pandas()  # 初始化 tqdm 的 pandas 支持
 
     def __str__(self) -> str:
         return self.fingerprint
@@ -91,6 +92,10 @@ class MixUp:
         
         i = 1
         while os.path.exists(os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}")):
+            # 先检查README.txt是否存在(防止出现数据增强到一半终止了，文件夹中只有部分数据增强后的图片，没有README.txt)
+            if os.path.exists(os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}", 'README.txt')) is False:
+                warn(f"README.txt not found in {self.short_description}-{i},please check it manually!")
+                return
             with open(os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}", 'README.txt'), 'r') as file:
                 if file.read() == self.full_description:
                     warn(f"{self.full_description} already exists! stop augment")
@@ -102,7 +107,8 @@ class MixUp:
         os.makedirs(self.dst_folder)
         self.table['noise_image'] = np.random.randint(0, len(self.table), (len(self.table), 1))
         self.table.noise_image = self.table.noise_image.apply(lambda x: self.table.file_name[x])
-        self.table.file_name = self.table.apply(self.mixup, axis=1)
+        # 使用 progress_apply 以显示进度条
+        self.table.file_name = self.table.progress_apply(self.mixup, axis=1)
         self.table.drop(['noise_image', 'no'], axis=1, inplace=True)
         self.table.to_csv(os.path.join(self.dst_folder, 'ground_truth.csv'), index=False)
         with open(os.path.join(self.dst_folder, 'README.txt'), 'w') as file:

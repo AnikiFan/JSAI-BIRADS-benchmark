@@ -57,7 +57,7 @@ def make_ratio_table(table: pd.DataFrame, ratio: float) -> pd.DataFrame:
 
 class MixUp:
     def __init__(self, mixup_alpha: float, ratio=Optional[Tuple[float]], official_train: bool = True, BUS: bool = True,
-                 USG: bool = True, data_folder_path: str = os.path.join(os.pardir, 'data'), seed: str = 42):
+                 USG: bool = True, data_folder_path: str = os.path.join(os.getcwd(), 'data'), seed: str = 42):
         """
         对图像进行 Mixup 增广并保存。
         划分验证集和训练集时，若图片A在验证集中，则训练集中不能含有任何包含该图片的mixup，当每个样本通过mixup生成s张图片时，若采用

@@ -23,8 +23,7 @@ class Trainer:
         self.loss_fn = instantiate(cfg.train.loss_function)
         self.cur_fold = 1
         # 用于统计各折之间的指标
-        self.loss, self.f1_score, self.accuracy, self.confusion_matrix = 0, 0, 0, torch.zeros(
-            (self.cfg.dataset.num_classes, self.cfg.dataset.num_classes), dtype=torch.int, device=self.cfg.env.device)
+        self.loss, self.f1_score, self.accuracy, self.confusion_matrix = None,None,None,None
         self.train_transform = instantiate(self.cfg.train_transform)
         self.valid_transform = instantiate(self.cfg.valid_transform)
         # 用于记录以折为单位的最佳指标
@@ -34,20 +33,23 @@ class Trainer:
         for train_ds, valid_ds in instantiate(self.cfg.dataset, data_folder_path=self.cfg.env.data_folder_path,
                                               train_transform=self.train_transform,
                                               valid_transform=self.valid_transform):
-
-
             loss, f1_score, accuracy, confusion_matrix = self.train_one_fold(
-                DataLoader(train_ds, batch_size=self.cfg.train.batch_size, shuffle=True, pin_memory=self.cfg.env.pin_memory,
+                DataLoader(train_ds, batch_size=self.cfg.train.batch_size, shuffle=True,
+                           pin_memory=self.cfg.env.pin_memory,
                            drop_last=False, num_workers=self.cfg.train.num_workers,
                            pin_memory_device=self.cfg.env.pin_memory_device),
-                DataLoader(valid_ds, batch_size=self.cfg.train.batch_size, shuffle=True, pin_memory=self.cfg.env.pin_memory,
+                DataLoader(valid_ds, batch_size=self.cfg.train.batch_size, shuffle=True,
+                           pin_memory=self.cfg.env.pin_memory,
                            drop_last=False, num_workers=self.cfg.train.num_workers,
                            pin_memory_device=self.cfg.env.pin_memory_device)
             )
-            self.loss += loss
-            self.f1_score += f1_score
-            self.accuracy += accuracy
-            self.confusion_matrix += confusion_matrix
+            if self.loss is None:
+                self.loss,self.f1_score,self.accuracy,self.confusion_matrix = loss,f1_score,accuracy,confusion_matrix
+            else:
+                self.loss += loss
+                self.f1_score += f1_score
+                self.accuracy += accuracy
+                self.confusion_matrix += confusion_matrix
             self.cur_fold += 1
         fold_num = self.cur_fold - 1
         if fold_num != 1:
@@ -59,7 +61,8 @@ class Trainer:
             info(f'ACCURACY             :{self.f1_score:.10f}')
             info(f'F1                   :{self.accuracy:.10f}')
             info(f'confusion matrix:\n{str(self.confusion_matrix)}')
-        return instantiate(self.cfg.train.choose_strategy,loss=self.loss,accuracy=self.accuracy,f1_score=self.f1_score)
+        return instantiate(self.cfg.train.choose_strategy, loss=self.loss, accuracy=self.accuracy,
+                           f1_score=self.f1_score)
 
     def train_one_epoch(self, *, model, train_loader: DataLoader, optimizer, epoch_index: int,
                         tb_writer: SummaryWriter) -> Tuple[float, float, float]:
@@ -75,7 +78,7 @@ class Trainer:
 
         model.train(True)
 
-        for i, data in enumerate(tqdm(train_loader, desc=f"Training   Epoch {epoch_index}", leave=True), start=1):
+        for i, data in enumerate(tqdm(train_loader, desc=f"Training   Epoch {epoch_index}", leave=False), start=1):
             input, label = data
             input = input.to(self.cfg.env.device)
             label = label.to(self.cfg.env.device)
@@ -87,14 +90,14 @@ class Trainer:
             loss.backward()
             optimizer.step()
             if (i % self.cfg.train.info_frequency == 0
-                    or len(train_loader)>self.cfg.train.info_frequency and i == len(train_loader)-1):
+                    or len(train_loader) > self.cfg.train.info_frequency and i == len(train_loader) - 1):
                 # 计算实际的批次数
                 outputs, labels = torch.cat(outputs, dim=0), torch.cat(labels, dim=0)
                 avg_loss = self.loss_fn(input=outputs, target=labels).item()
                 avg_f1 = instantiate(self.cfg.train.f1_score, input=outputs, target=labels,
-                                 num_classes=self.cfg.dataset.num_classes).item()
+                                     num_classes=self.cfg.dataset.num_classes).item()
                 avg_accuracy = instantiate(self.cfg.train.accuracy, input=outputs, target=labels,
-                                       num_classes=self.cfg.dataset.num_classes).item()
+                                           num_classes=self.cfg.dataset.num_classes).item()
                 tb_x = (epoch_index - 1) * len(train_loader) + i
                 tb_writer.add_scalar('Loss/train', avg_loss, tb_x)
                 tb_writer.add_scalar('Accuracy/train', avg_accuracy, tb_x)
@@ -133,11 +136,13 @@ class Trainer:
         """
         # 用于计算以epoch为单位的最佳指标
         best_loss, best_f1, best_accuracy, best_confusion_matrix = 1_000_000., None, None, None
-        model = instantiate(self.cfg.model, num_classes=self.cfg.dataset.num_classes).to(self.cfg.env.device)
+        model = instantiate(self.cfg.model, num_classes=self.cfg.dataset.num_classes,
+                            model_weight_path=self.cfg.env.model_weight_path).to(self.cfg.env.device)
         # 为了初始化lazy layer，先传入一张图片
-        model.forward(next(iter(train_loader))[0].to(self.cfg.env.device))
         # 初始化权重
-        model.apply(Trainer.init_weights)
+        if not self.cfg.model.pretrained:
+            model.forward(next(iter(train_loader))[0].to(self.cfg.env.device))
+            model.apply(Trainer.init_weights)
         optimizer = instantiate(self.cfg.optimizer, params=model.parameters())
         schedular = instantiate(self.cfg.schedular, optimizer=optimizer)
         writer = SummaryWriter(os.path.join('runs', self.make_writer_title()))
@@ -153,7 +158,7 @@ class Trainer:
             model.eval()
             with torch.no_grad():
                 valid_outcomes = [(vlabel.to(self.cfg.env.device), model(vinputs.to(self.cfg.env.device))) for
-                                  vinputs, vlabel in tqdm(valid_loader, desc=f"Validating Epoch {epoch}", leave=True)]
+                                  vinputs, vlabel in tqdm(valid_loader, desc=f"Validating Epoch {epoch}", leave=False)]
             target = torch.cat([pair[0] for pair in valid_outcomes], dim=0)
             prediction = torch.cat([pair[1] for pair in valid_outcomes], dim=0)
             # 在该epoch的验证集上获得的指标

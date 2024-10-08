@@ -1,5 +1,5 @@
 import pandas as pd
-from warnings import warn
+from logging import warning
 import os
 from tqdm import tqdm
 import shutil
@@ -33,13 +33,13 @@ class OfficialClaDataOrganizer:
         with open(os.path.join(base_path, 'labels', file_name), 'r') as file:
             content = file.readlines()
             if len(content) != 1:
-                warn(f"invalid label num:{os.path.join(base_path, 'labels', file_name)}")
+                warning(f"invalid label num:{os.path.join(base_path, 'labels', file_name)}")
                 return False
             if len(content[0].split()) != 5:
-                warn(f"invalid label:{os.path.join(base_path, 'labels', file_name)}")
+                warning(f"invalid label:{os.path.join(base_path, 'labels', file_name)}")
                 return False
             if content[0].split()[0] != str(ground_truth):
-                warn(f"incompatible label:{os.path.join(base_path, 'labels', file_name)}")
+                warning(f"incompatible label:{os.path.join(base_path, 'labels', file_name)}")
                 return False
         return True
 
@@ -59,7 +59,7 @@ class OfficialClaDataOrganizer:
         elif os.path.exists(os.path.join(image_path, jpg_suffix)):
             shutil.copy(os.path.join(image_path, jpg_suffix), dst)
         else:
-            warn(f"image {image_path + label_name.replace('.txt')} doesn't exist!")
+            warning(f"image {image_path + label_name.replace('.txt')} doesn't exist!")
 
     def organize(self, ignore:bool)->None:
         """

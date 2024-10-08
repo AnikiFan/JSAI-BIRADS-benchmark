@@ -10,8 +10,12 @@ from utils.earlyStopping import EarlyStopping
 
 
 @dataclass
-class CrossEntropyConfig:
+class CrossEntropyLossConfig:
     _target_: str = 'torch.nn.CrossEntropyLoss'
+
+@dataclass
+class BCELossConfig:
+    _target_: str = 'utils.loss_function.MyBCELoss'
 
 
 @dataclass
@@ -49,10 +53,9 @@ class MultiClassConfusionMatrix:
 
 @dataclass
 class MultiLabelAccuracy:
-    _target_: str = "torcheval.metrics.functional.multilabel_accuracy"
+    _target_: str = "utils.metrics.my_multilabel_accuracy"
     input: Any = MISSING
     target: Any = MISSING
-    criteria: str = 'hamming'
 
 
 @dataclass
@@ -68,19 +71,21 @@ class MultiLabelConfusionMatrix:
     input: Any = MISSING
     target: Any = MISSING
 
+
 @dataclass
 class ScoreOrientedConfig:
-    _target_:str="utils.ChooseStrategy.score_oriented"
-    loss:Any=MISSING
-    accuracy:Any=MISSING
-    f1_score:Any=MISSING
+    _target_: str = "utils.ChooseStrategy.score_oriented"
+    loss: Any = MISSING
+    accuracy: Any = MISSING
+    f1_score: Any = MISSING
+
 
 @dataclass
 class MultiClassTrainConfig:
-    accuracy:MultiClassAccuracy = field(default_factory=MultiClassAccuracy)
-    f1_score:MultiClassF1Score = field(default_factory=MultiClassF1Score)
-    confusion_matrix:MultiClassConfusionMatrix = field(default_factory=MultiClassConfusionMatrix)
-    choose_strategy:ScoreOrientedConfig = field(default_factory=ScoreOrientedConfig)
+    accuracy: MultiClassAccuracy = field(default_factory=MultiClassAccuracy)
+    f1_score: MultiClassF1Score = field(default_factory=MultiClassF1Score)
+    confusion_matrix: MultiClassConfusionMatrix = field(default_factory=MultiClassConfusionMatrix)
+    choose_strategy: ScoreOrientedConfig = field(default_factory=ScoreOrientedConfig)
 
 
 @dataclass
@@ -88,14 +93,23 @@ class MultiLabelTrainConfig:
     accuracy: MultiLabelAccuracy = field(default_factory=MultiLabelAccuracy)
     f1_score: MultiLabelF1Score = field(default_factory=MultiLabelF1Score)
     confusion_matrix: MultiLabelConfusionMatrix = field(default_factory=MultiLabelConfusionMatrix)
-    choose_strategy:ScoreOrientedConfig = field(default_factory=ScoreOrientedConfig)
+    choose_strategy: ScoreOrientedConfig = field(default_factory=ScoreOrientedConfig)
+
 
 @dataclass
-class DefaultTrainConfig(MultiClassTrainConfig):
-    checkpoint_path: Path = MISSING
+class DefaultTrainConfig:
     epoch_num: int = 1000
     num_workers: int = 4
     batch_size: int = 16
     info_frequency: int = 100
     early_stopping: EarlyStopping = field(default_factory=EarlyStopping)
-    loss_function: CrossEntropyConfig = field(default_factory=CrossEntropyConfig)
+
+
+@dataclass
+class ClaTrainConfig(MultiClassTrainConfig, DefaultTrainConfig):
+    loss_function: CrossEntropyLossConfig = field(default_factory=CrossEntropyLossConfig)
+
+
+@dataclass
+class FeaTrainConfig(MultiLabelTrainConfig, DefaultTrainConfig):
+    loss_function: BCELossConfig = field(default_factory=BCELossConfig)

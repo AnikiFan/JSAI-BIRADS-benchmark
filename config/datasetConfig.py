@@ -19,25 +19,50 @@ class ClaDatasetConfig:
     data_folder_path: Path = MISSING
     image_format: str = "Tensor"
     num_classes: int = 6
+    official_train:bool=True
+    BUS:bool=True
+    USG:bool=True
+    fea_official_train:bool=False
+
+@dataclass
+class FeaDatasetConfig:
+    data_folder_path: Path = MISSING
+    image_format: str = "Tensor"
+    num_classes: int = 2
+    official_train:bool=False
+    BUS:bool=False
+    USG:bool=False
+    fea_official_train:bool=True
+
 
 @dataclass
 class ClaAugmentedDatasetConfig:
     augmented_folder_list: List[Path] = field(
         default_factory=lambda:[
-            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'Mixup,ratio=(2,1,3,4,5,6)'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'VerticalFlip,ratio=(2,1,3,4,5,6)')
+            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'Mixup,ratio=(2,1,3,4,5,6)'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'VerticalFlip,ratio=(2,1,3,4,5,6)')
         ])
 
+
 @dataclass
-class SingleFoldDatasetConfig(ClaDatasetConfig,ClaAugmentedDatasetConfig):
+class FeaAugmentedDatasetConfig:
+    pass
+
+@dataclass
+class ClaSingleFoldDatasetConfig(ClaDatasetConfig,ClaAugmentedDatasetConfig):
     _target_: str = "utils.BreastDataset.getBreastTrainValidData"
-    _convert_: str = "all"
-    
-
 
 
 @dataclass
-class CrossValidationDatasetConfig(ClaDatasetConfig):
+class ClaCrossValidationDatasetConfig(ClaDatasetConfig,ClaAugmentedDatasetConfig):
+    _target_: str = "utils.BreastDataset.BreastCrossValidationData"
+
+@dataclass
+class FeaSingleFoldDatasetConfig(FeaDatasetConfig, FeaAugmentedDatasetConfig):
+    _target_: str = "utils.BreastDataset.getBreastTrainValidData"
+
+@dataclass
+class FeaCrossValidationDatasetConfig(FeaDatasetConfig,FeaAugmentedDatasetConfig):
     _target_: str = "utils.BreastDataset.BreastCrossValidationData"
 
 

@@ -1,4 +1,5 @@
 from utils.dataAugmentation import Preprocess
+from utils.dataAugmentation import MixUp
 import albumentations as A
 
 
@@ -70,10 +71,10 @@ if __name__ == '__main__':
     # MixUp通常在数据加载时动态应用，不需要预处理
     # 若需要预处理，可以在此处调用相应的方法
     # from utils.dataAugmentation import MixUp
-    MixUp(0.3, ratio=ratio).process_image()
+    MixUp(0.2, ratio=ratio).process_image()
 
     # 12. 随机擦除 (Random Erasing)
-    transform_random_erasing = A.Compose([
-        A.RandomErasing(p=1.0)
-    ])
-    Preprocess(transform_random_erasing, ratio=ratio).process_image()
+    # transform_random_erasing = A.Compose([
+    #     A.RandomErasing(p=1.0)
+    # ])
+    # Preprocess(transform_random_erasing, ratio=ratio).process_image()

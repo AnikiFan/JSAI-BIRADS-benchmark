@@ -25,4 +25,4 @@ outputs/*
 *.xlsx
 *.ipynb
 *.xml
-.idea
+**/.idea/

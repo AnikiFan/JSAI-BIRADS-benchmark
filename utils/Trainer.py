@@ -86,21 +86,22 @@ class Trainer:
             loss = self.loss_fn(output, label)
             loss.backward()
             optimizer.step()
-            if i % self.cfg.train.info_frequency == 0:
+            if (i % self.cfg.train.info_frequency == 0
+                    or len(train_loader)>self.cfg.train.info_frequency and i == len(train_loader)-1):
                 # 计算实际的批次数
                 outputs, labels = torch.cat(outputs, dim=0), torch.cat(labels, dim=0)
-                loss = self.loss_fn(input=outputs, target=labels).item() / self.cfg.train.info_frequency
-                f1 = instantiate(self.cfg.train.f1_score, input=outputs, target=labels,
+                avg_loss = self.loss_fn(input=outputs, target=labels).item()
+                avg_f1 = instantiate(self.cfg.train.f1_score, input=outputs, target=labels,
                                  num_classes=self.cfg.dataset.num_classes).item()
-                accuracy = instantiate(self.cfg.train.accuracy, input=outputs, target=labels,
+                avg_accuracy = instantiate(self.cfg.train.accuracy, input=outputs, target=labels,
                                        num_classes=self.cfg.dataset.num_classes).item()
                 tb_x = (epoch_index - 1) * len(train_loader) + i
-                tb_writer.add_scalar('Loss/train', loss, tb_x)
-                tb_writer.add_scalar('Accuracy/train', accuracy, tb_x)
-                tb_writer.add_scalar('F1/train', f1, tb_x)
+                tb_writer.add_scalar('Loss/train', avg_loss, tb_x)
+                tb_writer.add_scalar('Accuracy/train', avg_accuracy, tb_x)
+                tb_writer.add_scalar('F1/train', avg_f1, tb_x)
                 outputs, labels = [], []
         # 为了避免指标出现大幅波动，不对尾部剩余的一小部分计算指标
-        return loss, accuracy, f1
+        return avg_loss, avg_accuracy, avg_f1
 
     def make_writer_title(self) -> str:
         """

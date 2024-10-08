@@ -1,2 +1,24 @@
+defaults:
+  - _self_
+  - my_config
+  - override hydra/job_logging: colorlog
+  - override hydra/hydra_logging: colorlog
+  - override hydra/sweeper: optuna
+  - override hydra/sweeper/sampler: tpe
 hydra:
-  verbose: true
+  job_logging:
+    handlers:
+      file:
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+  verbose:
+    true
+  sweeper:
+    sampler:
+      seed: 123
+    direction: maximize
+    study_name: sanity_check
+    storage: 'sqlite:///${hydra.sweeper.study_name}.db'
+    n_trials: 10
+    n_jobs: 5
+    params:
+      model.lr: choice(0.1 ,0.2 ,0.3)

@@ -8,6 +8,8 @@ model_*
 *.txt
 *.pyc
 runs/*
+multirun/*
+*.db
 __pycache__/*
 .idea/*
 checkPoint/*
@@ -17,3 +19,9 @@ checkPoint/*
 *.json
 *.iml
 *.pth
+outputs/*
+*.csv
+*.CSV
+*.xlsx
+*.ipynb
+*.xml

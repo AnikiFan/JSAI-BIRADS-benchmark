@@ -39,10 +39,10 @@ class Trainer:
             loss, f1_score, accuracy, confusion_matrix = self.train_one_fold(
                 DataLoader(train_ds, batch_size=self.cfg.train.batch_size, shuffle=True, pin_memory=self.cfg.env.pin_memory,
                            drop_last=False, num_workers=self.cfg.train.num_workers,
-                           pin_memory_device=self.cfg.train.pin_memory_device),
+                           pin_memory_device=self.cfg.env.pin_memory_device),
                 DataLoader(valid_ds, batch_size=self.cfg.train.batch_size, shuffle=True, pin_memory=self.cfg.env.pin_memory,
                            drop_last=False, num_workers=self.cfg.train.num_workers,
-                           pin_memory_device=self.cfg.train.pin_memory_device)
+                           pin_memory_device=self.cfg.env.pin_memory_device)
             )
             self.loss += loss
             self.f1_score += f1_score

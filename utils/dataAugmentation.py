@@ -87,8 +87,15 @@ class MixUp:
         return self.fingerprint
 
     def process_image(self) -> None:
+        print("----Processing image----")
         if os.path.exists(self.dst_folder):
-            warn(f"{self.short_description} already exists! stop augment")
+            # 获取这个文件夹中README.txt文件的内容
+            with open(os.path.join(self.dst_folder, 'README.txt'), 'r') as file:
+                content = file.read()
+                if content == self.full_description:
+                    warn(f"{self.full_description} already exists! stop augment")
+                    return
+            # warn(f"{self.short_description} already exists! stop augment")
             return
         os.makedirs(self.dst_folder)
         self.table['noise_image'] = np.random.randint(0, len(self.table), (len(self.table), 1))

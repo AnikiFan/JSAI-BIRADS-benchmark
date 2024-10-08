@@ -9,7 +9,7 @@ from data.CIFAR10.MyCIFAR10 import MyCIFAR10
 from typing import *
 
 """
-数据集配置，用于直接实例化数据集，所以不能有数据集所需的参数以外的配置项
+数据集配置，用于直接实例化数据集
 数据集对象应该是一个迭代器，每次迭代返回train_dataset和valid_dataset
 """
 

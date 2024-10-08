@@ -12,6 +12,7 @@ from utils.tools import getDevice
 class EnvConfig:
     device: str = getDevice()
     pin_memory: bool = True
+    pin_memory_device: str = device if device.startswith('cuda') else ''
 
 
 @dataclass

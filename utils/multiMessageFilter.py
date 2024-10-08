@@ -24,6 +24,9 @@ class MultiMessageFilter(logging.Filter):
         # 创建 logger
         logger = logging.getLogger()
         logger.setLevel(logging.DEBUG)
+        # 创建 PIL 日志记录器用于过滤 PIL 的debug信息
+        PIL_logger = logging.getLogger("PIL.PngImagePlugin")
+        PIL_logger.setLevel(logging.WARNING)
         # 创建控制台处理器
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.DEBUG)

@@ -7,7 +7,7 @@ from utils.BreastDataset import make_table
 import re
 from warnings import warn
 from typing import *
-
+from tqdm import tqdm
 
 def remove_nested_parentheses(s: str)->str:
     # 使用正则表达式匹配嵌套的圆括号及其内容
@@ -80,23 +80,25 @@ class MixUp:
         self.lam = np.random.beta(mixup_alpha, mixup_alpha)
         self.fingerprint = f"\nMixup(mixup_alpha={mixup_alpha},official_train={official_train},BUS={BUS},USG={USG}),\n\n"
         self.short_description, self.full_description = make_fingerprint(self, ratio)
-        self.dst_folder = os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', self.short_description)
+        self.dst_folder = os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{1}")
         self.ratio = ratio
 
     def __str__(self) -> str:
         return self.fingerprint
 
     def process_image(self) -> None:
-        print("----Processing image----")
-        if os.path.exists(self.dst_folder):
-            # 获取这个文件夹中README.txt文件的内容
-            with open(os.path.join(self.dst_folder, 'README.txt'), 'r') as file:
-                content = file.read()
-                if content == self.full_description:
+        print(f"processing {self.full_description}")
+        
+        i = 1
+        while os.path.exists(os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}")):
+            with open(os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}", 'README.txt'), 'r') as file:
+                if file.read() == self.full_description:
                     warn(f"{self.full_description} already exists! stop augment")
                     return
-            # warn(f"{self.short_description} already exists! stop augment")
-            return
+            i += 1
+            
+        self.dst_folder = os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}")
+        
         os.makedirs(self.dst_folder)
         self.table['noise_image'] = np.random.randint(0, len(self.table), (len(self.table), 1))
         self.table.noise_image = self.table.noise_image.apply(lambda x: self.table.file_name[x])
@@ -125,13 +127,14 @@ class MixUp:
         return file_name
 
 
+
 class Preprocess:
     def __init__(self, transform: A.Compose, ratio: Optional[Tuple[float]] = None,
                  data_folder_path: str = os.path.join(os.getcwd(), 'data'), official_train: bool = True, BUS: bool = True,
-                 USG: bool = True,fea_official_train:bool=False):
+                 USG: bool = True, fea_official_train: bool = False):
         self.transform = transform
         self.data_folder_path = data_folder_path
-        self.table = make_table(data_folder_path=self.data_folder_path, official_train=official_train, BUS=BUS, USG=USG,fea_official_train=fea_official_train)
+        self.table = make_table(data_folder_path=self.data_folder_path, official_train=official_train, BUS=BUS, USG=USG, fea_official_train=fea_official_train)
         if not ratio:
             ratio = np.ones(self.table.label.nunique())
         if not isinstance(ratio, np.ndarray):
@@ -145,10 +148,11 @@ class Preprocess:
         self.short_description, self.full_description = make_fingerprint(transform, ratio)
         if not fea_official_train:
             self.table = make_ratio_table(self.table, ratio)
-        self.dst_folder = os.path.join(self.data_folder_path, 'breast', self.task, 'augmented', self.short_description)
+        self.dst_folder = os.path.join(self.data_folder_path, 'breast', self.task, 'augmented', f"{self.short_description}-{1}")
         self.ratio = ratio
+        tqdm.pandas()  # 初始化 tqdm 的 pandas 支持
 
-    def read_transform_write(self, row)->str:
+    def read_transform_write(self, row) -> str:
         """
         apply辅助函数
         :param row:
@@ -161,21 +165,37 @@ class Preprocess:
         cv2.imwrite(os.path.join(self.dst_folder, file_name), image)
         return file_name
 
-    def process_image(self)->None:
-        if os.path.exists(self.dst_folder):
-            warn(f"{self.short_description} already exists! stop augment")
-            return
+    def process_image(self) -> None:
+        # if os.path.exists(self.dst_folder):
+        #     warn(f"{self.short_description} already exists! stop augment")
+        #     return
+        print(f"processin:\n {self.full_description}")
+        
+        i = 1
+        while os.path.exists(os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}")):
+            # 先检查README.txt是否存在(防止出现数据增强到一半终止了，文件夹中只有部分数据增强后的图片，没有README.txt)
+            if os.path.exists(os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}", 'README.txt')) is False:
+                warn(f"README.txt not found in {self.short_description}-{i},please check it manually!")
+                return
+            with open(os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}", 'README.txt'), 'r') as file:
+                if file.read() == self.full_description:
+                    warn(f"{self.full_description} already exists! stop augment")
+                    return
+            i += 1
+        self.dst_folder = os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}")
+        
         os.makedirs(self.dst_folder)
         if self.task == 'cla':
-            self.table.file_name = self.table.apply(self.read_transform_write, axis=1)
+            self.table.file_name = self.table.progress_apply(self.read_transform_write, axis=1)
             self.table.drop(["no"], axis=1, inplace=True)
         else:
-            self.table.file_name.apply(lambda x:cv2.imwrite(os.path.join(self.dst_folder,x.split(os.sep)[-1]),np.array(self.transform(image=cv2.imread(filename=x))['image'])))
+            for x in tqdm(self.table.file_name, desc="处理图像"):
+                cv2.imwrite(os.path.join(self.dst_folder, x.split(os.sep)[-1]), np.array(self.transform(image=cv2.imread(filename=x))['image']))
         self.table.to_csv(os.path.join(self.dst_folder, 'ground_truth.csv'), index=False)
         with open(os.path.join(self.dst_folder, 'README.txt'), 'w') as file:
             file.write(self.full_description)
-
-
+            
+            
 if __name__ == '__main__':
     transform = A.Compose([A.Rotate(limit=10, always_apply=True)])
     Preprocess(transform,official_train=False,BUS=False,USG=False,fea_official_train=True).process_image()

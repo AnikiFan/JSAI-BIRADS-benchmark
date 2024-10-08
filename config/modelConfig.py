@@ -3,7 +3,7 @@ from omegaconf import MISSING
 from typing import *
 
 """
-模型配置，用于直接实例化模型，所以不能有除模型实例化所需参数以外的配置项
+模型配置，用于直接实例化模型
 """
 
 

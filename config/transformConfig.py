@@ -32,8 +32,8 @@ class MyCropConfig:
 @dataclass
 class ResizeConfig:
     """
-    这里设置_convert_="all"是为了让size在传入参数是变为list类型，否则会以hydra库中的类传入，不符合规定
-    注意，conver只支持转换为list，不支持转换为tuple
+    这里设置_convert_="all"是为了让size在传入参数时变为list类型，否则会以hydra库中的类传入，不符合规定
+    注意，convert只支持转换为list，不支持转换为tuple
     """
     _target_: str = "torchvision.transforms.Resize"
     size: List[int] = field(default_factory=lambda: [256, 256])

@@ -22,8 +22,8 @@ class FXEnvConfig(EnvConfig):
 @dataclass
 class ZHYLocalEnvConfig(EnvConfig):
     data_folder_path: Path = os.path.join(os.curdir, 'data')
-    # device: str = getDevice()
-    device: str = 'cpu'
+    device: str = getDevice()
+    # device: str = 'cpu'
     pin_memory: bool = False
     
 class ZhyRemoteEnvConfig(EnvConfig):

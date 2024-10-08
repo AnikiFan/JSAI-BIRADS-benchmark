@@ -1,10 +1,6 @@
 from dataclasses import dataclass, field
-from omegaconf import MISSING
-from pathlib import Path
 from typing import *
-from torchvision.transforms import Compose, ToTensor
-from utils.MyBlock.MyCrop import MyCrop
-from utils.PILResize import PILResize
+from utils.MyCrop import MyCrop
 
 """
 图像变换配置
@@ -14,7 +10,7 @@ from utils.PILResize import PILResize
 @dataclass
 class DefaultTrainTransformConfig:
     _target_: str = "torchvision.transforms.Compose"
-    transforms: List[Any] = field(default_factory=lambda: [MyCropConfig(), ResizeConfig()])
+    transforms: List[Any] = field(default_factory=lambda: [ MyCropConfig(),ResizeConfig()])
 
 
 @dataclass
@@ -30,7 +26,7 @@ class ToTensorConfig:
 
 @dataclass
 class MyCropConfig:
-    _target_: str = "utils.MyBlock.MyCrop.MyCrop"
+    _target_: str = "utils.MyCrop.MyCrop"
 
 
 @dataclass

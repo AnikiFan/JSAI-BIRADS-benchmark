@@ -9,7 +9,8 @@ class MultiMessageFilter(logging.Filter):
         "iCCP",
         "Compression method",
         "Warning: Some classes",
-        " UserWarning: A new version"
+        "A new version",
+        "The reduce argument of torch.scatter"
     ]
 
     def __init__(self):

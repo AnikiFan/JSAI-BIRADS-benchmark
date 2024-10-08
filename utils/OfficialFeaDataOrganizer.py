@@ -13,16 +13,13 @@ class OfficialFeaDataOrganizer:
     """
     feature_folder = ["boundary_labels", "calcification_labels", "direction_labels", "shape_labels"]
 
-    def __init__(self, src: str):
+    def __init__(self, src: str,dst:str):
         """
         :param src: boundary_labels……文件夹所在目录
         :param dst: 整理后存储的目录
         """
         self.src = src
-        if os.path.exists(os.path.join(self.src, "images","ground_truth.csv")):
-            os.remove(os.path.join(self.src, "images","ground_truth.csv"))
-        if os.path.exists(os.path.join(self.src, "images", "fea_order.csv")):
-            os.remove(os.path.join(self.src, "images", "fea_order.csv"))
+        self.dst = dst
         self.images = os.listdir(os.path.join(self.src, "images"))
 
     def check(self, file_name):
@@ -60,13 +57,22 @@ class OfficialFeaDataOrganizer:
     def organize(self, ignore):
         if not ignore:
             self.images = filter(self.check, self.images)
+        if os.path.exists(self.dst):
+            shutil.rmtree(self.dst)
+        os.makedirs(self.dst)
         table = pd.DataFrame({"file_name": self.images})
         table['label'] = table.file_name.apply(self.collect_labels)
-        table.to_csv(os.path.join(self.src,"images", "ground_truth.csv"), index=False)
+        table.file_name.apply(lambda x:shutil.copy(os.path.join(self.src,'images',x),os.path.join(self.dst)))
+        table.to_csv(os.path.join(self.dst,"ground_truth.csv"), index=False)
+        
 
 
 if __name__ == '__main__':
+    print(os.getcwd())
+    print()
     src = os.path.join(os.pardir, 'data', 'breast', 'fea', 'official_test')
-    OfficialFeaDataOrganizer(src).organize(ignore=True)
+    dst = os.path.join(os.pardir, 'data', 'breast', 'fea', 'test')
+    OfficialFeaDataOrganizer(src,dst).organize(ignore=True)
     src = os.path.join(os.pardir, 'data', 'breast', 'fea', 'official_train')
-    OfficialFeaDataOrganizer(src).organize(ignore=False)
+    dst = os.path.join(os.pardir, 'data', 'breast', 'fea', 'train')
+    OfficialFeaDataOrganizer(src,dst).organize(ignore=False)

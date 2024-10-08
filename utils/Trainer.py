@@ -24,7 +24,7 @@ class Trainer:
         self.cur_fold = 1
         # 用于统计各折之间的指标
         self.loss, self.f1_score, self.accuracy, self.confusion_matrix = 0, 0, 0, torch.zeros(
-            (self.cfg.dataset.num_classes, self.cfg.dataset.num_classes), dtype=torch.int, device=self.cfg.env.device)
+            (self.cfg.dataset.num_classes, self.cfg.dataset.num_classes), dtype=torch.int, device="cuda" if self.cfg.env.device.startswith('cuda') else "cpu")
         self.train_transform = instantiate(self.cfg.train_transform)
         self.valid_transform = instantiate(self.cfg.valid_transform)
         # 用于记录以折为单位的最佳指标
@@ -142,23 +142,23 @@ class Trainer:
         for epoch in range(1, self.cfg.train.epoch_num + 1):
             # 训练一个epoch，获取在上面的指标
             avg_loss, avg_accuracy, avg_f1 = self.train_one_epoch(model=model, train_loader=train_loader,
-                                                                  optimizer=optimizer, epoch_index=epoch,
-                                                                  tb_writer=writer)
+                                                                optimizer=optimizer, epoch_index=epoch,
+                                                                tb_writer=writer)
             schedular.step()
             model.eval()
             with torch.no_grad():
                 valid_outcomes = [(vlabel.to(self.cfg.env.device), model(vinputs.to(self.cfg.env.device))) for
-                                  vinputs, vlabel in tqdm(valid_loader, desc=f"Validating Epoch {epoch}", leave=True)]
+                                vinputs, vlabel in tqdm(valid_loader, desc=f"Validating Epoch {epoch}", leave=True)]
             target = torch.cat([pair[0] for pair in valid_outcomes], dim=0)
             prediction = torch.cat([pair[1] for pair in valid_outcomes], dim=0)
             # 在该epoch的验证集上获得的指标
             avg_vloss = self.loss_fn(prediction, target).item()
-            avg_vaccuracy = instantiate(self.cfg.train.accuracy, input=prediction, target=target,
+            avg_vaccuracy = instantiate(self.cfg.train.accuracy, input=prediction.cpu(), target=target.cpu(),
                                         num_classes=self.cfg.dataset.num_classes).item()
-            avg_vf1 = instantiate(self.cfg.train.f1_score, input=prediction, target=target, average='macro',
-                                  num_classes=self.cfg.dataset.num_classes).item()
-            confusion_matrix = instantiate(self.cfg.train.confusion_matrix, input=prediction, target=target,
-                                           num_classes=self.cfg.dataset.num_classes)
+            avg_vf1 = instantiate(self.cfg.train.f1_score, input=prediction.cpu(), target=target.cpu(), average='macro',
+                                num_classes=self.cfg.dataset.num_classes).item()
+            confusion_matrix = instantiate(self.cfg.train.confusion_matrix, input=prediction.cpu(), target=target.cpu(),
+                                        num_classes=self.cfg.dataset.num_classes)
             info(f"----------------- Epoch {epoch} Summary -----------------")
             info('LOSS      train {:.10f} valid {:.10f}'.format(avg_loss, avg_vloss))
             info('ACCURACY  train {:.10f} valid {:.10f}'.format(avg_accuracy, avg_vaccuracy))
@@ -167,12 +167,12 @@ class Trainer:
             # Log the running loss averaged per batch
             # for both training and validation
             writer.add_scalars('Training vs. Validation Loss', {'Training': avg_loss, 'Validation': avg_vloss},
-                               epoch)
+                            epoch)
             writer.add_scalars('Training vs. Validation Accuracy',
-                               {'Training': avg_accuracy, 'Validation': avg_vaccuracy},
-                               epoch)
+                            {'Training': avg_accuracy, 'Validation': avg_vaccuracy},
+                            epoch)
             writer.add_scalars('Training vs. Validation F1', {'Training': avg_f1, 'Validation': avg_vf1},
-                               epoch)
+                            epoch)
             writer.add_text(f'confusion matrix of epoch {epoch}', str(confusion_matrix))
             writer.flush()
 
@@ -183,8 +183,8 @@ class Trainer:
             if avg_vloss < self.best_vloss:
                 self.best_vloss, self.best_vf1, self.best_vaccuracy, self.best_vconfusion_matrix = avg_vloss, avg_vf1, avg_vaccuracy, confusion_matrix
                 info(f"\n############################################################\n"
-                     f"# Validation loss improved to {avg_vloss:.6f} - saving best model #\n"
-                     f"############################################################")
+                    f"# Validation loss improved to {avg_vloss:.6f} - saving best model #\n"
+                    f"############################################################")
                 # 保存checkpoint（包括epoch，model_state_dict，optimizer_state_dict，best_vloss，但仅在best时保存）
                 # 保存断点重训所需的信息（需要包括epoch，model_state_dict，optimizer_state_dict，best_vloss）
                 # 只保留一份最佳指标对应的参数

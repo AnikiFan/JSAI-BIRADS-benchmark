@@ -1,8 +1,10 @@
 from utils.dataAugmentation import Preprocess
 import albumentations as A
 
+
+
 if __name__ == '__main__':
-    ratio = [2, 1, 3, 4, 5, 6]
+    ratio = [2, 1, 8, 7, 7, 6]
 
     # 1. 旋转 (Rotation)
     transform_rotate = A.Compose([
@@ -30,13 +32,13 @@ if __name__ == '__main__':
 
     # 5. 高斯噪声 (Gaussian Noise)
     transform_gaussian_noise = A.Compose([
-        A.GaussianNoise(var_limit=(10.0, 50.0), p=1.0)
+        A.GaussNoise(var_limit=(10.0, 50.0), p=1.0)
     ])
     Preprocess(transform_gaussian_noise, ratio=ratio).process_image()
 
     # 6. 弹性变换 (Elastic Transform)
     transform_elastic = A.Compose([
-        A.ElasticTransform(alpha=1, sigma=50, alpha_affine=50, p=1.0)
+        A.ElasticTransform(alpha=1, sigma=50, alpha_affine=None, p=1.0)
     ])
     Preprocess(transform_elastic, ratio=ratio).process_image()
 
@@ -47,16 +49,16 @@ if __name__ == '__main__':
     Preprocess(transform_clahe, ratio=ratio).process_image()
 
     # 8. Cutout
-    transform_cutout = A.Compose([
-        A.Cutout(num_holes=8, max_h_size=16, max_w_size=16, p=1.0)
-    ])
-    Preprocess(transform_cutout, ratio=ratio).process_image()
+    # transform_cutout = A.Compose([
+    #     A.cutout(num_holes=8, max_h_size=16, max_w_size=16, p=1.0)
+    # ])
+    # Preprocess(transform_cutout, ratio=ratio).process_image()
 
     # 9. 模糊 (Gaussian Blur)
-    # transform_blur = A.Compose([
-    #     A.GaussianBlur(blur_limit=(3, 7), p=1.0)
-    # ])
-    # Preprocess(transform_blur, ratio=ratio).process_image()
+    transform_blur = A.Compose([
+        A.GaussianBlur(blur_limit=(3, 7), p=1.0)
+    ])
+    Preprocess(transform_blur, ratio=ratio).process_image()
 
     # 10. 随机缩放和平移 (Random Scale and Translate)
     transform_shift_scale_rotate = A.Compose([
@@ -68,7 +70,7 @@ if __name__ == '__main__':
     # MixUp通常在数据加载时动态应用，不需要预处理
     # 若需要预处理，可以在此处调用相应的方法
     # from utils.dataAugmentation import MixUp
-    # MixUp(0.4, ratio=ratio).process_image()
+    MixUp(0.3, ratio=ratio).process_image()
 
     # 12. 随机擦除 (Random Erasing)
     transform_random_erasing = A.Compose([

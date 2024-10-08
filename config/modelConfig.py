@@ -65,7 +65,8 @@ class PretrainedResNetModelConfig:
 @dataclass
 class ResNetClassifierModelConfig:
     _target_:str="models.PretrainClassifer.resnet.ResNetClassifier"
-    num_classes:int=MISSING
+    resnet_type:str="resnet50"
+    num_classes:int=6
     pretrained:bool=True
     freeze_backbone:bool=False
     dropout:float=0.2

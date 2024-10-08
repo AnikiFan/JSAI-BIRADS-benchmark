@@ -73,3 +73,14 @@ class ResNetClassifierModelConfig:
     lr:float=0.001
     
 
+@dataclass
+class PretrainedClassifierModelConfig:
+    _target_:str="models.UnetClassifer.unet.PretrainedClassifier"
+    resnet_type:str="resnet50"
+    num_classes:int=6
+    pretrained:bool=True
+    backbone:str="resnet50"
+    freeze_backbone:bool=False
+    # dropout:float=0.2
+    lr:float=0.001
+    

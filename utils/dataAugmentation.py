@@ -56,6 +56,41 @@ def make_ratio_table(table: pd.DataFrame, ratio: float) -> pd.DataFrame:
     return pd.concat(result, axis=0).reset_index(drop=True)
 
 
+def print_transformations_info(full_description: str):
+    print(f"----------------------processing-----------------------------------\n")
+    print(f"{full_description}\n")
+    print(f"-------------------------------------------------------------------\n")
+
+
+def find_next_augmented_folder(data_folder_path: str, short_description: str, full_description: str) -> int:
+    """
+    查找下一个可用的增强文件夹编号。如果存在相同描述的文件夹，则发出警告并停止增强。
+
+    :param data_folder_path: 数据文件夹的路径。
+    :param short_description: 简短描述，用于文件夹命名。
+    :param full_description: 完整描述，用于README.txt内容比较。
+    :return: 下一个可用的文件夹编号。
+    """
+    i = 1
+    while os.path.exists(os.path.join(data_folder_path, 'breast', 'cla', 'augmented', f"{short_description}-{i}")):
+        augmented_path = os.path.join(data_folder_path, 'breast', 'cla', 'augmented', f"{short_description}-{i}")
+        readme_path = os.path.join(augmented_path, 'README.txt')
+        
+        # 检查 README.txt 是否存在
+        if not os.path.exists(readme_path):
+            warn(f"在 {short_description}-{i} 中未找到 README.txt，请手动检查！")
+            return i
+        
+        # 读取 README.txt 内容并进行比较
+        with open(readme_path, 'r') as file:
+            if file.read().strip() == full_description.strip():
+                warn(f"{full_description} 已存在！停止数据增强。")
+                return -1  # 返回-1表示已存在对应描述的文件夹，停止操作
+        
+        i += 1
+    
+    return i
+
 class MixUp:
     def __init__(self, mixup_alpha: float, ratio=Optional[Tuple[float]], official_train: bool = True, BUS: bool = True,
                  USG: bool = True, data_folder_path: str = os.path.join(os.getcwd(), 'data'), seed: str = 42):
@@ -89,19 +124,11 @@ class MixUp:
         return self.fingerprint
 
     def process_image(self) -> None:
-        print(f"processing {self.full_description}")
+        show_transformations_info(self.full_description)
         
-        i = 1
-        while os.path.exists(os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}")):
-            # 先检查README.txt是否存在(防止出现数据增强到一半终止了，文件夹中只有部分数据增强后的图片，没有README.txt)
-            if os.path.exists(os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}", 'README.txt')) is False:
-                warn(f"README.txt not found in {self.short_description}-{i},please check it manually!")
-                return
-            with open(os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}", 'README.txt'), 'r') as file:
-                if file.read() == self.full_description:
-                    warn(f"{self.full_description} already exists! stop augment")
-                    return
-            i += 1
+        i = find_next_augmented_folder(self.data_folder_path, self.short_description, self.full_description)
+        if i == -1:
+            return
             
         self.dst_folder = os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}")
         
@@ -176,19 +203,12 @@ class Preprocess:
         # if os.path.exists(self.dst_folder):
         #     warn(f"{self.short_description} already exists! stop augment")
         #     return
-        print(f"processin:\n {self.full_description}")
+        print_transformations_info(self.full_description)
         
-        i = 1
-        while os.path.exists(os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}")):
-            # 先检查README.txt是否存在(防止出现数据增强到一半终止了，文件夹中只有部分数据增强后的图片，没有README.txt)
-            if os.path.exists(os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}", 'README.txt')) is False:
-                warn(f"README.txt not found in {self.short_description}-{i},please check it manually!")
-                return
-            with open(os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}", 'README.txt'), 'r') as file:
-                if file.read() == self.full_description:
-                    warn(f"{self.full_description} already exists! stop augment")
-                    return
-            i += 1
+        i = find_next_augmented_folder(self.data_folder_path, self.short_description, self.full_description)
+        if i == -1:
+            return
+
         self.dst_folder = os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}")
         
         os.makedirs(self.dst_folder)
@@ -199,6 +219,12 @@ class Preprocess:
             for x in tqdm(self.table.file_name, desc="处理图像"):
                 cv2.imwrite(os.path.join(self.dst_folder, x.split(os.sep)[-1]), np.array(self.transform(image=cv2.imread(filename=x))['image']))
         self.table.to_csv(os.path.join(self.dst_folder, 'ground_truth.csv'), index=False)
+        
+        # 统计各类别的图片数量
+        category_counts = self.table['label'].value_counts().reset_index()
+        category_counts.columns = ['类别', '图片数量']
+        category_counts.to_csv(os.path.join(self.dst_folder, 'category_counts.csv'), index=False)
+        
         with open(os.path.join(self.dst_folder, 'README.txt'), 'w') as file:
             file.write(self.full_description)
             

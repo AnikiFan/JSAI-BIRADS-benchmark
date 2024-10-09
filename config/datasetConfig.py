@@ -23,10 +23,20 @@ class ClaDatasetConfig:
 @dataclass
 class ClaAugmentedDatasetConfig:
     augmented_folder_list: List[Path] = field(
-        default_factory=lambda:[
-            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'Mixup,ratio=(2,1,3,4,5,6)'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'VerticalFlip,ratio=(2,1,3,4,5,6)')
-        ])
+        default_factory=lambda: [
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'CLAHE,ratio=(1,1,1,1,1,1)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'ElasticTransform,ratio=(1,1,1,1,1,1)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'GaussianBlur,ratio=(1,1,1,1,1,1)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'GaussNoise,ratio=(1,1,1,1,1,1)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'HorizontalFlip,ratio=(1,1,1,1,1,1)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'Mixup,ratio=(1,1,1,1,1,1)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'Mixup,ratio=(1,1,1,1,1,1)-2'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'RandomBrightnessContrast,ratio=(1,1,1,1,1,1)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'Rotate,ratio=(1,1,1,1,1,1)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'ShiftScaleRotate,ratio=(1,1,1,1,1,1)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'VerticalFlip,ratio=(1,1,1,1,1,1)-1')
+        ]
+    )
 
 @dataclass
 class SingleFoldDatasetConfig(ClaDatasetConfig,ClaAugmentedDatasetConfig):

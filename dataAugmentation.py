@@ -53,6 +53,8 @@ if __name__ == '__main__':
     ]
     
     for mixup_name in mixup_transforms:
-        if mixup_name in selected_transforms:
-            alpha = float(mixup_name.split('_')[1])  # 提取 MixUp 的 alpha 值
-            MixUp(alpha, ratio=ratio).process_image()
+        alpha = float(mixup_name.split('_')[1])  # 提取 MixUp 的 alpha 值
+        print(f"alpha: {alpha}")
+        MixUp(alpha, ratio=ratio).process_image()
+    
+    

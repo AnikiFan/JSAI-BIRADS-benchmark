@@ -17,22 +17,21 @@ import numpy as np
     
 
 if __name__ == '__main__':
-    initial_num = np.array([1061, 849, 404, 274, 269, 232])
-    target_num = np.array([200, 200, 200, 200, 200, 200])
+    initial_num = np.array([1035, 1349, 492, 341, 301, 343])
+    target_num = np.array([1500-1035, 1500-1349, 1500-492, 1500-341, 1500-301, 1500-343])
     print("target_num: ", target_num)
     ratio = target_num / initial_num
-    # ratio = np.array([1,2,6,10,10,11])
-    # 将 ratio 转换为普通列表
     ratio = ratio.tolist()
     
     print("ratio: ", ratio)
     
     # 设置要使用的增广策略
     selected_transforms = [
-        A.Rotate(limit=15, p=1.0),
+        # A.Rotate(limit=10, p=1.0),
         # A.HorizontalFlip(p=1.0),
         # A.VerticalFlip(p=1.0),
-        # A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=1.0),
+        # A.RandomBrightnessContrast(brightness_limit=
+        # 0.2, contrast_limit=0.2, p=1.0),
         # A.GaussNoise(var_limit=(10.0, 50.0), p=1.0),
         # A.ElasticTransform(alpha=1.0, sigma=50, p=1.0),
         # A.CLAHE(clip_limit=2.0, tile_grid_size=(8, 8), p=1.0),

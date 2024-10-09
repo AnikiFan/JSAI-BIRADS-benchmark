@@ -46,18 +46,16 @@ def make_ratio_table(table: pd.DataFrame, ratio: float) -> pd.DataFrame:
     :return:
     """
     num_class = table.label.nunique()
-    whole = np.round(ratio).astype(np.int_)
+    whole = np.floor(ratio).astype(np.int_)
     left = ratio - whole
     result = []
     for label, group in table.groupby('label'):
-        if whole[label] > 0:
-            df = pd.concat([group.assign(no=int(i)) for i in range(1, whole[label] + 1)], axis=0)
-            if left[label] > 0:
-                df = pd.concat([df, group.iloc[:round(len(group) * left[label]), :].assign(no=int(whole[label]) + 1)], axis=0)
-        else:
-            # 如果 whole[label] <= 0，至少保留原始数据
-            df = group.assign(no=1)
-        result.append(df)
+        df = []
+        if np.any(whole!=0):
+            df.append(pd.concat([group.assign(no=int(i)) for i in range(1,whole[label]+1)],axis=0))
+        if np.any(left!=0):
+            df.append(group.iloc[:int(len(group)*left[label]),:].assign(no=int(whole[label]+1)))
+        result.append(pd.concat(df,axis=0))
     return pd.concat(result, axis=0).reset_index(drop=True)
 
 
@@ -193,7 +191,7 @@ class Preprocess:
             ratio = None
         else:
             self.task = "cla"
-        
+        print(self.table.label.value_counts())
         self.short_description, self.full_description = make_fingerprint(transform, ratio)
         if not fea_official_train:
             self.table = make_ratio_table(self.table, ratio)

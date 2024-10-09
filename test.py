@@ -88,8 +88,8 @@ class Tester:
             os.path.join(self.check_point_folder_path, "submit", self.task + "_order.csv"), index=False, )
 
 
-checkpoint_path = os.path.join(os.curdir, "outputs", "2024-10-09", "10-11-33")
 task = 'cla'
+checkpoint_path = os.path.join(os.curdir, "outputs", "2024-10-09", "10-11-33")
 
 
 @main(version_base=None, config_name="config", config_path=os.path.join(checkpoint_path, ".hydra"))

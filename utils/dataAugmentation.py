@@ -57,7 +57,7 @@ def make_ratio_table(table: pd.DataFrame, ratio: float) -> pd.DataFrame:
 
 class MixUp:
     def __init__(self, mixup_alpha: float, ratio=Optional[Tuple[float]], official_train: bool = True, BUS: bool = True,
-                 USG: bool = True, data_folder_path: str = os.path.join(os.pardir, 'data'), seed: str = 42):
+                 USG: bool = True,fea_official_train=False, data_folder_path: str = os.path.join(os.curdir, 'data'), seed: str = 42):
         """
         对图像进行 Mixup 增广并保存。
         划分验证集和训练集时，若图片A在验证集中，则训练集中不能含有任何包含该图片的mixup，当每个样本通过mixup生成s张图片时，
@@ -72,16 +72,22 @@ class MixUp:
         :param seed:
         """
         self.data_folder_path = data_folder_path
-        self.table = make_table(data_folder_path=data_folder_path, official_train=official_train, BUS=BUS, USG=USG)
+        self.table = make_table(data_folder_path=data_folder_path, official_train=official_train, BUS=BUS, USG=USG,fea_official_train=fea_official_train)
         if not ratio:
             ratio = np.ones(self.table.label.nunique(), dtype=np.int_)
         if not isinstance(ratio, np.ndarray):
             ratio = np.array(ratio)
-        self.table = make_ratio_table(self.table, ratio)
+        if fea_official_train:
+            ratio = None
+        if not fea_official_train:
+            self.table = make_ratio_table(self.table, ratio)
+            self.fingerprint = f"\nMixup(mixup_alpha={mixup_alpha},official_train={official_train},BUS={BUS},USG={USG}),\n\n"
+            self.short_description, self.full_description = make_fingerprint(self, ratio)
+        else:
+            self.fingerprint = f"\nMixup(mixup_alpha={mixup_alpha},fea_official_train={fea_official_train})\n\n"
+            self.short_description,self.full_description = "Mixup",self.fingerprint
         self.lam = np.random.beta(mixup_alpha, mixup_alpha)
-        self.fingerprint = f"\nMixup(mixup_alpha={mixup_alpha},official_train={official_train},BUS={BUS},USG={USG}),\n\n"
-        self.short_description, self.full_description = make_fingerprint(self, ratio)
-        self.dst_folder = os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', self.short_description)
+        self.dst_folder = os.path.join(self.data_folder_path, 'breast', 'cla' if not fea_official_train else 'fea', 'augmented', self.short_description)
         self.ratio = ratio
 
     def __str__(self) -> str:
@@ -95,7 +101,10 @@ class MixUp:
         self.table['noise_image'] = np.random.randint(0, len(self.table), (len(self.table), 1))
         self.table.noise_image = self.table.noise_image.apply(lambda x: self.table.file_name[x])
         self.table.file_name = self.table.apply(self.mixup, axis=1)
-        self.table.drop(['noise_image', 'no'], axis=1, inplace=True)
+        if self.ratio  != None:
+            self.table.drop(['noise_image', 'no'], axis=1, inplace=True)
+        else:
+            self.table.drop(['noise_image'], axis=1, inplace=True)
         self.table.to_csv(os.path.join(self.dst_folder, 'ground_truth.csv'), index=False)
         with open(os.path.join(self.dst_folder, 'README.txt'), 'w') as file:
             file.write(self.full_description)
@@ -108,13 +117,21 @@ class MixUp:
         :param row:
         :return:
         """
-        origin, noise, no = row.file_name, row.noise_image, row.no
+        origin, noise = row.file_name, row.noise_image
+        if self.ratio is not None:
+            no = row.no
+        else:
+            no = ''
         origin_image, noise_image = cv2.imread(origin), cv2.imread(noise)
         # 调整 Mixup 图像尺寸为原图像尺寸
         noise_image = cv2.resize(noise_image, (origin_image.shape[1], origin_image.shape[0]))
         # 计算 Mixup 权重
         mixup_image = (self.lam * origin_image + (1 - self.lam) * noise_image).astype(np.uint8)
-        file_name = origin.split(os.sep)[-1] + "__mixup__" + noise.split(os.sep)[-1] + "(" + str(no) + ').jpg'
+        if self.ratio is None:
+            file_name = origin.split(os.sep)[-1] + "__mixup__" + noise.split(os.sep)[-1] + '.jpg'
+        else:
+            file_name = origin.split(os.sep)[-1] + "__mixup__" + noise.split(os.sep)[-1] + "("+no+")"+'.jpg'
+
         cv2.imwrite(filename=os.path.join(self.dst_folder, file_name), img=mixup_image)
         return file_name
 
@@ -174,7 +191,9 @@ if __name__ == '__main__':
     transform = A.Compose([A.Rotate(limit=10, always_apply=True)])
     Preprocess(transform,official_train=False,BUS=False,USG=False,fea_official_train=True).process_image()
 
-    ratio = [2, 1, 3, 4, 5, 6]
+    MixUp(0.4, official_train=False,BUS=False,USG=False,fea_official_train=True).process_image()
+
+    # ratio = [2, 1, 3, 4, 5, 6]
     # MixUp(0.4, ratio=ratio).process_image()
 
     # transform = A.Compose([A.Rotate(limit=10, always_apply=True), A.HorizontalFlip(always_apply=True)])
@@ -186,8 +205,8 @@ if __name__ == '__main__':
     # transform = A.Compose([A.RandomBrightnessContrast(always_apply=True)])
     # Preprocess(transform, ratio=ratio).process_image()
 
-    transform = A.Compose([A.VerticalFlip(always_apply=True)])
-    Preprocess(transform, ratio=ratio).process_image()
+    # transform = A.Compose([A.VerticalFlip(always_apply=True)])
+    # Preprocess(transform, ratio=ratio).process_image()
 
 
     # transform = A.Compose([A.Perspective(scale=(0.05, 0.1), always_apply=True)])

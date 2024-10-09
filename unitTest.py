@@ -3,6 +3,8 @@ import unittest
 import pandas as pd
 import numpy as np
 import os
+
+import torch
 from PIL.Image import Image
 from torch import Tensor
 from numpy import ndarray
@@ -11,6 +13,8 @@ from utils.BreastDataset import make_table, getBreastTrainValidData, in_valid, s
     BreastCrossValidationData
 from utils.TableDataset import TableDataset
 from unittest.mock import mock_open, patch
+from utils.loss_function import MyBCELoss
+from utils.metrics import my_multilabel_accuracy, multilabel_f1_score, multilabel_confusion_matrix
 
 
 class CrossValidationTestCase(unittest.TestCase):
@@ -33,7 +37,7 @@ class CrossValidationTestCase(unittest.TestCase):
         不引入数据增广数据集的情况下，测试是否发生信息泄露
         :return:
         """
-        official_train, BUS, USG, fea_official_train = True,True,True,False
+        official_train, BUS, USG, fea_official_train = True, True, True, False
         cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
                                                                  k_fold=self.k_fold, official_train=official_train,
                                                                  BUS=BUS, USG=USG,
@@ -42,7 +46,7 @@ class CrossValidationTestCase(unittest.TestCase):
             valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
             self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: in_valid(x, valid_list))))
 
-        official_train, BUS, USG, fea_official_train = True,False,False,False
+        official_train, BUS, USG, fea_official_train = True, False, False, False
         cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
                                                                  k_fold=self.k_fold, official_train=official_train,
                                                                  BUS=BUS, USG=USG,
@@ -179,8 +183,12 @@ class CrossValidationTestCase(unittest.TestCase):
         引入数据增广数据集的情况下，测试是否发生信息泄露
         :return:
         """
+        official_train, BUS, USG, fea_official_train = True, True, True, False
         cla_cross_validation_dataset_with_augmented = BreastCrossValidationData(data_folder_path=self.data_folder_path,
                                                                                 k_fold=self.k_fold,
+                                                                                official_train=official_train, BUS=BUS,
+                                                                                USG=USG,
+                                                                                fea_official_train=fea_official_train,
                                                                                 augmented_folder_list=[
                                                                                     os.path.join(os.curdir, 'data',
                                                                                                  'breast', 'cla',
@@ -190,17 +198,57 @@ class CrossValidationTestCase(unittest.TestCase):
             valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
             self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: in_valid(x, valid_list))))
 
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        cla_cross_validation_dataset_with_augmented = BreastCrossValidationData(data_folder_path=self.data_folder_path,
+                                                                                k_fold=self.k_fold,
+                                                                                official_train=official_train, BUS=BUS,
+                                                                                USG=USG,
+                                                                                fea_official_train=fea_official_train,
+                                                                                augmented_folder_list=[
+                                                                                    os.path.join(os.curdir, 'data',
+                                                                                                 'breast', 'cla',
+                                                                                                 'augmented',
+                                                                                                 'Mixup')])
+        for train_dataset, valid_dataset in cla_cross_validation_dataset_with_augmented:
+            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
+            self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: in_valid(x, valid_list))))
+
     def test_overlap_with_mixup_augment(self):
         """
         引入数据增广数据集的情况下，测试各折的验证集之间是否存在重叠的情况
         :return:
         """
+        official_train, BUS, USG, fea_official_train = True, True, True, False
         cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
                                                                  k_fold=self.k_fold,
-                                                                 augmented_folder_list=[os.path.join(os.curdir, 'data',
-                                                                                                     'breast', 'cla',
-                                                                                                     'augmented',
-                                                                                                     'Mixup,ratio=(2,1,3,4,5,6)')])
+                                                                 official_train=official_train, BUS=BUS,
+                                                                 USG=USG,
+                                                                 fea_official_train=fea_official_train,
+                                                                 augmented_folder_list=[
+                                                                     os.path.join(os.curdir, 'data',
+                                                                                  'breast', 'cla',
+                                                                                  'augmented',
+                                                                                  'Mixup,ratio=(2,1,3,4,5,6)')])
+        first = True
+        for train_dataset, valid_dataset in cla_cross_validation_dataset:
+            if first:
+                valid_datasets = valid_dataset.table.file_name
+                first = False
+                continue
+            valid_datasets = np.intersect1d(valid_datasets, valid_dataset.table.file_name)
+        self.assertEqual(0, len(valid_datasets))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
+                                                                 k_fold=self.k_fold,
+                                                                 official_train=official_train, BUS=BUS,
+                                                                 USG=USG,
+                                                                 fea_official_train=fea_official_train,
+                                                                 augmented_folder_list=[
+                                                                     os.path.join(os.curdir, 'data',
+                                                                                  'breast', 'cla',
+                                                                                  'augmented',
+                                                                                  'Mixup,ratio=(2,1,3,4,5,6)')])
         first = True
         for train_dataset, valid_dataset in cla_cross_validation_dataset:
             if first:
@@ -657,6 +705,137 @@ class ClaTableDatasetTestCase(unittest.TestCase):
             self.assertEqual(self.labels[idx], label)
             idx += 1
 
+
+class MyBCELossTestCase(unittest.TestCase):
+    myBCELoss = MyBCELoss()
+    sigmoid = torch.nn.Sigmoid()
+
+    def test_MyBCELoss1(self):
+        """
+        测试BCELoss
+        :return:
+        """
+        input = torch.Tensor([
+            [1],
+        ])
+        target = torch.Tensor([
+            [0],
+        ])
+        result = - (target * torch.log(self.sigmoid(input)) + (1 - target) * torch.log(
+            1 - self.sigmoid(input))).mean().item()
+        self.assertEqual(result, self.myBCELoss(input=input, target=target).item())
+
+    def test_MyBCELoss2(self):
+        """
+        测试BCELoss
+        :return:
+        """
+        input = torch.Tensor([
+            [0],
+        ])
+        target = torch.Tensor([
+            [0],
+        ])
+        result = - (target * torch.log(self.sigmoid(input)) + (1 - target) * torch.log(
+            1 - self.sigmoid(input))).mean().item()
+        self.assertEqual(result, self.myBCELoss(input=input, target=target).item())
+
+    def test_MyBCELoss3(self):
+        """
+        测试MyBCE
+        :return:
+        """
+        input = torch.Tensor([
+            [1, 2, 3, 4],
+            [-1, -2, -3, -4]
+        ])
+        target = torch.Tensor([
+            [0, 0, 1, 1],
+            [0, 0, 0, 0]
+        ])
+        result = - (target * torch.log(self.sigmoid(input)) + (1 - target) * torch.log(
+            1 - self.sigmoid(input))).mean().item()
+        self.assertEqual(result, self.myBCELoss(input=input, target=target).item())
+
+
+class MyMultiLabelAccuracyTestCase(unittest.TestCase):
+    def test_MyMultiLabelAccuracy(self):
+        """
+        fea任务Accuracy计算
+        :return:
+        """
+        input = torch.Tensor([
+            [1, -1, 1, 1],
+            [-1, -1, 1, -1],
+            [1, 1, 1, -1],
+            [1, 1, -1, 1]
+        ])
+        target = torch.Tensor([
+            [1, 1, 1, 1],
+            [0, 0, 0, 0],
+            [1, 0, 1, 1],
+            [1, 1, 0, 1]
+        ])
+        self.assertAlmostEqual(0.75, my_multilabel_accuracy(input, target))
+
+
+class MyMultiLabelF1ScoreTestCase(unittest.TestCase):
+    def test_MyMultiLabelF1Score(self):
+        """
+        fea任务Accuracy计算
+        :return:
+        """
+        input = torch.Tensor([
+            [1, -1, 1, 1],
+            [-1, -1, 1, -1],
+            [1, 1, 1, -1],
+            [1, 1, -1, 1]
+        ])
+        target = torch.Tensor([
+            [1, 1, 1, 1],
+            [0, 0, 0, 0],
+            [1, 0, 1, 1],
+            [1, 1, 0, 1]
+        ])
+        self.assertAlmostEqual(0.775, multilabel_f1_score(input, target))
+
+
+class MyMultiLabelConfusionMatrixTestCase(unittest.TestCase):
+    def test_MyMultiLabelConfusionMatrix(self):
+        """
+        fea任务Accuracy计算
+        :return:
+        """
+        input = torch.Tensor([
+            [1, -1, 1, 1],
+            [-1, -1, 1, -1],
+            [1, 1, 1, -1],
+            [1, 1, -1, 1]
+        ])
+        target = torch.Tensor([
+            [1, 1, 1, 1],
+            [0, 0, 0, 0],
+            [1, 0, 1, 1],
+            [1, 1, 0, 1]
+        ])
+        self.assertTrue(torch.all(torch.Tensor([
+            [
+                [3, 0],
+                [0, 1]
+            ],
+            [
+                [1, 1],
+                [1, 1]
+            ],
+            [
+                [2, 0],
+                [1, 1]
+            ],
+            [
+                [2, 1],
+                [0, 1]
+            ],
+        ]) == multilabel_confusion_matrix(input, target)).item(),f"got {multilabel_confusion_matrix(input, target)}")
 
 if __name__ == '__main__':
     unittest.main()

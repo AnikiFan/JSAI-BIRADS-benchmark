@@ -24,7 +24,8 @@ def multilabel_confusion_matrix(input:Tensor,target:Tensor,**kwargs)->Tensor:
     用于多个二元标签样本的ocnfusion_matrix，只是将各个标签分开计算confusion_matrix，然后拼接起来
     :param input: 预测，可以是(num_sample,num_label,num_class=2)，也可以是(num_sample,num_label)，这里默认都是二元标签
     :param target: ground_truth，形状为(num_sample,num_label)
-    :return:
+    :return: [TP , FN]
+             [FP , TN]
     """
     assert input.shape == target.shape,"input and target shapes must match"
     input = torch.where(input<0,0,1)
@@ -39,9 +40,9 @@ def multilabel_confusion_matrix(input:Tensor,target:Tensor,**kwargs)->Tensor:
         fn = ((input[:, i] == 0) & (target[:, i] == 1)).sum().item()
 
         # 填充混淆矩阵
-        confusion_matrices[i, 0, 0] = tn  # True Negatives
-        confusion_matrices[i, 0, 1] = fp  # False Positives
-        confusion_matrices[i, 1, 0] = fn  # False Negatives
-        confusion_matrices[i, 1, 1] = tp  # True Positives
+        confusion_matrices[i, 1, 1] = tn  # True Negatives
+        confusion_matrices[i, 1, 0] = fp  # False Positives
+        confusion_matrices[i, 0, 1] = fn  # False Negatives
+        confusion_matrices[i, 0, 0] = tp  # True Positives
 
     return confusion_matrices

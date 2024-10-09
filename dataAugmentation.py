@@ -3,8 +3,8 @@ from albumentations import Compose, RandomBrightnessContrast
 import albumentations as A
 
 if __name__ == '__main__':
-    # transform = A.Compose([A.Rotate(limit=10, always_apply=True)])
-    # Preprocess(transform,official_train=True,BUS=False,USG=False,fea_official_train=False).process_image()
+    transform = A.Compose([A.Rotate(limit=10, always_apply=True)])
+    Preprocess(transform,official_train=False,BUS=False,USG=False,fea_official_train=True).process_image()
 
     ratio = [2, 1, 3, 4, 5, 6]
     # MixUp(0.4, ratio=ratio).process_image()

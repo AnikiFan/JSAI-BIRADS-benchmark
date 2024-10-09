@@ -6,6 +6,7 @@ import numpy as np
 from torchvision.transforms import transforms
 from PIL import Image
 from typing import *
+from collections.abc import Iterable
 
 
 class TableDataset(VisionDataset):
@@ -77,7 +78,7 @@ class TableDataset(VisionDataset):
         """
         label = self.table.iloc[item].label
         # 针对fea任务
-        if type(label) != torch.Tensor:
+        if isinstance(label,str):
             label = torch.Tensor([int(x) for x in label])
         if self.transform:
             return self.transform(self.reader(self.table.iloc[item].file_name)), label

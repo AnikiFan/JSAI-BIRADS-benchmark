@@ -38,7 +38,7 @@ class Trainer:
                            pin_memory=self.cfg.env.pin_memory,
                            drop_last=False, num_workers=self.cfg.train.num_workers,
                            pin_memory_device=self.cfg.env.pin_memory_device),
-                DataLoader(valid_ds, batch_size=self.cfg.train.batch_size, shuffle=True,
+                DataLoader(valid_ds, batch_size=self.cfg.train.batch_size, shuffle=False,
                            pin_memory=self.cfg.env.pin_memory,
                            drop_last=False, num_workers=self.cfg.train.num_workers,
                            pin_memory_device=self.cfg.env.pin_memory_device)

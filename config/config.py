@@ -11,10 +11,18 @@ from .transformConfig import *
 from .schedularConfig import *
 from typing import *
 
+cla_defaults = [
+        {"train": "cla_task"},
+        {"model": "linear_sanity_check"},
+        {"dataset": "cla_single"},
+        {"optimizer": "SGD"},
+        {"env": "fx"},
+        {"train_transform": "default"},
+        {"valid_transform": "default"},
+        {"schedular": "exponential"},
+    ]
 
-@dataclass
-class Config:
-    defaults: List[Any] = field(default_factory=lambda: [
+fea_defaults = [
         {"train": "fea_task"},
         {"model": "mobilenet_v2"},
         {"dataset": "fea_single"},
@@ -23,7 +31,12 @@ class Config:
         {"train_transform": "default"},
         {"valid_transform": "default"},
         {"schedular": "exponential"},
-    ])
+    ]
+
+
+@dataclass
+class Config:
+    defaults: List[Any] = field(default_factory=lambda: cla_defaults)
     train: Any = MISSING
     model: Any = MISSING
     dataset: Any = MISSING

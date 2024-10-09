@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 from torchvision import models
+from torchvision.models import ResNet50_Weights, ResNet18_Weights, ResNet34_Weights, ResNet101_Weights, ResNet152_Weights
 from typing import Type, Any, Callable, Union, List, Optional
 
 class ResNetClassifier(nn.Module):
@@ -32,8 +33,8 @@ class ResNetClassifier(nn.Module):
         self.resnet_type = resnet_type.lower()
         self.num_classes = num_classes
 
-        # 根据 resnet_type 获取对应的 ResNet 模型
-        self.backbone = self._get_resnet_model(self.resnet_type, pretrained)
+        # 根据 resnet_type 获取对应的 ResNet 模型及其权重
+        self.backbone, self.weights = self._get_resnet_model(self.resnet_type, pretrained)
 
         # 获取 ResNet 的最后一个全局平均池化层之后的特征维度
         if self.resnet_type in ['resnet18', 'resnet34']:
@@ -61,29 +62,38 @@ class ResNetClassifier(nn.Module):
         if freeze_backbone:
             self.freeze_backbone()
 
-    def _get_resnet_model(self, resnet_type: str, pretrained: bool) -> nn.Module:
+    def _get_resnet_model(self, resnet_type: str, pretrained: bool) -> (nn.Module, Optional[models.ResNet50_Weights]):
         """
-        根据 resnet_type 获取对应的 ResNet 模型。
+        根据 resnet_type 获取对应的 ResNet 模型及其权重。
 
         Args:
             resnet_type (str): ResNet 变体名称。
             pretrained (bool): 是否加载预训练权重。
 
         Returns:
-            nn.Module: 对应的 ResNet 模型。
+            tuple: (ResNet 模型, 权重对象或 None)
         """
         resnet_dict = {
-            'resnet18': models.resnet18,
-            'resnet34': models.resnet34,
-            'resnet50': models.resnet50,
-            'resnet101': models.resnet101,
-            'resnet152': models.resnet152
+            'resnet18': (models.resnet18, ResNet18_Weights),
+            'resnet34': (models.resnet34, ResNet34_Weights),
+            'resnet50': (models.resnet50, ResNet50_Weights),
+            'resnet101': (models.resnet101, ResNet101_Weights),
+            'resnet152': (models.resnet152, ResNet152_Weights)
         }
 
         if resnet_type not in resnet_dict:
             raise ValueError(f"Unsupported ResNet type: {resnet_type}. Choose from {list(resnet_dict.keys())}.")
 
-        return resnet_dict[resnet_type](pretrained=pretrained)
+        model_fn, weights_enum = resnet_dict[resnet_type]
+
+        if pretrained:
+            weights = weights_enum.DEFAULT
+            model = model_fn(weights=weights)
+        else:
+            weights = None
+            model = model_fn(weights=None)
+
+        return model, weights
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """

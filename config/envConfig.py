@@ -27,6 +27,7 @@ class ZHYLocalEnvConfig(EnvConfig):
     device: str = 'cpu'
     pin_memory: bool = False
     
+@dataclass
 class ZhyRemoteEnvConfig(EnvConfig):
     pass
     

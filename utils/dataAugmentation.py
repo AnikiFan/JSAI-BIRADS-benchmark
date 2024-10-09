@@ -7,7 +7,8 @@ from utils.BreastDataset import make_table
 import re
 from warnings import warn
 from typing import *
-
+from tqdm import tqdm
+from logging import debug
 
 def remove_nested_parentheses(s: str)->str:
     # 使用正则表达式匹配嵌套的圆括号及其内容
@@ -27,8 +28,9 @@ def make_fingerprint(transform: A.Compose, ratio: Optional[Tuple[float]])->Tuple
     full = fingerprint
     fingerprint = remove_nested_parentheses(fingerprint)
 
-    if type(ratio)!=type(None):
-        fingerprint += 'ratio=' + str(tuple(ratio))
+    if type(ratio) != type(None):
+        rounded_ratio = [round(r, 1) for r in ratio]
+        fingerprint += 'ratio=' + str(tuple(rounded_ratio))
     fingerprint = re.sub(r'[<>:"/\\|?*]', '_', fingerprint).replace(' ', '').rstrip(',')
 
     if type(ratio)!=type(None):
@@ -45,15 +47,53 @@ def make_ratio_table(table: pd.DataFrame, ratio: float) -> pd.DataFrame:
     :return:
     """
     num_class = table.label.nunique()
-    whole = np.round(ratio).astype(np.int_)
+    whole = np.floor(ratio).astype(np.int_)
     left = ratio - whole
     result = []
     for label, group in table.groupby('label'):
-        df = pd.concat([group.assign(no=int(i)) for i in range(1, whole[label] + 1)], axis=0)
-        df = pd.concat([df, group.iloc[:round(len(group) * left[label]), :].assign(no=int(whole[label]) + 1)], axis=0)
-        result.append(df)
+        df = []
+        if np.any(whole!=0):
+            df.append(pd.concat([group.assign(no=int(i)) for i in range(1,whole[label]+1)],axis=0))
+        if np.any(left!=0):
+            df.append(group.iloc[:int(len(group)*left[label]),:].assign(no=int(whole[label]+1)))
+        result.append(pd.concat(df,axis=0))
     return pd.concat(result, axis=0).reset_index(drop=True)
 
+
+def print_transformations_info(full_description: str):
+    debug(f"----------------------processing-----------------------------------\n")
+    debug(f"{full_description}\n")
+    debug(f"-------------------------------------------------------------------\n")
+
+
+def find_next_augmented_folder(data_folder_path: str, short_description: str, full_description: str) -> int:
+    """
+    查找下一个可用的增强文件夹编号。如果存在相同描述的文件夹，则发出警告并停止增强。
+
+    :param data_folder_path: 数据文件夹的路径。
+    :param short_description: 简短描述，用于文件夹命名。
+    :param full_description: 完整描述，用于README.txt内容比较。
+    :return: 下一个可用的文件夹编号。
+    """
+    i = 1
+    while os.path.exists(os.path.join(data_folder_path, 'breast', 'cla', 'augmented', f"{short_description}-{i}")):
+        augmented_path = os.path.join(data_folder_path, 'breast', 'cla', 'augmented', f"{short_description}-{i}")
+        readme_path = os.path.join(augmented_path, 'README.txt')
+
+        # 检查 README.txt 是否存在
+        if not os.path.exists(readme_path):
+            warn(f"在 {short_description}-{i} 中未找到 README.txt，请手动检查！")
+            return i
+
+        # 读取 README.txt 内容并进行比较
+        with open(readme_path, 'r') as file:
+            if file.read().strip() == full_description.strip():
+                warn(f"{full_description} 已存在！停止数据增强。")
+                return -1  # 返回-1表示已存在对应描述的文件夹，停止操作
+
+        i += 1
+
+    return i
 
 class MixUp:
     def __init__(self, mixup_alpha: float, ratio=Optional[Tuple[float]], official_train: bool = True, BUS: bool = True,
@@ -89,23 +129,39 @@ class MixUp:
         self.lam = np.random.beta(mixup_alpha, mixup_alpha)
         self.dst_folder = os.path.join(self.data_folder_path, 'breast', 'cla' if not fea_official_train else 'fea', 'augmented', self.short_description)
         self.ratio = ratio
+        tqdm.pandas()  # 初始化 tqdm 的 pandas 支持
 
     def __str__(self) -> str:
         return self.fingerprint
 
     def process_image(self) -> None:
-        if os.path.exists(self.dst_folder):
-            warn(f"{self.short_description} already exists! stop augment")
+        print_transformations_info(self.full_description)
+
+        i = find_next_augmented_folder(self.data_folder_path, self.short_description, self.full_description)
+        if i == -1:
             return
+
+        self.dst_folder = os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}")
+
         os.makedirs(self.dst_folder)
         self.table['noise_image'] = np.random.randint(0, len(self.table), (len(self.table), 1))
         self.table.noise_image = self.table.noise_image.apply(lambda x: self.table.file_name[x])
-        self.table.file_name = self.table.apply(self.mixup, axis=1)
+        self.table.file_name = self.table.progress_apply(self.mixup, axis=1)
         if self.ratio  != None:
             self.table.drop(['noise_image', 'no'], axis=1, inplace=True)
         else:
             self.table.drop(['noise_image'], axis=1, inplace=True)
         self.table.to_csv(os.path.join(self.dst_folder, 'ground_truth.csv'), index=False)
+
+        # 添加类别数量统计
+        category_counts = self.table['label'].value_counts().reset_index()
+        category_counts.columns = ['类别', '图片数量']
+        category_counts.to_csv(os.path.join(self.dst_folder, 'category_counts.csv'), index=False)
+
+        # 打印类别数量信息
+        debug("数据增强后的类别数量统计：")
+        debug(category_counts)
+
         with open(os.path.join(self.dst_folder, 'README.txt'), 'w') as file:
             file.write(self.full_description)
 
@@ -152,12 +208,13 @@ class Preprocess:
             ratio = None
         else:
             self.task = "cla"
-        
+        debug(self.table.label.value_counts())
         self.short_description, self.full_description = make_fingerprint(transform, ratio)
         if not fea_official_train:
             self.table = make_ratio_table(self.table, ratio)
-        self.dst_folder = os.path.join(self.data_folder_path, 'breast', self.task, 'augmented', self.short_description)
+        self.dst_folder = os.path.join(self.data_folder_path, 'breast', self.task, 'augmented', f"{self.short_description}-{1}")
         self.ratio = ratio
+        tqdm.pandas()  # 初始化 tqdm 的 pandas 支持
 
     def read_transform_write(self, row)->str:
         """
@@ -172,17 +229,36 @@ class Preprocess:
         cv2.imwrite(os.path.join(self.dst_folder, file_name), image)
         return file_name
 
-    def process_image(self)->None:
-        if os.path.exists(self.dst_folder):
-            warn(f"{self.short_description} already exists! stop augment")
+    def process_image(self) -> None:
+        # if os.path.exists(self.dst_folder):
+        #     warn(f"{self.short_description} already exists! stop augment")
+        #     return
+        print_transformations_info(self.full_description)
+
+        i = find_next_augmented_folder(self.data_folder_path, self.short_description, self.full_description)
+        if i == -1:
             return
+
+        self.dst_folder = os.path.join(self.data_folder_path, 'breast', self.task, 'augmented', f"{self.short_description}-{i}")
+
         os.makedirs(self.dst_folder)
         if self.task == 'cla':
-            self.table.file_name = self.table.apply(self.read_transform_write, axis=1)
+            self.table.file_name = self.table.progress_apply(self.read_transform_write, axis=1)
             self.table.drop(["no"], axis=1, inplace=True)
         else:
-            self.table.file_name.apply(lambda x:cv2.imwrite(os.path.join(self.dst_folder,x.split(os.sep)[-1]),np.array(self.transform(image=cv2.imread(filename=x))['image'])))
+            for x in tqdm(self.table.file_name, desc="处理图像"):
+                cv2.imwrite(os.path.join(self.dst_folder, x.split(os.sep)[-1]), np.array(self.transform(image=cv2.imread(filename=x))['image']))
         self.table.to_csv(os.path.join(self.dst_folder, 'ground_truth.csv'), index=False)
+
+        # 添加类别数量统计
+        category_counts = self.table['label'].value_counts().reset_index()
+        category_counts.columns = ['类别', '图片数量']
+        category_counts.to_csv(os.path.join(self.dst_folder, 'category_counts.csv'), index=False)
+
+        # 打印类别数量信息
+        debug("数据增强后的类别数量统计：")
+        debug(category_counts)
+
         with open(os.path.join(self.dst_folder, 'README.txt'), 'w') as file:
             file.write(self.full_description)
 
@@ -191,9 +267,7 @@ if __name__ == '__main__':
     transform = A.Compose([A.Rotate(limit=10, always_apply=True)])
     Preprocess(transform,official_train=False,BUS=False,USG=False,fea_official_train=True).process_image()
 
-    MixUp(0.4, official_train=False,BUS=False,USG=False,fea_official_train=True).process_image()
-
-    # ratio = [2, 1, 3, 4, 5, 6]
+    ratio = [2, 1, 3, 4, 5, 6]
     # MixUp(0.4, ratio=ratio).process_image()
 
     # transform = A.Compose([A.Rotate(limit=10, always_apply=True), A.HorizontalFlip(always_apply=True)])
@@ -205,8 +279,8 @@ if __name__ == '__main__':
     # transform = A.Compose([A.RandomBrightnessContrast(always_apply=True)])
     # Preprocess(transform, ratio=ratio).process_image()
 
-    # transform = A.Compose([A.VerticalFlip(always_apply=True)])
-    # Preprocess(transform, ratio=ratio).process_image()
+    transform = A.Compose([A.VerticalFlip(always_apply=True)])
+    Preprocess(transform, ratio=ratio).process_image()
 
 
     # transform = A.Compose([A.Perspective(scale=(0.05, 0.1), always_apply=True)])

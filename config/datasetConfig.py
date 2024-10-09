@@ -39,10 +39,9 @@ class FeaDatasetConfig:
 class ClaAugmentedDatasetConfig:
     augmented_folder_list: List[Path] = field(
         default_factory=lambda:[
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'Mixup,ratio=(2,1,3,4,5,6)'),
-            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'VerticalFlip,ratio=(2,1,3,4,5,6)')
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'Mixup,ratio=(2,1,3,4,5,6)'),
+            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'VerticalFlip,ratio=(2,1,3,4,5,6)')
         ])
-
 
 @dataclass
 class FeaAugmentedDatasetConfig:

@@ -11,32 +11,23 @@ from .transformConfig import *
 from .schedularConfig import *
 from typing import *
 
-cla_defaults = [
-        {"train": "cla_task"},
-        {"model": "linear_sanity_check"},
-        {"dataset": "cla_single"},
-        {"optimizer": "SGD"},
-        {"env": "fx"},
-        {"train_transform": "default"},
-        {"valid_transform": "default"},
-        {"schedular": "exponential"},
-    ]
-
-fea_defaults = [
-        {"train": "fea_task"},
-        {"model": "mobilenet_v2"},
-        {"dataset": "fea_single"},
-        {"optimizer": "SGD"},
-        {"env": "fx"},
-        {"train_transform": "default"},
-        {"valid_transform": "default"},
-        {"schedular": "exponential"},
-    ]
-
 
 @dataclass
 class Config:
-    defaults: List[Any] = field(default_factory=lambda: cla_defaults)
+    defaults: List[Any] = field(default_factory=lambda: [
+        {"train": "default"},
+        {"model": "linear_sanity_check"},
+        {"dataset": "mnist"},
+        {"optimizer": "SGD"},
+        {"env": "fx"},
+        {"train_transform": "default"},
+        {"valid_transform": "default"},
+        {"schedular": "exponential"},
+
+        # 彩色日志插件，会导致无法自动保存日志
+        # {"override hydra/job_logging": "colorlog"},
+        # {"override hydra/hydra_logging": "colorlog"}
+    ])
     train: Any = MISSING
     model: Any = MISSING
     dataset: Any = MISSING
@@ -57,6 +48,7 @@ def init_config():
 
     cs.store(group='train', name="cla_task", node=ClaTrainConfig)
     cs.store(group='train', name="fea_task", node=FeaTrainConfig)
+    cs.store(group='train', name="remote", node=RemoteTrainConfig)
 
     cs.store(group='model', name="alex_net", node=AlexNetModelConfig)
     cs.store(group='model', name="google_net", node=GoogleNetModelConfig)
@@ -68,6 +60,7 @@ def init_config():
     cs.store(group='model', name="unet_classifier", node=UnetModelConfig)
     cs.store(group='model', name="resnet_classifier", node=ResNetClassifierModelConfig)
     cs.store(group='model', name="mobilenet_v2", node=MobileNetModleConfig)
+    cs.store(group='model', name="pretrained_classifier", node=PretrainedClassifierModelConfig)
 
     cs.store(group='dataset', name="fashion_mnist", node=FashionMNISTDatasetConfig)
     cs.store(group='dataset', name="mnist", node=MNISTDatasetConfig)
@@ -85,8 +78,10 @@ def init_config():
     cs.store(group='env', name="yzl", node=YZLEnvConfig)
 
     cs.store(group='train_transform', name="default", node=DefaultTrainTransformConfig)
+    cs.store(group='train_transform', name="custom", node=CustomTrainTransformConfig)
 
     cs.store(group='valid_transform', name="default", node=DefaultValidTransformConfig)
+    cs.store(group='valid_transform', name="custom", node=CustomValidTransformConfig)
 
     cs.store(group='schedular', name="exponential", node=ExponentialLRConfig)
     cs.store(group='schedular', name="dummy", node=DummySchedularConfig)

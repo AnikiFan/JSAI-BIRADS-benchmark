@@ -90,7 +90,7 @@ class Trainer:
             loss.backward()
             optimizer.step()
             if (i % self.cfg.train.info_frequency == 0
-                    or len(train_loader) > self.cfg.train.info_frequency and i == len(train_loader) - 1):
+                    or len(train_loader) < self.cfg.train.info_frequency and i == len(train_loader) - 1):
                 # 计算实际的批次数
                 outputs, labels = torch.cat(outputs, dim=0), torch.cat(labels, dim=0)
                 avg_loss = self.loss_fn(input=outputs, target=labels).item()
@@ -117,11 +117,6 @@ class Trainer:
 
     @staticmethod
     def init_weights(m):
-        """
-        使用xavier方法初始化权重
-        :param m:
-        :return:
-        """
         if type(m) == torch.nn.Linear or type(m) == torch.nn.Conv2d:
             torch.nn.init.xavier_uniform_(m.weight)
 
@@ -158,17 +153,17 @@ class Trainer:
             model.eval()
             with torch.no_grad():
                 valid_outcomes = [(vlabel.to(self.cfg.env.device), model(vinputs.to(self.cfg.env.device))) for
-                                  vinputs, vlabel in tqdm(valid_loader, desc=f"Validating Epoch {epoch}", leave=False)]
+                                  vinputs, vlabel in tqdm(valid_loader, desc=f"Validating Epoch {epoch}", leave=True)]
             target = torch.cat([pair[0] for pair in valid_outcomes], dim=0)
             prediction = torch.cat([pair[1] for pair in valid_outcomes], dim=0)
             # 在该epoch的验证集上获得的指标
             avg_vloss = self.loss_fn(prediction, target).item()
-            avg_vaccuracy = instantiate(self.cfg.train.accuracy, input=prediction, target=target,
+            avg_vaccuracy = instantiate(self.cfg.train.accuracy, input=prediction.cpu(), target=target.cpu(),
                                         num_classes=self.cfg.dataset.num_classes).item()
-            avg_vf1 = instantiate(self.cfg.train.f1_score, input=prediction, target=target, average='macro',
-                                  num_classes=self.cfg.dataset.num_classes).item()
-            confusion_matrix = instantiate(self.cfg.train.confusion_matrix, input=prediction, target=target,
-                                           num_classes=self.cfg.dataset.num_classes)
+            avg_vf1 = instantiate(self.cfg.train.f1_score, input=prediction.cpu(), target=target.cpu(), average='macro',
+                                num_classes=self.cfg.dataset.num_classes).item()
+            confusion_matrix = instantiate(self.cfg.train.confusion_matrix, input=prediction.cpu(), target=target.cpu(),
+                                        num_classes=self.cfg.dataset.num_classes)
             info(f"----------------- Epoch {epoch} Summary -----------------")
             info('LOSS      train {:.10f} valid {:.10f}'.format(avg_loss, avg_vloss))
             info('ACCURACY  train {:.10f} valid {:.10f}'.format(avg_accuracy, avg_vaccuracy))

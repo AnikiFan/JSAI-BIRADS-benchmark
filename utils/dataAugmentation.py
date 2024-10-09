@@ -8,7 +8,7 @@ import re
 from warnings import warn
 from typing import *
 from tqdm import tqdm
-from logging import debug
+from logging import info
 
 def remove_nested_parentheses(s: str)->str:
     # 使用正则表达式匹配嵌套的圆括号及其内容
@@ -61,9 +61,9 @@ def make_ratio_table(table: pd.DataFrame, ratio: float) -> pd.DataFrame:
 
 
 def print_transformations_info(full_description: str):
-    debug(f"----------------------processing-----------------------------------\n")
-    debug(f"{full_description}\n")
-    debug(f"-------------------------------------------------------------------\n")
+    info(f"----------------------processing-----------------------------------\n")
+    info(f"{full_description}\n")
+    info(f"-------------------------------------------------------------------\n")
 
 
 def find_next_augmented_folder(data_folder_path: str, short_description: str, full_description: str) -> int:
@@ -159,8 +159,8 @@ class MixUp:
         category_counts.to_csv(os.path.join(self.dst_folder, 'category_counts.csv'), index=False)
 
         # 打印类别数量信息
-        debug("数据增强后的类别数量统计：")
-        debug(category_counts)
+        info("数据增强后的类别数量统计：")
+        info(category_counts)
 
         with open(os.path.join(self.dst_folder, 'README.txt'), 'w') as file:
             file.write(self.full_description)
@@ -208,7 +208,7 @@ class Preprocess:
             ratio = None
         else:
             self.task = "cla"
-        debug(self.table.label.value_counts())
+        info(self.table.label.value_counts())
         self.short_description, self.full_description = make_fingerprint(transform, ratio)
         if not fea_official_train:
             self.table = make_ratio_table(self.table, ratio)
@@ -256,8 +256,8 @@ class Preprocess:
         category_counts.to_csv(os.path.join(self.dst_folder, 'category_counts.csv'), index=False)
 
         # 打印类别数量信息
-        debug("数据增强后的类别数量统计：")
-        debug(category_counts)
+        info("数据增强后的类别数量统计：")
+        info(category_counts)
 
         with open(os.path.join(self.dst_folder, 'README.txt'), 'w') as file:
             file.write(self.full_description)

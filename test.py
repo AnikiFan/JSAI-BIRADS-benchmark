@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import os
 from config.config import init_config, Config
-from fontTools.varLib.instancer import instantiateSTAT
 from hydra import main
 from hydra.utils import instantiate
 import torch

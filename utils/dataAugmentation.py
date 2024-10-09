@@ -50,8 +50,13 @@ def make_ratio_table(table: pd.DataFrame, ratio: float) -> pd.DataFrame:
     left = ratio - whole
     result = []
     for label, group in table.groupby('label'):
-        df = pd.concat([group.assign(no=int(i)) for i in range(1, whole[label] + 1)], axis=0)
-        df = pd.concat([df, group.iloc[:round(len(group) * left[label]), :].assign(no=int(whole[label]) + 1)], axis=0)
+        if whole[label] > 0:
+            df = pd.concat([group.assign(no=int(i)) for i in range(1, whole[label] + 1)], axis=0)
+            if left[label] > 0:
+                df = pd.concat([df, group.iloc[:round(len(group) * left[label]), :].assign(no=int(whole[label]) + 1)], axis=0)
+        else:
+            # 如果 whole[label] <= 0，至少保留原始数据
+            df = group.assign(no=1)
         result.append(df)
     return pd.concat(result, axis=0).reset_index(drop=True)
 
@@ -124,7 +129,7 @@ class MixUp:
         return self.fingerprint
 
     def process_image(self) -> None:
-        show_transformations_info(self.full_description)
+        print_transformations_info(self.full_description)
         
         i = find_next_augmented_folder(self.data_folder_path, self.short_description, self.full_description)
         if i == -1:
@@ -139,6 +144,16 @@ class MixUp:
         self.table.file_name = self.table.progress_apply(self.mixup, axis=1)
         self.table.drop(['noise_image', 'no'], axis=1, inplace=True)
         self.table.to_csv(os.path.join(self.dst_folder, 'ground_truth.csv'), index=False)
+        
+        # 添加类别数量统计
+        category_counts = self.table['label'].value_counts().reset_index()
+        category_counts.columns = ['类别', '图片数量']
+        category_counts.to_csv(os.path.join(self.dst_folder, 'category_counts.csv'), index=False)
+        
+        # 打印类别数量信息
+        print("数据增强后的类别数量统计：")
+        print(category_counts)
+        
         with open(os.path.join(self.dst_folder, 'README.txt'), 'w') as file:
             file.write(self.full_description)
 
@@ -220,15 +235,19 @@ class Preprocess:
                 cv2.imwrite(os.path.join(self.dst_folder, x.split(os.sep)[-1]), np.array(self.transform(image=cv2.imread(filename=x))['image']))
         self.table.to_csv(os.path.join(self.dst_folder, 'ground_truth.csv'), index=False)
         
-        # 统计各类别的图片数量
+        # 添加类别数量统计
         category_counts = self.table['label'].value_counts().reset_index()
         category_counts.columns = ['类别', '图片数量']
         category_counts.to_csv(os.path.join(self.dst_folder, 'category_counts.csv'), index=False)
         
+        # 打印类别数量信息
+        print("数据增强后的类别数量统计：")
+        print(category_counts)
+        
         with open(os.path.join(self.dst_folder, 'README.txt'), 'w') as file:
             file.write(self.full_description)
-            
-            
+
+
 if __name__ == '__main__':
     transform = A.Compose([A.Rotate(limit=10, always_apply=True)])
     Preprocess(transform,official_train=False,BUS=False,USG=False,fea_official_train=True).process_image()
@@ -255,3 +274,6 @@ if __name__ == '__main__':
     # transform = A.Compose([A.ElasticTransform(alpha=1, sigma=50, always_apply=True)])
     # Preprocess(transform, ratio=ratio).process_image()
 
+
+    # transform = A.Compose([A.ElasticTransform(alpha=1, sigma=50, always_apply=True)])
+    # Preprocess(transform, ratio=ratio).process_image()

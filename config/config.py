@@ -47,7 +47,7 @@ def init_config():
     cs = ConfigStore.instance()
 
     cs.store(group='train', name="default", node=DefaultTrainConfig)
-    cs.store(group='train', name="remote_zhy", node=RemoteTrainConfig)
+    cs.store(group='train', name="remote", node=RemoteTrainConfig)
 
     cs.store(group='model', name="alex_net", node=AlexNetModelConfig)
     cs.store(group='model', name="google_net", node=GoogleNetModelConfig)
@@ -58,6 +58,7 @@ def init_config():
     cs.store(group='model', name="pretrained_resnet", node=PretrainedResNetModelConfig)
     cs.store(group='model', name="default", node=DefaultModelConfig)
     cs.store(group='model', name="resnet_classifier", node=ResNetClassifierModelConfig)
+    cs.store(group='model', name="pretrained_classifier", node=PretrainedClassifierModelConfig)
 
     cs.store(group='dataset', name="fashion_mnist", node=FashionMNISTDatasetConfig)
     cs.store(group='dataset', name="mnist", node=MNISTDatasetConfig)
@@ -73,8 +74,10 @@ def init_config():
     cs.store(group='env', name="yzl", node=YZLEnvConfig)
 
     cs.store(group='train_transform', name="default", node=DefaultTrainTransformConfig)
+    cs.store(group='train_transform', name="custom", node=CustomTrainTransformConfig)
 
     cs.store(group='valid_transform', name="default", node=DefaultValidTransformConfig)
+    cs.store(group='valid_transform', name="custom", node=CustomValidTransformConfig)
 
     cs.store(group='schedular', name="exponential", node=ExponentialLRConfig)
     cs.store(group='schedular', name="dummy", node=DummySchedularConfig)

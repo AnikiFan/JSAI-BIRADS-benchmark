@@ -100,12 +100,14 @@ class DefaultTrainConfig(MultiClassTrainConfig):
     early_stopping: EarlyStopping = field(default_factory=EarlyStopping)
     loss_function: CrossEntropyConfig = field(default_factory=CrossEntropyConfig)
 
+
 @dataclass
 class RemoteTrainConfig(DefaultTrainConfig):
     checkpoint_path: Path = MISSING
-    epoch_num:int=1000
-    num_workers:int=10
-    batch_size:int=16
-    info_frequency:int=100
-    early_stopping:EarlyStopping=field(default_factory=EarlyStopping)
-    loss_function:CrossEntropyConfig=field(default_factory=CrossEntropyConfig)
+    epoch_num: int = 1000
+    num_workers: int = 10
+    batch_size: int = 16
+    info_frequency: int = 100
+    early_stopping: EarlyStopping = field(default_factory=EarlyStopping)
+    loss_function: CrossEntropyConfig = field(default_factory=CrossEntropyConfig)
+

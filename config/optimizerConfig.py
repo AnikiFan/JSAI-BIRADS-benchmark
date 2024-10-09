@@ -11,3 +11,9 @@ from typing import *
 class SGDOptimizerConfig:
     _target_: str = "torch.optim.SGD"
     params:Any=MISSING
+
+@dataclass
+class AdamOptimizerConfig:
+    _target_: str = "torch.optim.Adam"
+    params:Any=MISSING
+

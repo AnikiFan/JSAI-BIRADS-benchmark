@@ -46,3 +46,32 @@ class PILResizeConfig:
     _target_: str = "utils.PILResize.PILResize"
     size: List[int] = field(default_factory=lambda: [128, 128])
     _convert_: str = "all"
+
+
+@dataclass
+class NormalizeConfig:
+    _target_: str = "torchvision.transforms.Normalize"
+    mean: List[float] = field(default_factory=lambda: [0.4914, 0.4822, 0.4465])
+    std: List[float] = field(default_factory=lambda: [0.2023, 0.1994, 0.201])
+
+
+@dataclass
+class CustomTrainTransformConfig:
+    _target_: str = "torchvision.transforms.Compose"
+    transforms: List[Any] = field(default_factory=lambda: [
+        MyCropConfig(),
+        ResizeConfig(),
+        # ToTensorConfig(),
+        NormalizeConfig()
+    ])
+
+
+@dataclass
+class CustomValidTransformConfig:
+    _target_: str = "torchvision.transforms.Compose"
+    transforms: List[Any] = field(default_factory=lambda: [
+        MyCropConfig(),
+        ResizeConfig(),
+        # ToTensorConfig(),
+        NormalizeConfig()
+    ])

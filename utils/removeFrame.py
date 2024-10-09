@@ -1,7 +1,7 @@
 import numpy as np
 from logging import debug
 from typing import *
-def removeFrame(x:np.ndarray)->Tuple[int,int,int,int]:
+def removeFrame(x:np.ndarray,debug=False)->Tuple[int,int,int,int]:
     """
     对张量进行裁剪。
     :param x: 输入ndarray，形状为 (C, H, W)
@@ -109,10 +109,12 @@ def removeFrame(x:np.ndarray)->Tuple[int,int,int,int]:
             p -= 1
 
     if (right - left) < w * 0.4:
-        debug('width too small after cropped!')
+        if debug:
+            debug('width too small after cropped!')
         left, right = 0, w - 1
     if (bottom - top) < h * 0.4:
-        debug('height too small after cropped!')
+        if debug:
+            debug('height too small after cropped!')
         top, bottom = 0, h - 1
 
     return top,left,bottom-top,right-left

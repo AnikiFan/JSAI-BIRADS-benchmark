@@ -60,8 +60,9 @@ class MixUp:
                  USG: bool = True, data_folder_path: str = os.path.join(os.pardir, 'data'), seed: str = 42):
         """
         对图像进行 Mixup 增广并保存。
-        划分验证集和训练集时，若图片A在验证集中，则训练集中不能含有任何包含该图片的mixup，当每个样本通过mixup生成s张图片时，若采用
-        k折交叉验证，能够采用为训练集的由mixup额外生成的图片数量的期望为s*n*(k-1)^2/k^2，方差是s*n*(k-1)^2/k^3
+        划分验证集和训练集时，若图片A在验证集中，则训练集中不能含有任何包含该图片的mixup，当每个样本通过mixup生成s张图片时，
+        能够加入训练集的图片个数为sn(1-ratio)E(X)，其中X~B(1;1-ratio)，所以期望为sn(1-ratio)^2，方差为(sn)^2(1-ratio)^3ratio，其中ratio为验证集比例
+        若采用k折交叉验证，则ratio=1/k
         :param mixup_alpha: Mixup 中 Beta 分布的参数。这里alpha对应的是认为是真实label的图片所占的比例。
         :param ratio: 各个类别通过增广得到的数量与原来的数量之比，默认都是1，若为小数x，会保证该类中的每张图片增广x下取整次，小数部分随机选取
         :param official_train:

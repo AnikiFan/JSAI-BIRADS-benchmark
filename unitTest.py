@@ -7,7 +7,8 @@ from PIL.Image import Image
 from torch import Tensor
 from numpy import ndarray
 from torchvision.transforms import Compose, RandomCrop, RandomHorizontalFlip
-from utils.BreastDataset import make_table, getBreastTrainValidData, in_valid, split_augmented_image, BreastCrossValidationData
+from utils.BreastDataset import make_table, getBreastTrainValidData, in_valid, split_augmented_image, \
+    BreastCrossValidationData
 from utils.TableDataset import TableDataset
 from unittest.mock import mock_open, patch
 
@@ -32,19 +33,114 @@ class CrossValidationTestCase(unittest.TestCase):
         不引入数据增广数据集的情况下，测试是否发生信息泄露
         :return:
         """
+        official_train, BUS, USG, fea_official_train = True,True,True,False
         cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
-                                                                 k_fold=self.k_fold)
+                                                                 k_fold=self.k_fold, official_train=official_train,
+                                                                 BUS=BUS, USG=USG,
+                                                                 fea_official_train=fea_official_train)
         for train_dataset, valid_dataset in cla_cross_validation_dataset:
             valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
             self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: in_valid(x, valid_list))))
+
+        official_train, BUS, USG, fea_official_train = True,False,False,False
+        cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
+                                                                 k_fold=self.k_fold, official_train=official_train,
+                                                                 BUS=BUS, USG=USG,
+                                                                 fea_official_train=fea_official_train)
+        for train_dataset, valid_dataset in cla_cross_validation_dataset:
+            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
+            self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: in_valid(x, valid_list))))
+
+        official_train, BUS, USG, fea_official_train = False, True, False, False
+        cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
+                                                                 k_fold=self.k_fold, official_train=official_train,
+                                                                 BUS=BUS, USG=USG,
+                                                                 fea_official_train=fea_official_train)
+        for train_dataset, valid_dataset in cla_cross_validation_dataset:
+            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
+
+        official_train, BUS, USG, fea_official_train = False, False, True, False
+        cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
+                                                                 k_fold=self.k_fold, official_train=official_train,
+                                                                 BUS=BUS, USG=USG,
+                                                                 fea_official_train=fea_official_train)
+        for train_dataset, valid_dataset in cla_cross_validation_dataset:
+            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
+                                                                 k_fold=self.k_fold, official_train=official_train,
+                                                                 BUS=BUS, USG=USG,
+                                                                 fea_official_train=fea_official_train)
+        for train_dataset, valid_dataset in cla_cross_validation_dataset:
+            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
 
     def test_overlap_without_augment(self):
         """
         不引入数据增广数据集的情况下，测试各折的验证集之间是否存在重叠的情况
         :return:
         """
+        official_train, BUS, USG, fea_official_train = True, True, True, False
         cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
-                                                                 k_fold=self.k_fold)
+                                                                 k_fold=self.k_fold, official_train=official_train,
+                                                                 BUS=BUS, USG=USG,
+                                                                 fea_official_train=fea_official_train)
+        first = True
+        for train_dataset, valid_dataset in cla_cross_validation_dataset:
+            if first:
+                valid_datasets = valid_dataset.table.file_name
+                first = False
+                continue
+            valid_datasets = np.intersect1d(valid_datasets, valid_dataset.table.file_name)
+        self.assertEqual(0, len(valid_datasets))
+
+        official_train, BUS, USG, fea_official_train = True, False, False, False
+        cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
+                                                                 k_fold=self.k_fold, official_train=official_train,
+                                                                 BUS=BUS, USG=USG,
+                                                                 fea_official_train=fea_official_train)
+        first = True
+        for train_dataset, valid_dataset in cla_cross_validation_dataset:
+            if first:
+                valid_datasets = valid_dataset.table.file_name
+                first = False
+                continue
+            valid_datasets = np.intersect1d(valid_datasets, valid_dataset.table.file_name)
+        self.assertEqual(0, len(valid_datasets))
+
+        official_train, BUS, USG, fea_official_train = False, True, False, False
+        cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
+                                                                 k_fold=self.k_fold, official_train=official_train,
+                                                                 BUS=BUS, USG=USG,
+                                                                 fea_official_train=fea_official_train)
+        first = True
+        for train_dataset, valid_dataset in cla_cross_validation_dataset:
+            if first:
+                valid_datasets = valid_dataset.table.file_name
+                first = False
+                continue
+            valid_datasets = np.intersect1d(valid_datasets, valid_dataset.table.file_name)
+        self.assertEqual(0, len(valid_datasets))
+
+        official_train, BUS, USG, fea_official_train = False, False, True, False
+        cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
+                                                                 k_fold=self.k_fold, official_train=official_train,
+                                                                 BUS=BUS, USG=USG,
+                                                                 fea_official_train=fea_official_train)
+        first = True
+        for train_dataset, valid_dataset in cla_cross_validation_dataset:
+            if first:
+                valid_datasets = valid_dataset.table.file_name
+                first = False
+                continue
+            valid_datasets = np.intersect1d(valid_datasets, valid_dataset.table.file_name)
+        self.assertEqual(0, len(valid_datasets))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
+                                                                 k_fold=self.k_fold, official_train=official_train,
+                                                                 BUS=BUS, USG=USG,
+                                                                 fea_official_train=fea_official_train)
         first = True
         for train_dataset, valid_dataset in cla_cross_validation_dataset:
             if first:
@@ -64,20 +160,19 @@ class CrossValidationTestCase(unittest.TestCase):
         cla_cross_validation_dataset_with_augment = BreastCrossValidationData(data_folder_path=self.data_folder_path,
                                                                               k_fold=self.k_fold,
                                                                               augmented_folder_list=[
-                                                                               os.path.join(os.curdir, 'data',
-                                                                                            'breast', 'cla',
-                                                                                            'augmented',
-                                                                                            'Mixup,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)')])
+                                                                                  os.path.join(os.curdir, 'data',
+                                                                                               'breast', 'cla',
+                                                                                               'augmented',
+                                                                                               'Mixup,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)')])
         cla_cross_validation_dataset_without_augment = BreastCrossValidationData(data_folder_path=self.data_folder_path,
                                                                                  k_fold=self.k_fold)
-        num = 9824  # 增广后得到的mixup图片数量
         for train_dataset_with_augment, valid_dataset_with_augment in cla_cross_validation_dataset_with_augment:
             train_dataset_without_augment, valid_dataset_without_augment = next(
                 cla_cross_validation_dataset_without_augment)
             self.assertGreater(len(train_dataset_with_augment) - len(train_dataset_without_augment),
-                               (0.64 - 0.128 * 2) * 1.5 * len(train_dataset_without_augment))
+                               (0.64 - 0.08 * 3) * len(train_dataset_without_augment))
             self.assertLess(len(train_dataset_with_augment) - len(train_dataset_without_augment),
-                            (0.64 + 0.128 * 2) * 1.5 * len(train_dataset_without_augment))
+                            (0.64 + 0.08 * 3) * len(train_dataset_without_augment))
 
     def test_leakage_with_mixup_augment(self):
         """
@@ -87,12 +182,10 @@ class CrossValidationTestCase(unittest.TestCase):
         cla_cross_validation_dataset_with_augmented = BreastCrossValidationData(data_folder_path=self.data_folder_path,
                                                                                 k_fold=self.k_fold,
                                                                                 augmented_folder_list=[
-                                                                                 os.path.join(os.curdir, 'data',
-                                                                                              'breast', 'cla',
-                                                                                              'augmented',
-                                                                                              'Mixup,ratio=(2,1,3,4,5,6)')])
-        cla_cross_validation_dataset_without_augmented = BreastCrossValidationData(data_folder_path=self.data_folder_path,
-                                                                                   k_fold=self.k_fold)
+                                                                                    os.path.join(os.curdir, 'data',
+                                                                                                 'breast', 'cla',
+                                                                                                 'augmented',
+                                                                                                 'Mixup,ratio=(2,1,3,4,5,6)')])
         for train_dataset, valid_dataset in cla_cross_validation_dataset_with_augmented:
             valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
             self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: in_valid(x, valid_list))))
@@ -105,9 +198,9 @@ class CrossValidationTestCase(unittest.TestCase):
         cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
                                                                  k_fold=self.k_fold,
                                                                  augmented_folder_list=[os.path.join(os.curdir, 'data',
-                                                                                                  'breast', 'cla',
-                                                                                                  'augmented',
-                                                                                                  'Mixup,ratio=(2,1,3,4,5,6)')])
+                                                                                                     'breast', 'cla',
+                                                                                                     'augmented',
+                                                                                                     'Mixup,ratio=(2,1,3,4,5,6)')])
         first = True
         for train_dataset, valid_dataset in cla_cross_validation_dataset:
             if first:
@@ -143,13 +236,12 @@ class CrossValidationTestCase(unittest.TestCase):
         cla_cross_validation_dataset_with_augment = BreastCrossValidationData(data_folder_path=self.data_folder_path,
                                                                               k_fold=self.k_fold,
                                                                               augmented_folder_list=[
-                                                                               os.path.join(os.curdir, 'data',
-                                                                                            'breast', 'cla',
-                                                                                            'augmented',
-                                                                                            'Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)')])
+                                                                                  os.path.join(os.curdir, 'data',
+                                                                                               'breast', 'cla',
+                                                                                               'augmented',
+                                                                                               'Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)')])
         cla_cross_validation_dataset_without_augment = BreastCrossValidationData(data_folder_path=self.data_folder_path,
                                                                                  k_fold=self.k_fold)
-        num = 9824  # 增广后得到的mixup图片数量
         for train_dataset_with_augment, valid_dataset_with_augment in cla_cross_validation_dataset_with_augment:
             train_dataset_without_augment, valid_dataset_without_augment = next(
                 cla_cross_validation_dataset_without_augment)
@@ -164,12 +256,10 @@ class CrossValidationTestCase(unittest.TestCase):
         cla_cross_validation_dataset_with_augmented = BreastCrossValidationData(data_folder_path=self.data_folder_path,
                                                                                 k_fold=self.k_fold,
                                                                                 augmented_folder_list=[
-                                                                                 os.path.join(os.curdir, 'data',
-                                                                                              'breast', 'cla',
-                                                                                              'augmented',
-                                                                                              'Rotate,ratio=(2,1,3,4,5,6)')])
-        cla_cross_validation_dataset_without_augmented = BreastCrossValidationData(data_folder_path=self.data_folder_path,
-                                                                                   k_fold=self.k_fold)
+                                                                                    os.path.join(os.curdir, 'data',
+                                                                                                 'breast', 'cla',
+                                                                                                 'augmented',
+                                                                                                 'Rotate,ratio=(2,1,3,4,5,6)')])
         for train_dataset, valid_dataset in cla_cross_validation_dataset_with_augmented:
             valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
             self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: in_valid(x, valid_list))))
@@ -182,9 +272,9 @@ class CrossValidationTestCase(unittest.TestCase):
         cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
                                                                  k_fold=self.k_fold,
                                                                  augmented_folder_list=[os.path.join(os.curdir, 'data',
-                                                                                                  'breast', 'cla',
-                                                                                                  'augmented',
-                                                                                                  'Rotate,ratio=(2,1,3,4,5,6)')])
+                                                                                                     'breast', 'cla',
+                                                                                                     'augmented',
+                                                                                                     'Rotate,ratio=(2,1,3,4,5,6)')])
         first = True
         for train_dataset, valid_dataset in cla_cross_validation_dataset:
             if first:
@@ -195,7 +285,7 @@ class CrossValidationTestCase(unittest.TestCase):
         self.assertEqual(0, len(valid_datasets))
 
 
-class InValidTestCase(unittest.TestCase):
+class ClaInValidTestCase(unittest.TestCase):
     valid_list = [
         "0086.jpg",
         "0087.jpg",
@@ -261,7 +351,7 @@ class InValidTestCase(unittest.TestCase):
             self.assertFalse(in_valid(file_name, self.valid_list), file_name)
 
 
-class SplitAugmentedImageTestCase(unittest.TestCase):
+class ClaSplitAugmentedImageTestCase(unittest.TestCase):
     num_classes = 6
     valid_list = [
         "0086.jpg",
@@ -355,7 +445,7 @@ class GetBreastTrainValidDataTestCase(unittest.TestCase):
         table = make_table(self.data_folder_path, official_train=official_train, BUS=BUS, USG=USG)
         train_dataset, valid_dataset = next(
             getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
-                                 BUS=BUS, USG=USG))
+                                    BUS=BUS, USG=USG))
         self.assertEqual(len(table), len(train_dataset) + len(valid_dataset))
         self.assertEqual(int(len(table) * self.valid_ratio), len(valid_dataset))
 
@@ -363,7 +453,7 @@ class GetBreastTrainValidDataTestCase(unittest.TestCase):
         table = make_table(self.data_folder_path, official_train=official_train, BUS=BUS, USG=USG)
         train_dataset, valid_dataset = next(
             getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
-                                 BUS=BUS, USG=USG))
+                                    BUS=BUS, USG=USG))
         self.assertEqual(len(table), len(train_dataset) + len(valid_dataset))
         self.assertEqual(int(len(table) * self.valid_ratio), len(valid_dataset))
 
@@ -371,7 +461,7 @@ class GetBreastTrainValidDataTestCase(unittest.TestCase):
         table = make_table(self.data_folder_path, official_train=official_train, BUS=BUS, USG=USG)
         train_dataset, valid_dataset = next(
             getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
-                                 BUS=BUS, USG=USG))
+                                    BUS=BUS, USG=USG))
         self.assertEqual(len(table), len(train_dataset) + len(valid_dataset))
         self.assertEqual(int(len(table) * self.valid_ratio), len(valid_dataset))
 
@@ -379,7 +469,16 @@ class GetBreastTrainValidDataTestCase(unittest.TestCase):
         table = make_table(self.data_folder_path, official_train=official_train, BUS=BUS, USG=USG)
         train_dataset, valid_dataset = next(
             getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
-                                 BUS=BUS, USG=USG))
+                                    BUS=BUS, USG=USG))
+        self.assertEqual(len(table), len(train_dataset) + len(valid_dataset))
+        self.assertEqual(int(len(table) * self.valid_ratio), len(valid_dataset))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        table = make_table(self.data_folder_path, official_train=official_train, BUS=BUS, USG=USG,
+                           fea_official_train=fea_official_train)
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train))
         self.assertEqual(len(table), len(train_dataset) + len(valid_dataset))
         self.assertEqual(int(len(table) * self.valid_ratio), len(valid_dataset))
 
@@ -389,35 +488,37 @@ class GetBreastTrainValidDataTestCase(unittest.TestCase):
         :return:
         """
         official_train, BUS, USG = True, True, True
-        table = make_table(self.data_folder_path, official_train=official_train, BUS=BUS, USG=USG)
         train_dataset, valid_dataset = next(
             getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
-                                 BUS=BUS, USG=USG))
+                                    BUS=BUS, USG=USG))
         self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
 
         official_train, BUS, USG = True, False, False
-        table = make_table(self.data_folder_path, official_train=official_train, BUS=BUS, USG=USG)
         train_dataset, valid_dataset = next(
             getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
-                                 BUS=BUS, USG=USG))
+                                    BUS=BUS, USG=USG))
         self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
 
         official_train, BUS, USG = False, True, False
-        table = make_table(self.data_folder_path, official_train=official_train, BUS=BUS, USG=USG)
         train_dataset, valid_dataset = next(
             getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
-                                 BUS=BUS, USG=USG))
+                                    BUS=BUS, USG=USG))
         self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
 
         official_train, BUS, USG = False, False, True
-        table = make_table(self.data_folder_path, official_train=official_train, BUS=BUS, USG=USG)
         train_dataset, valid_dataset = next(
             getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
-                                 BUS=BUS, USG=USG))
+                                    BUS=BUS, USG=USG))
+        self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train))
         self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
 
 
-class MakeTableTestCase(unittest.TestCase):
+class ClaMakeTableTestCase(unittest.TestCase):
     num_official_train = 2210 + 217  # jpg+png
     num_BUS = 0 + 1875 - 693  # jpg+png-4类
     num_USG = 0 + 256 - 4  # jpg+png-1类
@@ -478,7 +579,7 @@ class MakeTableTestCase(unittest.TestCase):
         self.assertEqual(self.num_USG + self.num_BUS + self.num_official_train, len(table))
 
 
-class TableDatasetTestCase(unittest.TestCase):
+class ClaTableDatasetTestCase(unittest.TestCase):
     test_images = os.listdir(os.path.join(os.curdir, 'data', 'test'))
     num_classes = 6
     seed = 42

@@ -1,5 +1,5 @@
 class EarlyStopping:
-    def __init__(self, patience=5, min_delta=0.001):
+    def __init__(self, patience:int=5, min_delta:float=0.001):
         """
         初始化 EarlyStopping 实例。
 
@@ -12,7 +12,7 @@ class EarlyStopping:
         self.best_loss = float('inf')
         self.early_stop = False
 
-    def __call__(self, val_loss):
+    def __call__(self, val_loss:float)->None:
         # 如果验证损失有显著改善，重置计数器和最佳损失
         if val_loss < self.best_loss - self.min_delta:
             self.best_loss = val_loss

@@ -13,7 +13,7 @@ def nin_block(out_channels, kernel_size, strides, padding):
 
 
 class NiN(nn.Module):
-    def __init__(self, num_classes=10):
+    def __init__(self, num_classes=10,**kwargs):
         super().__init__()
         self.net = nn.Sequential(
             nin_block(96, kernel_size=11, strides=4, padding=0),

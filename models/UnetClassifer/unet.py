@@ -7,8 +7,6 @@ sys.path.append('/Users/huiyangzheng/Desktop/Project/Competition/GCAIAEC2024/AIC
 from models.UnetClassifer.resnet import resnet50
 from models.UnetClassifer.vgg import VGG16
 
-# from resnet import resnet50
-# from vgg import VGG16
 
 class unetUp(nn.Module):
     # 上采样（尺寸）-> 缝合（通道）-> 卷积（通道）
@@ -108,18 +106,18 @@ class Unet(nn.Module):
 
 
 class PretrainedClassifier(nn.Module):
-    def __init__(self, num_classes=10,in_channels = 3, pretrained=False, backbone='vgg'):
+    def __init__(self, num_classes=10, in_channels=3, pretrained=False, backbone='vgg', **kwargs):
         super(PretrainedClassifier, self).__init__()
-        # 使用已有的Unet作为基础
-        self.unet = Unet(num_classes=num_classes, in_channels=in_channels,pretrained=pretrained, backbone=backbone)
-        
-        # 移除解码器部分，使用Unet编码器输出
-        # 假设使用VGG的最后一个特征图feat5来进行分类
+        # 选择主干网络
         if backbone == 'vgg':
+            self.backbone = VGG16(pretrained=pretrained, in_channels=in_channels)
             self.feature_dim = 512  # VGG的最后一层输出通道数
         elif backbone == 'resnet50':
+            self.backbone = resnet50(pretrained=pretrained)
             self.feature_dim = 2048  # ResNet50的最后一层输出通道数
-        
+        else:
+            raise ValueError(f"Unsupported backbone type: {backbone}. Choose 'vgg' or 'resnet50'.")
+
         # 全局平均池化层将特征图转化为特征向量
         self.global_pool = nn.AdaptiveAvgPool2d(1)
         
@@ -127,11 +125,11 @@ class PretrainedClassifier(nn.Module):
         self.fc = nn.Linear(self.feature_dim, num_classes)
 
     def forward(self, inputs):
-        # 使用Unet的编码器提取特征
-        if self.unet.backbone == "vgg":
-            [feat1, feat2, feat3, feat4, feat5] = self.unet.vgg.forward(inputs)
-        elif self.unet.backbone == "resnet50":
-            [feat1, feat2, feat3, feat4, feat5] = self.unet.resnet.forward(inputs)
+        # 使用主干网络提取特征
+        if self.backbone.__class__.__name__ == "VGG":
+            _, _, _, _, feat5 = self.backbone(inputs)
+        elif self.backbone.__class__.__name__ == "ResNet":
+            _, _, _, _, feat5 = self.backbone(inputs)
         
         # 使用最后的特征图进行分类
         x = self.global_pool(feat5)  # 全局平均池化
@@ -139,10 +137,18 @@ class PretrainedClassifier(nn.Module):
         x = self.fc(x)               # 全连接层
         return x
 
+    def freeze_backbone(self):
+        for param in self.backbone.parameters():
+            param.requires_grad = False
+
+    def unfreeze_backbone(self):
+        for param in self.backbone.parameters():
+            param.requires_grad = True
+
 
 # day9.25
 class UnetClassifier(Unet):
-    def __init__(self, in_channels, num_classes, pretrained=False, backbone='vgg'):
+    def __init__(self, in_channels, num_classes, pretrained=False, backbone='vgg',**kwargs):
         super(UnetClassifier, self).__init__(in_channels, num_classes, pretrained, backbone)
         
         # 分类层

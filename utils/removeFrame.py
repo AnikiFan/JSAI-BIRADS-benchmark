@@ -1,6 +1,7 @@
 import numpy as np
-import warnings
-def removeFrame(x):
+from logging import debug
+from typing import *
+def removeFrame(x:np.ndarray)->Tuple[int,int,int,int]:
     """
     对张量进行裁剪。
     :param x: 输入ndarray，形状为 (C, H, W)
@@ -17,7 +18,7 @@ def removeFrame(x):
     max_row_tolerance_time = 2
     max_col_tolerance_time = 2
 
-    channel_mean = np.mean(x.astype(np.float_), axis=0)
+    channel_mean = np.mean(x.astype(np.float64), axis=0)
     channel_diff_abs = np.abs(x - channel_mean).astype(np.uint8)
     channel_is_same = (channel_diff_abs == 0)
     channel_is_black = (x <= 20)
@@ -43,7 +44,7 @@ def removeFrame(x):
     tolerance_cnt = 0
     tolerance_time = 0
     p = left
-    while p < right and tolerance_time < col_tolerance:
+    while p < right and tolerance_time < max_col_tolerance_time:
         if col_mask[p]:
             left = p
             p += 1
@@ -60,7 +61,7 @@ def removeFrame(x):
     tolerance_cnt = 0
     tolerance_time = 0
     p = right
-    while p > left and tolerance_time < col_tolerance:
+    while p > left and tolerance_time < max_col_tolerance_time:
         if col_mask[p]:
             right = p
             p -= 1
@@ -77,7 +78,7 @@ def removeFrame(x):
     tolerance_cnt = 0
     tolerance_time = 0
     p = top
-    while p < bottom and tolerance_time < row_tolerance:
+    while p < bottom and tolerance_time < max_row_tolerance_time:
         if row_mask[p]:
             top = p
             p += 1
@@ -94,7 +95,7 @@ def removeFrame(x):
     tolerance_cnt = 0
     tolerance_time = 0
     p = bottom
-    while p > top and tolerance_time < row_tolerance:
+    while p > top and tolerance_time < max_row_tolerance_time:
         if row_mask[p]:
             bottom = p
             p -= 1
@@ -108,10 +109,10 @@ def removeFrame(x):
             p -= 1
 
     if (right - left) < w * 0.4:
-        warnings.warn('width too small after cropped!')
+        debug('width too small after cropped!')
         left, right = 0, w - 1
     if (bottom - top) < h * 0.4:
-        warnings.warn('height too small after cropped!')
+        debug('height too small after cropped!')
         top, bottom = 0, h - 1
 
     return top,left,bottom-top,right-left

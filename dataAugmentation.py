@@ -1,31 +1,23 @@
 from utils.dataAugmentation import Preprocess, MixUp
 import albumentations as A
 import numpy as np
-# from debug import debug
-
-'''
-原始数据集
-1    1061
-0     849
-2     404
-3     274
-5     269
-4     232
-'''
-
-
+from logging import debug
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 
 if __name__ == '__main__':
     initial_num = np.array([1035, 1349, 492, 341, 301, 343])
     target_num = np.array([200, 200, 200, 200, 200, 200])
-    print("target_num: ", target_num)
+    debug("target_num: ")
+    debug(target_num)
     ratio = target_num / initial_num
     # ratio = np.array([1,2,6,10,10,11])
     # 将 ratio 转换为普通列表
     ratio = ratio.tolist()
 
-    print("ratio: ", ratio)
+    debug("ratio: ")
+    debug(ratio)
 
     # 设置要使用的增广策略
     selected_transforms = [

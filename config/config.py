@@ -11,23 +11,31 @@ from .transformConfig import *
 from .schedularConfig import *
 from typing import *
 
-
-@dataclass
-class Config:
-    defaults: List[Any] = field(default_factory=lambda: [
-        {"train": "default"},
+cla_defaults = [
+        {"train": "cla_task"},
         {"model": "linear_sanity_check"},
-        {"dataset": "mnist"},
+        {"dataset": "cla_single"},
         {"optimizer": "SGD"},
         {"env": "fx"},
         {"train_transform": "default"},
         {"valid_transform": "default"},
         {"schedular": "exponential"},
+    ]
 
-        # 彩色日志插件，会导致无法自动保存日志
-        # {"override hydra/job_logging": "colorlog"},
-        # {"override hydra/hydra_logging": "colorlog"}
-    ])
+fea_defaults = [
+        {"train": "fea_task"},
+        {"model": "mobilenet_v2"},
+        {"dataset": "fea_single"},
+        {"optimizer": "SGD"},
+        {"env": "fx"},
+        {"train_transform": "default"},
+        {"valid_transform": "default"},
+        {"schedular": "exponential"},
+    ]
+
+@dataclass
+class Config:
+    defaults: List[Any] = field(default_factory=lambda:fea_defaults)
     train: Any = MISSING
     model: Any = MISSING
     dataset: Any = MISSING

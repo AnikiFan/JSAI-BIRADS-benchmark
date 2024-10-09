@@ -1,80 +1,58 @@
-from utils.dataAugmentation import Preprocess
-from utils.dataAugmentation import MixUp
+from utils.dataAugmentation import Preprocess, MixUp
 import albumentations as A
+import numpy as np
+# from debug import debug
+
+'''
+原始数据集
+1    1061
+0     849
+2     404
+3     274
+5     269
+4     232
+'''
 
 
+    
 
 if __name__ == '__main__':
-    ratio = [2, 1, 8, 7, 7, 6]
-
-    # 1. 旋转 (Rotation)
-    transform_rotate = A.Compose([
-        A.Rotate(limit=15, p=1.0)  # 始终应用旋转
-    ])
-    Preprocess(transform_rotate, ratio=ratio).process_image()
-
-    # 2. 水平翻转 (Horizontal Flip)
-    transform_hflip = A.Compose([
-        A.HorizontalFlip(p=1.0)  # 始终应用水平翻转
-    ])
-    Preprocess(transform_hflip, ratio=ratio).process_image()
-
-    # 3. 垂直翻转 (Vertical Flip)
-    transform_vflip = A.Compose([
-        A.VerticalFlip(p=1.0)  # 始终应用垂直翻转
-    ])
-    Preprocess(transform_vflip, ratio=ratio).process_image()
-
-    # 4. 随机亮度和对比度 (Random Brightness and Contrast)
-    transform_brightness_contrast = A.Compose([
-        A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=1.0)
-    ])
-    Preprocess(transform_brightness_contrast, ratio=ratio).process_image()
-
-    # 5. 高斯噪声 (Gaussian Noise)
-    transform_gaussian_noise = A.Compose([
-        A.GaussNoise(var_limit=(10.0, 50.0), p=1.0)
-    ])
-    Preprocess(transform_gaussian_noise, ratio=ratio).process_image()
-
-    # 6. 弹性变换 (Elastic Transform)
-    transform_elastic = A.Compose([
-        A.ElasticTransform(alpha=1, sigma=50, alpha_affine=None, p=1.0)
-    ])
-    Preprocess(transform_elastic, ratio=ratio).process_image()
-
-    # 7. CLAHE
-    transform_clahe = A.Compose([
-        A.CLAHE(clip_limit=2.0, tile_grid_size=(8, 8), p=1.0)
-    ])
-    Preprocess(transform_clahe, ratio=ratio).process_image()
-
-    # 8. Cutout
-    # transform_cutout = A.Compose([
-    #     A.cutout(num_holes=8, max_h_size=16, max_w_size=16, p=1.0)
-    # ])
-    # Preprocess(transform_cutout, ratio=ratio).process_image()
-
-    # 9. 模糊 (Gaussian Blur)
-    transform_blur = A.Compose([
-        A.GaussianBlur(blur_limit=(3, 7), p=1.0)
-    ])
-    Preprocess(transform_blur, ratio=ratio).process_image()
-
-    # 10. 随机缩放和平移 (Random Scale and Translate)
-    transform_shift_scale_rotate = A.Compose([
+    # balanced_num = 500
+    target_num = np.array([1000, 1000, 1000, 1000, 1000, 1000])
+    ratio = target_num / np.array([1061, 849, 404, 274, 269, 232])
+    # 将 ratio 转换为普通列表
+    ratio = ratio.tolist()
+    
+    print(ratio)
+    
+    # 设置要使用的增广策略
+    selected_transforms = [
+        A.Rotate(limit=15, p=1.0),
+        A.HorizontalFlip(p=1.0),
+        A.VerticalFlip(p=1.0),
+        A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=1.0),
+        A.GaussNoise(var_limit=(10.0, 50.0), p=1.0),
+        A.ElasticTransform(alpha=1.0, sigma=50, p=1.0),
+        A.CLAHE(clip_limit=2.0, tile_grid_size=(8, 8), p=1.0),
+        A.GaussianBlur(blur_limit=(3, 7), p=1.0),
         A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=10, p=1.0)
-    ])
-    Preprocess(transform_shift_scale_rotate, ratio=ratio).process_image()
-
-    # 11. MixUp（如果需要，可以单独处理或集成到训练循环中）
-    # MixUp通常在数据加载时动态应用，不需要预处理
-    # 若需要预处理，可以在此处调用相应的方法
-    # from utils.dataAugmentation import MixUp
-    MixUp(0.2, ratio=ratio).process_image()
-
-    # 12. 随机擦除 (Random Erasing)
-    # transform_random_erasing = A.Compose([
-    #     A.RandomErasing(p=1.0)
-    # ])
-    # Preprocess(transform_random_erasing, ratio=ratio).process_image()
+    ]
+    
+    # 转化成compose
+    selected_transforms = [A.Compose([transform]) for transform in selected_transforms]
+    
+    
+    for transform in selected_transforms:
+        Preprocess(transform, ratio=ratio).process_image()
+    
+    # 单独处理 MixUp
+    mixup_transforms = [
+        'mixup_0.2',
+        'mixup_0.4'
+        # 根据需要添加或移除 MixUp 策略
+    ]
+    
+    for mixup_name in mixup_transforms:
+        if mixup_name in selected_transforms:
+            alpha = float(mixup_name.split('_')[1])  # 提取 MixUp 的 alpha 值
+            MixUp(alpha, ratio=ratio).process_image()

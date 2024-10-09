@@ -27,8 +27,9 @@ def make_fingerprint(transform: A.Compose, ratio: Optional[Tuple[float]])->Tuple
     full = fingerprint
     fingerprint = remove_nested_parentheses(fingerprint)
 
-    if type(ratio)!=type(None):
-        fingerprint += 'ratio=' + str(tuple(ratio))
+    if type(ratio) != type(None):
+        rounded_ratio = [round(r, 1) for r in ratio]
+        fingerprint += 'ratio=' + str(tuple(rounded_ratio))
     fingerprint = re.sub(r'[<>:"/\\|?*]', '_', fingerprint).replace(' ', '').rstrip(',')
 
     if type(ratio)!=type(None):

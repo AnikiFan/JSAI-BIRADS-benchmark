@@ -17,7 +17,7 @@ import numpy as np
     
 
 if __name__ == '__main__':
-    initial_num = np.array([1061, 849, 404, 274, 269, 232])
+    initial_num = np.array([1035, 1349, 492, 341, 301, 343])
     target_num = np.array([200, 200, 200, 200, 200, 200])
     print("target_num: ", target_num)
     ratio = target_num / initial_num

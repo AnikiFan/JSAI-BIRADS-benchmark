@@ -78,7 +78,7 @@ class Trainer:
 
         model.train(True)
 
-        for i, data in enumerate(tqdm(train_loader, desc=f"Training   Epoch {epoch_index}", leave=True), start=1):
+        for i, data in enumerate(tqdm(train_loader, desc=f"Training   Epoch {epoch_index}", leave=False), start=1):
             input, label = data
             input = input.to(self.cfg.env.device)
             label = label.to(self.cfg.env.device)
@@ -148,7 +148,7 @@ class Trainer:
             model.eval()
             with torch.no_grad():
                 valid_outcomes = [(vlabel.to(self.cfg.env.device), model(vinputs.to(self.cfg.env.device))) for
-                                vinputs, vlabel in tqdm(valid_loader, desc=f"Validating Epoch {epoch}", leave=True)]
+                                vinputs, vlabel in tqdm(valid_loader, desc=f"Validating Epoch {epoch}", leave=False)]
             target = torch.cat([pair[0] for pair in valid_outcomes], dim=0)
             prediction = torch.cat([pair[1] for pair in valid_outcomes], dim=0)
             # 在该epoch的验证集上获得的指标

@@ -59,13 +59,13 @@ class ClaAugmentedDatasetConfig:
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.4,0.1,2.0,3.4,4.0,3.4)-2'),
             
             # 200
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','ElasticTransform,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','GaussNoise,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','HorizontalFlip,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','RandomBrightnessContrast,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
-            os.path.join(os.curdir,"data", 'breast', 'cla', 'augmented','RandomGamma,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Rotate,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','ShiftScaleRotate,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','ElasticTransform,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','GaussNoise,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','HorizontalFlip,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','RandomBrightnessContrast,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
+            # os.path.join(os.curdir,"data", 'breast', 'cla', 'augmented','RandomGamma,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Rotate,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','ShiftScaleRotate,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
             # 200 
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','ElasticTransform,ratio=(0.2,0.2,0.5,0.7,0.9,0.7)-1'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','GaussNoise,ratio=(0.2,0.2,0.5,0.7,0.9,0.7)-1'),

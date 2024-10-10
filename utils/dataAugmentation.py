@@ -96,7 +96,7 @@ def find_next_augmented_folder(data_folder_path: str, short_description: str, fu
     return i
 
 class MixUp:
-    def __init__(self, mixup_alpha: float, ratio=Optional[Tuple[float]], official_train: bool = True, BUS: bool = True,
+    def __init__(self, mixup_alpha: float, ratio:Optional[Tuple[float]]=None, official_train: bool = True, BUS: bool = True,
                  USG: bool = True,fea_official_train=False, data_folder_path: str = os.path.join(os.curdir, 'data'), seed: str = 42):
         """
         对图像进行 Mixup 增广并保存。
@@ -129,7 +129,7 @@ class MixUp:
             self.fingerprint = f"\nMixup(mixup_alpha={mixup_alpha},fea_official_train={fea_official_train})\n\n"
             self.short_description,self.full_description = "Mixup",self.fingerprint
         self.lam = np.random.beta(mixup_alpha, mixup_alpha)
-        self.dst_folder = os.path.join(self.data_folder_path, 'breast', 'cla' if not fea_official_train else 'fea', 'augmented', self.short_description)
+        self.task = 'fea' if fea_official_train else 'cla'
         self.ratio = ratio
         tqdm.pandas()  # 初始化 tqdm 的 pandas 支持
 
@@ -143,7 +143,7 @@ class MixUp:
         if i == -1:
             return
 
-        self.dst_folder = os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}")
+        self.dst_folder = os.path.join(self.data_folder_path, 'breast', self.task, 'augmented', f"{self.short_description}-{i}")
 
         os.makedirs(self.dst_folder)
         self.table['noise_image'] = np.random.randint(0, len(self.table), (len(self.table), 1))
@@ -204,7 +204,7 @@ class Preprocess:
         if not ratio:
             ratio = np.ones(self.table.label.nunique(),dtype=np.float32)
         if not isinstance(ratio, np.ndarray):
-            ratio = np.array(ratio)
+            ratio = np.array(ratio,dtype=np.float32)
         else:
             ratio = ratio.astype(np.float32)
         if fea_official_train:

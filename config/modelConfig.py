@@ -3,12 +3,21 @@ from omegaconf import MISSING
 from typing import *
 
 """
-模型配置，用于直接实例化模型，所以不能有除模型实例化所需参数以外的配置项
+模型配置，用于直接实例化模型
 """
+
+@dataclass
+class UnpretrainedModelConfig:
+    pretrained: bool = False
 
 
 @dataclass
-class DefaultModelConfig:
+class PretrainedModelConfig:
+    pretrained: bool = False
+
+
+@dataclass
+class UnetModelConfig(PretrainedModelConfig):
     """
     _target_使得这个类的配置可以用于实例化target所指的可调用对象，
     该类的其他配置都会作为该可调用对象的参数
@@ -19,59 +28,62 @@ class DefaultModelConfig:
     _target_: str = "models.UnetClassifer.unet.UnetClassifier"
     in_channels: int = 3
     backbone: str = "resnet50"
-    pretrained: bool = True
     lr:float=0.001
 
 @dataclass
-class AlexNetModelConfig:
+class AlexNetModelConfig(UnpretrainedModelConfig):
     _target_:str = "models.model4compare.AlexNet.AlexNet"
     lr:float=0.001
 
 
 @dataclass
-class GoogleNetModelConfig:
+class GoogleNetModelConfig(UnpretrainedModelConfig):
     _target_: str = "models.model4compare.GoogleNet.GoogleNet"
     lr:float=0.1
 
 
 @dataclass
-class NiNModelConfig:
+class NiNModelConfig(UnpretrainedModelConfig):
     _target_: str = "models.model4compare.NiN.NiN"
     lr:float=0.01
 
 @dataclass
-class VGGModelConfig:
+class VGGModelConfig(UnpretrainedModelConfig):
     _target_: str = "models.model4compare.VGG.VGG"
     lr:float=0.01
     arch:List[List[int]] = field(default_factory=lambda:[[1, 64], [1, 128], [2, 256], [2, 512], [2, 512]])
 
 @dataclass
-class LinearSanityCheckerModelConfig:
+class LinearSanityCheckerModelConfig(UnpretrainedModelConfig):
     _target_: str = "models.model4compare.SanityChecker.LinearSanityChecker"
     lr:float=0.001
 
 @dataclass
-class ConvSanityCheckerModelConfig:
+class ConvSanityCheckerModelConfig(UnpretrainedModelConfig):
     _target_: str = "models.model4compare.SanityChecker.ConvSanityChecker"
     lr:float=0.001
 
 @dataclass
-class PretrainedResNetModelConfig:
+class PretrainedResNetModelConfig(PretrainedModelConfig):
     _target_:str="models.model4compare.ResNet18.ResNet18"
     num_classes:int=MISSING
     lr:float=0.001
 
 
 @dataclass
-class ResNetClassifierModelConfig:
+class ResNetClassifierModelConfig(PretrainedModelConfig):
     _target_:str="models.PretrainClassifer.resnet.ResNetClassifier"
-    resnet_type:str="resnet50"
-    num_classes:int=6
-    pretrained:bool=True
+    num_classes:int=MISSING
     freeze_backbone:bool=False
     dropout:float=0.2
     lr:float=0.001
     
+
+@dataclass 
+class MobileNetModleConfig(PretrainedModelConfig):
+    _target_:str="models.MobileNet.MobileNet_V2.MyMobileNetV2"
+    lr:float=0.001
+
 
 @dataclass
 class PretrainedClassifierModelConfig:
@@ -83,4 +95,3 @@ class PretrainedClassifierModelConfig:
     freeze_backbone:bool=False
     # dropout:float=0.2
     lr:float=0.001
-    

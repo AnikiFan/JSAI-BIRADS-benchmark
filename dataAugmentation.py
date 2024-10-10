@@ -31,9 +31,10 @@ if __name__ == '__main__':
     print("target_num: ", target_num)
     ratio = (target_num) / initial_num
     ratio = ratio.tolist()
-    
-    print("ratio: ", ratio)
-    
+
+    debug("ratio: ")
+    debug(ratio)
+
     # 设置要使用的增广策略
     selected_transforms = [
         # A.Rotate(limit=10, p=1.0),
@@ -63,11 +64,11 @@ if __name__ == '__main__':
         #     A.RandomGamma(gamma_limit=(80, 120), p=0.5)
         # ])
     ]
-    
+
     # 转化成compose
     selected_transforms = [A.Compose([transform]) for transform in selected_transforms]
-    
-    
+
+
     for transform in selected_transforms:
         Preprocess(transform, ratio=ratio).process_image()
     
@@ -83,7 +84,7 @@ if __name__ == '__main__':
         # 'mixup_0.3'
         # 根据需要添加或移除 MixUp 策略
     ]
-    
+
     for mixup_name in mixup_transforms:
         alpha = float(mixup_name.split('_')[1])  # 提取 MixUp 的 alpha 值
         MixUp(alpha, ratio=mixup_ratio).process_image()

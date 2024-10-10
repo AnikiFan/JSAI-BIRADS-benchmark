@@ -3,13 +3,13 @@
 ## 初始化框架
 
 1. 按照仓库目录约定来整理`data`文件夹，只需将`official_test`,`official_trian`,`BUS`,`USG`按照约定放入即可，其中`BUS`和`USG`是事先处理过的版本（微信群里有）
-2. 运行`\utils\OfficialClaDataOrganizer.py`,`\utils\OfficialFeaDataOrganizer.py`，来获取`train`和`test`数据集
-
-note:cla和fea似乎需要都准备好才能进行数据增强？
+2. 运行`\utils\OfficialClaDataOrganizer.py`,`\utils\OfficialFeaDataOrganizer.py`，来分别对cla和fea任务获取`train`和`test`数据集
 
 ## 数据增强
 
-使用`\utils\dataAugmentations.py`。
+请先初始化框架
+
+使用`\utils\dataAugmentations.py`。（路径中不能包含中文，否则`imread`会报错！）
 
 增强后得到的数据自动存放在对应任务数据文件夹下的`augmented`文件夹下的文件夹中，文件夹的名称是所用变换的名称以及所用比例（fea任务不支持）。在该文件夹下，会有`README.md`文件详细描述所用变换的参数。
 

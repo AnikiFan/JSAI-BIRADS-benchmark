@@ -11,23 +11,31 @@ from .transformConfig import *
 from .schedularConfig import *
 from typing import *
 
-
-@dataclass
-class Config:
-    defaults: List[Any] = field(default_factory=lambda: [
-        {"train": "default"},
+cla_defaults = [
+        {"train": "cla_task"},
         {"model": "linear_sanity_check"},
-        {"dataset": "mnist"},
+        {"dataset": "cla_single"},
         {"optimizer": "SGD"},
         {"env": "fx"},
         {"train_transform": "default"},
         {"valid_transform": "default"},
         {"schedular": "exponential"},
+    ]
 
-        # 彩色日志插件，会导致无法自动保存日志
-        # {"override hydra/job_logging": "colorlog"},
-        # {"override hydra/hydra_logging": "colorlog"}
-    ])
+fea_defaults = [
+        {"train": "fea_task"},
+        {"model": "mobilenet_v2"},
+        {"dataset": "fea_single"},
+        {"optimizer": "SGD"},
+        {"env": "fx"},
+        {"train_transform": "default"},
+        {"valid_transform": "default"},
+        {"schedular": "exponential"},
+    ]
+
+@dataclass
+class Config:
+    defaults: List[Any] = field(default_factory=lambda:fea_defaults)
     train: Any = MISSING
     model: Any = MISSING
     dataset: Any = MISSING
@@ -46,7 +54,8 @@ def init_config():
     # 初始化
     cs = ConfigStore.instance()
 
-    cs.store(group='train', name="default", node=DefaultTrainConfig)
+    cs.store(group='train', name="cla_task", node=ClaTrainConfig)
+    cs.store(group='train', name="fea_task", node=FeaTrainConfig)
     cs.store(group='train', name="remote", node=RemoteTrainConfig)
 
     cs.store(group='model', name="alex_net", node=AlexNetModelConfig)
@@ -56,15 +65,18 @@ def init_config():
     cs.store(group='model', name="linear_sanity_check", node=LinearSanityCheckerModelConfig)
     cs.store(group='model', name="conv_sanity_check", node=ConvSanityCheckerModelConfig)
     cs.store(group='model', name="pretrained_resnet", node=PretrainedResNetModelConfig)
-    cs.store(group='model', name="default", node=DefaultModelConfig)
+    cs.store(group='model', name="unet_classifier", node=UnetModelConfig)
     cs.store(group='model', name="resnet_classifier", node=ResNetClassifierModelConfig)
+    cs.store(group='model', name="mobilenet_v2", node=MobileNetModleConfig)
     cs.store(group='model', name="pretrained_classifier", node=PretrainedClassifierModelConfig)
 
     cs.store(group='dataset', name="fashion_mnist", node=FashionMNISTDatasetConfig)
     cs.store(group='dataset', name="mnist", node=MNISTDatasetConfig)
     cs.store(group='dataset', name="cifar10", node=CIFAR10DatasetConfig)
-    cs.store(group='dataset', name="single", node=SingleFoldDatasetConfig)
-    cs.store(group='dataset', name="multiple", node=CrossValidationDatasetConfig)
+    cs.store(group='dataset', name="cla_single", node=ClaSingleFoldDatasetConfig)
+    cs.store(group='dataset', name="cla_multiple", node=ClaCrossValidationDatasetConfig)
+    cs.store(group='dataset', name="fea_single", node=FeaSingleFoldDatasetConfig)
+    cs.store(group='dataset', name="fea_multiple", node=FeaCrossValidationDatasetConfig)
 
     cs.store(group='optimizer', name="SGD", node=SGDOptimizerConfig)
 

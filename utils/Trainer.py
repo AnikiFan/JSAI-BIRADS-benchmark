@@ -23,34 +23,33 @@ class Trainer:
         self.loss_fn = instantiate(cfg.train.loss_function)
         self.cur_fold = 1
         # 用于统计各折之间的指标
-        self.loss, self.f1_score, self.accuracy, self.confusion_matrix = 0, 0, 0, torch.zeros(
-            (self.cfg.dataset.num_classes, self.cfg.dataset.num_classes), dtype=torch.int, device=self.cfg.env.device if self.cfg.env.device.startswith('cuda') else "cpu") # 只在device=cuda，cuda：0时使用，否则使用cpu
+        self.loss, self.f1_score, self.accuracy, self.confusion_matrix = None,None,None,None
         self.train_transform = instantiate(self.cfg.train_transform)
         self.valid_transform = instantiate(self.cfg.valid_transform)
         # 用于记录以折为单位的最佳指标
         self.best_vloss, self.best_vf1, self.best_vaccuracy, self.best_vconfusion_matrix = 1_000_000., None, None, None
 
     def train(self) -> None:
-        # cuda外的设备设置了pin_memor_device会报错，但不知道为什么，因此多了下面检查
-        pin_memory_device = self.cfg.env.device if self.cfg.env.device.startswith('cuda') else ""
-
         for train_ds, valid_ds in instantiate(self.cfg.dataset, data_folder_path=self.cfg.env.data_folder_path,
                                               train_transform=self.train_transform,
                                               valid_transform=self.valid_transform):
-
-
             loss, f1_score, accuracy, confusion_matrix = self.train_one_fold(
-                DataLoader(train_ds, batch_size=self.cfg.train.batch_size, shuffle=True, pin_memory=self.cfg.env.pin_memory,
+                DataLoader(train_ds, batch_size=self.cfg.train.batch_size, shuffle=True,
+                           pin_memory=self.cfg.env.pin_memory,
                            drop_last=False, num_workers=self.cfg.train.num_workers,
-                           pin_memory_device=pin_memory_device),
-                DataLoader(valid_ds, batch_size=self.cfg.train.batch_size, shuffle=True, pin_memory=self.cfg.env.pin_memory,
+                           pin_memory_device=self.cfg.env.pin_memory_device),
+                DataLoader(valid_ds, batch_size=self.cfg.train.batch_size, shuffle=False,
+                           pin_memory=self.cfg.env.pin_memory,
                            drop_last=False, num_workers=self.cfg.train.num_workers,
-                           pin_memory_device=pin_memory_device)
+                           pin_memory_device=self.cfg.env.pin_memory_device)
             )
-            self.loss += loss
-            self.f1_score += f1_score
-            self.accuracy += accuracy
-            self.confusion_matrix += confusion_matrix
+            if self.loss is None:
+                self.loss,self.f1_score,self.accuracy,self.confusion_matrix = loss,f1_score,accuracy,confusion_matrix
+            else:
+                self.loss += loss
+                self.f1_score += f1_score
+                self.accuracy += accuracy
+                self.confusion_matrix += confusion_matrix
             self.cur_fold += 1
         fold_num = self.cur_fold - 1
         if fold_num != 1:
@@ -59,10 +58,11 @@ class Trainer:
             self.accuracy /= fold_num
             info(f"***************** {fold_num} folds' summary *****************")
             info(f'LOSS                 :{self.loss:.10f}')
-            info(f'ACCURACY             :{self.f1_score:.10f}')
-            info(f'F1                   :{self.accuracy:.10f}')
+            info(f'ACCURACY             :{self.accuracy:.10f}')
+            info(f'F1                   :{self.f1_score:.10f}')
             info(f'confusion matrix:\n{str(self.confusion_matrix)}')
-        return instantiate(self.cfg.train.choose_strategy,loss=self.loss,accuracy=self.accuracy,f1_score=self.f1_score)
+        return instantiate(self.cfg.train.choose_strategy, loss=self.loss, accuracy=self.accuracy,
+                           f1_score=self.f1_score)
 
     def train_one_epoch(self, *, model, train_loader: DataLoader, optimizer, epoch_index: int,
                         tb_writer: SummaryWriter) -> Tuple[float, float, float]:
@@ -89,21 +89,22 @@ class Trainer:
             loss = self.loss_fn(output, label)
             loss.backward()
             optimizer.step()
-            if i % self.cfg.train.info_frequency == 0:
+            if (i % self.cfg.train.info_frequency == 0
+                    or len(train_loader) < self.cfg.train.info_frequency and i == len(train_loader) - 1):
                 # 计算实际的批次数
                 outputs, labels = torch.cat(outputs, dim=0), torch.cat(labels, dim=0)
-                loss = self.loss_fn(input=outputs, target=labels).item() / self.cfg.train.info_frequency
-                f1 = instantiate(self.cfg.train.f1_score, input=outputs, target=labels,
-                                 num_classes=self.cfg.dataset.num_classes).item()
-                accuracy = instantiate(self.cfg.train.accuracy, input=outputs, target=labels,
-                                       num_classes=self.cfg.dataset.num_classes).item()
+                avg_loss = self.loss_fn(input=outputs, target=labels).item()
+                avg_f1 = instantiate(self.cfg.train.f1_score, input=outputs, target=labels,
+                                     num_classes=self.cfg.dataset.num_classes).item()
+                avg_accuracy = instantiate(self.cfg.train.accuracy, input=outputs, target=labels,
+                                           num_classes=self.cfg.dataset.num_classes).item()
                 tb_x = (epoch_index - 1) * len(train_loader) + i
-                tb_writer.add_scalar('Loss/train', loss, tb_x)
-                tb_writer.add_scalar('Accuracy/train', accuracy, tb_x)
-                tb_writer.add_scalar('F1/train', f1, tb_x)
+                tb_writer.add_scalar('Loss/train', avg_loss, tb_x)
+                tb_writer.add_scalar('Accuracy/train', avg_accuracy, tb_x)
+                tb_writer.add_scalar('F1/train', avg_f1, tb_x)
                 outputs, labels = [], []
         # 为了避免指标出现大幅波动，不对尾部剩余的一小部分计算指标
-        return loss, accuracy, f1
+        return avg_loss, avg_accuracy, avg_f1
 
     def make_writer_title(self) -> str:
         """
@@ -131,19 +132,21 @@ class Trainer:
         # 用于计算以epoch为单位的最佳指标
         best_loss, best_f1, best_accuracy, best_confusion_matrix = 1_000_000., None, None, None
         model = instantiate(self.cfg.model, num_classes=self.cfg.dataset.num_classes).to(self.cfg.env.device)
-        model(next(iter(train_loader))[0].to(self.cfg.env.device))
-        model.apply(Trainer.init_weights)
+        if not self.cfg.model.pretrained:
+            model.forward(next(iter(train_loader))[0].to(self.cfg.env.device))
+            # model(next(iter(train_loader))[0].to(self.cfg.env.device))
+            model.apply(Trainer.init_weights)
         optimizer = instantiate(self.cfg.optimizer, params=model.parameters())
         schedular = instantiate(self.cfg.schedular, optimizer=optimizer)
         writer = SummaryWriter(os.path.join('runs', self.make_writer_title()))
-        # model.to(torch.device(self.cfg.env.device)) 初始化已经设置了device
+        model.to(torch.device(self.cfg.env.device)) #初始化已经设置了device
         # 定义检查点路径
         early_stopping = instantiate(self.cfg.train.early_stopping)
         for epoch in range(1, self.cfg.train.epoch_num + 1):
             # 训练一个epoch，获取在上面的指标
             avg_loss, avg_accuracy, avg_f1 = self.train_one_epoch(model=model, train_loader=train_loader,
-                                                                optimizer=optimizer, epoch_index=epoch,
-                                                                tb_writer=writer)
+                                                                  optimizer=optimizer, epoch_index=epoch,
+                                                                  tb_writer=writer)
             schedular.step()
             model.eval()
             with torch.no_grad():
@@ -167,12 +170,12 @@ class Trainer:
             # Log the running loss averaged per batch
             # for both training and validation
             writer.add_scalars('Training vs. Validation Loss', {'Training': avg_loss, 'Validation': avg_vloss},
-                            epoch)
+                               epoch)
             writer.add_scalars('Training vs. Validation Accuracy',
-                            {'Training': avg_accuracy, 'Validation': avg_vaccuracy},
-                            epoch)
+                               {'Training': avg_accuracy, 'Validation': avg_vaccuracy},
+                               epoch)
             writer.add_scalars('Training vs. Validation F1', {'Training': avg_f1, 'Validation': avg_vf1},
-                            epoch)
+                               epoch)
             writer.add_text(f'confusion matrix of epoch {epoch}', str(confusion_matrix))
             writer.flush()
 
@@ -183,8 +186,8 @@ class Trainer:
             if avg_vloss < self.best_vloss:
                 self.best_vloss, self.best_vf1, self.best_vaccuracy, self.best_vconfusion_matrix = avg_vloss, avg_vf1, avg_vaccuracy, confusion_matrix
                 info(f"\n############################################################\n"
-                    f"# Validation loss improved to {avg_vloss:.6f} - saving best model #\n"
-                    f"############################################################")
+                     f"# Validation loss improved to {avg_vloss:.6f} - saving best model #\n"
+                     f"############################################################")
                 # 保存checkpoint（包括epoch，model_state_dict，optimizer_state_dict，best_vloss，但仅在best时保存）
                 # 保存断点重训所需的信息（需要包括epoch，model_state_dict，optimizer_state_dict，best_vloss）
                 # 只保留一份最佳指标对应的参数

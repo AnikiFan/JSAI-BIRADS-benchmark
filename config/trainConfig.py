@@ -10,8 +10,12 @@ from utils.earlyStopping import EarlyStopping
 
 
 @dataclass
-class CrossEntropyConfig:
+class CrossEntropyLossConfig:
     _target_: str = 'torch.nn.CrossEntropyLoss'
+
+@dataclass
+class BCELossConfig:
+    _target_: str = 'utils.loss_function.MyBCELoss'
 
 
 @dataclass
@@ -49,7 +53,7 @@ class MultiClassConfusionMatrix:
 
 @dataclass
 class MultiLabelAccuracy:
-    _target_: str = "torcheval.metrics.functional.multilabel_accuracy"
+    _target_: str = "utils.metrics.my_multilabel_accuracy"
     input: Any = MISSING
     target: Any = MISSING
     criteria: str = 'hamming'
@@ -91,14 +95,22 @@ class MultiLabelTrainConfig:
     choose_strategy:ScoreOrientedConfig = field(default_factory=ScoreOrientedConfig)
 
 @dataclass
-class DefaultTrainConfig(MultiClassTrainConfig):
-    checkpoint_path: Path = MISSING
+class DefaultTrainConfig:
     epoch_num: int = 1000
     num_workers: int = 4
     batch_size: int = 16
     info_frequency: int = 100
     early_stopping: EarlyStopping = field(default_factory=EarlyStopping)
-    loss_function: CrossEntropyConfig = field(default_factory=CrossEntropyConfig)
+
+
+@dataclass
+class ClaTrainConfig(MultiClassTrainConfig, DefaultTrainConfig):
+    loss_function: CrossEntropyLossConfig = field(default_factory=CrossEntropyLossConfig)
+
+
+@dataclass
+class FeaTrainConfig(MultiLabelTrainConfig, DefaultTrainConfig):
+    loss_function: BCELossConfig = field(default_factory=BCELossConfig)
 
 
 @dataclass
@@ -109,5 +121,5 @@ class RemoteTrainConfig(DefaultTrainConfig):
     batch_size: int = 16
     info_frequency: int = 100
     early_stopping: EarlyStopping = field(default_factory=EarlyStopping)
-    loss_function: CrossEntropyConfig = field(default_factory=CrossEntropyConfig)
+    loss_function: CrossEntropyLossConfig = field(default_factory=CrossEntropyLossConfig)
 

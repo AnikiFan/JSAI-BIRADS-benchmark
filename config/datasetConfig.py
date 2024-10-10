@@ -9,7 +9,7 @@ from data.CIFAR10.MyCIFAR10 import MyCIFAR10
 from typing import *
 
 """
-数据集配置，用于直接实例化数据集，所以不能有数据集所需的参数以外的配置项
+数据集配置，用于直接实例化数据集
 数据集对象应该是一个迭代器，每次迭代返回train_dataset和valid_dataset
 """
 
@@ -19,6 +19,21 @@ class ClaDatasetConfig:
     data_folder_path: Path = MISSING
     image_format: str = "Tensor"
     num_classes: int = 6
+    official_train:bool=True
+    BUS:bool=True
+    USG:bool=True
+    fea_official_train:bool=False
+
+@dataclass
+class FeaDatasetConfig:
+    data_folder_path: Path = MISSING
+    image_format: str = "Tensor"
+    num_classes: int = 2
+    official_train:bool=False
+    BUS:bool=False
+    USG:bool=False
+    fea_official_train:bool=True
+
 
 @dataclass
 class ClaAugmentedDatasetConfig:
@@ -84,15 +99,20 @@ class ClaAugmentedDatasetConfig:
     )
 
 @dataclass
-class SingleFoldDatasetConfig(ClaDatasetConfig,ClaAugmentedDatasetConfig):
+class ClaSingleFoldDatasetConfig(ClaDatasetConfig,ClaAugmentedDatasetConfig):
     _target_: str = "utils.BreastDataset.getBreastTrainValidData"
-    _convert_: str = "all"
-    
-
 
 
 @dataclass
-class CrossValidationDatasetConfig(ClaDatasetConfig):
+class ClaCrossValidationDatasetConfig(ClaDatasetConfig,ClaAugmentedDatasetConfig):
+    _target_: str = "utils.BreastDataset.BreastCrossValidationData"
+
+@dataclass
+class FeaSingleFoldDatasetConfig(FeaDatasetConfig, FeaAugmentedDatasetConfig):
+    _target_: str = "utils.BreastDataset.getBreastTrainValidData"
+
+@dataclass
+class FeaCrossValidationDatasetConfig(FeaDatasetConfig,FeaAugmentedDatasetConfig):
     _target_: str = "utils.BreastDataset.BreastCrossValidationData"
 
 

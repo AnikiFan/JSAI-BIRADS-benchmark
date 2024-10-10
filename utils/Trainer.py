@@ -24,7 +24,7 @@ class Trainer:
         self.cur_fold = 1
         # 用于统计各折之间的指标
         self.loss, self.f1_score, self.accuracy, self.confusion_matrix = 0, 0, 0, torch.zeros(
-            (self.cfg.dataset.num_classes, self.cfg.dataset.num_classes), dtype=torch.int, device="cuda" if self.cfg.env.device.startswith('cuda') else "cpu")
+            (self.cfg.dataset.num_classes, self.cfg.dataset.num_classes), dtype=torch.int, device=self.cfg.env.device if self.cfg.env.device.startswith('cuda') else "cpu") # 只在device=cuda，cuda：0时使用，否则使用cpu
         self.train_transform = instantiate(self.cfg.train_transform)
         self.valid_transform = instantiate(self.cfg.valid_transform)
         # 用于记录以折为单位的最佳指标
@@ -131,12 +131,12 @@ class Trainer:
         # 用于计算以epoch为单位的最佳指标
         best_loss, best_f1, best_accuracy, best_confusion_matrix = 1_000_000., None, None, None
         model = instantiate(self.cfg.model, num_classes=self.cfg.dataset.num_classes).to(self.cfg.env.device)
-        model.forward(next(iter(train_loader))[0].to(self.cfg.env.device))
+        model(next(iter(train_loader))[0].to(self.cfg.env.device))
         model.apply(Trainer.init_weights)
         optimizer = instantiate(self.cfg.optimizer, params=model.parameters())
         schedular = instantiate(self.cfg.schedular, optimizer=optimizer)
         writer = SummaryWriter(os.path.join('runs', self.make_writer_title()))
-        model.to(torch.device(self.cfg.env.device))
+        # model.to(torch.device(self.cfg.env.device)) 初始化已经设置了device
         # 定义检查点路径
         early_stopping = instantiate(self.cfg.train.early_stopping)
         for epoch in range(1, self.cfg.train.epoch_num + 1):

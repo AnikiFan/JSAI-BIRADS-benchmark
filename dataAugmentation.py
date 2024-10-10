@@ -27,7 +27,7 @@ import numpy as np
 if __name__ == '__main__':
     # initial_num = np.array([849, 1061, 404, 274, 232, 269])
     initial_num = np.array([1035, 1349, 492, 341, 301, 343])
-    target_num = np.array([200, 200, 200, 200, 200, 200])
+    target_num = np.array([2000, 2000, 2000, 2000, 2000, 2000])
     print("target_num: ", target_num)
     ratio = (target_num) / initial_num
     ratio = ratio.tolist()
@@ -46,13 +46,13 @@ if __name__ == '__main__':
         # A.CLAHE(clip_limit=2.0, tile_grid_size=(8, 8), p=1.0),
         # A.GaussianBlur(blur_limit=(3, 7), p=1.0),
         # A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=10, p=1.0)
-        # A.Rotate(limit=10, p=1.0),
+        A.Rotate(limit=10, p=1.0),
         # A.HorizontalFlip(p=1.0), 
-        A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=1.0),
-        A.GaussNoise(var_limit=(10.0, 50.0), p=1.0),
-        A.ElasticTransform(alpha=1.0, sigma=50, alpha_affine=50, p=1.0),
-        A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=0, p=1.0),
-        A.RandomGamma(gamma_limit=(80, 120), p=1.0)
+        # A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=1.0),
+        # A.GaussNoise(var_limit=(10.0, 50.0), p=1.0),
+        # A.ElasticTransform(alpha=1.0, sigma=50, alpha_affine=50, p=1.0),
+        # A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=0, p=1.0),
+        # A.RandomGamma(gamma_limit=(80, 120), p=1.0)
         # A.Compose([
         #     A.Rotate(limit=10, p=0.5),
         #     A.HorizontalFlip(p=0.5), 
@@ -73,12 +73,13 @@ if __name__ == '__main__':
     
     # allData_num = 
     mixup_target_num = np.array([200, 200, 200, 200, 200, 200])
-    mixup_ratio = mixup_target_num / initial_num
-    mixup_ratio = mixup_ratio.tolist()
+    # mixup_ratio = mixup_target_num / initial_num
+    mixup_ratio = ratio
+    # mixup_ratio = mixup_ratio.tolist()
     
     # 单独处理 MixUp
     mixup_transforms = [
-        'mixup_0.2',
+        'mixup_0.1',
         # 'mixup_0.3'
         # 根据需要添加或移除 MixUp 策略
     ]

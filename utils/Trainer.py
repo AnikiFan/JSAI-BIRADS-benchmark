@@ -132,12 +132,14 @@ class Trainer:
         # 用于计算以epoch为单位的最佳指标
         best_loss, best_f1, best_accuracy, best_confusion_matrix = 1_000_000., None, None, None
         model = instantiate(self.cfg.model, num_classes=self.cfg.dataset.num_classes).to(self.cfg.env.device)
-        model(next(iter(train_loader))[0].to(self.cfg.env.device))
-        model.apply(Trainer.init_weights)
+        if not self.cfg.model.pretrained:
+            model.forward(next(iter(train_loader))[0].to(self.cfg.env.device))
+            # model(next(iter(train_loader))[0].to(self.cfg.env.device))
+            model.apply(Trainer.init_weights)
         optimizer = instantiate(self.cfg.optimizer, params=model.parameters())
         schedular = instantiate(self.cfg.schedular, optimizer=optimizer)
         writer = SummaryWriter(os.path.join('runs', self.make_writer_title()))
-        # model.to(torch.device(self.cfg.env.device)) 初始化已经设置了device
+        model.to(torch.device(self.cfg.env.device)) #初始化已经设置了device
         # 定义检查点路径
         early_stopping = instantiate(self.cfg.train.early_stopping)
         for epoch in range(1, self.cfg.train.epoch_num + 1):

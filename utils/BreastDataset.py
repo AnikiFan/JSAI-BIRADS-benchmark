@@ -80,6 +80,7 @@ def split_augmented_image(valid_dataset: pd.DataFrame,
             warning(f"augmented image folder {augmented_folder} doesn't exist!")
             continue
         augmented_ground_truth = pd.read_csv(os.path.join(augmented_folder, "ground_truth.csv"))
+        # print(augmented_ground_truth)
         augmented_ground_truth.file_name = augmented_ground_truth.file_name.apply(
             lambda x: os.path.join(augmented_folder, x))
         augmented_ground_truths.append(augmented_ground_truth)

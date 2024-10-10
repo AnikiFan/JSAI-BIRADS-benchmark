@@ -61,8 +61,7 @@ class Trainer:
             info(f'ACCURACY             :{self.f1_score:.10f}')
             info(f'F1                   :{self.accuracy:.10f}')
             info(f'confusion matrix:\n{str(self.confusion_matrix)}')
-        return instantiate(self.cfg.train.choose_strategy, loss=self.loss, accuracy=self.accuracy,
-                           f1_score=self.f1_score)
+        return instantiate(self.cfg.train.choose_strategy,loss=self.loss,accuracy=self.accuracy,f1_score=self.f1_score)
 
     def train_one_epoch(self, *, model, train_loader: DataLoader, optimizer, epoch_index: int,
                         tb_writer: SummaryWriter) -> Tuple[float, float, float]:
@@ -141,19 +140,18 @@ class Trainer:
         optimizer = instantiate(self.cfg.optimizer, params=model.parameters())
         schedular = instantiate(self.cfg.schedular, optimizer=optimizer)
         writer = SummaryWriter(os.path.join('runs', self.make_writer_title()))
-        model.to(torch.device(self.cfg.env.device))
         # 定义检查点路径
         early_stopping = instantiate(self.cfg.train.early_stopping)
         for epoch in range(1, self.cfg.train.epoch_num + 1):
             # 训练一个epoch，获取在上面的指标
             avg_loss, avg_accuracy, avg_f1 = self.train_one_epoch(model=model, train_loader=train_loader,
-                                                                  optimizer=optimizer, epoch_index=epoch,
-                                                                  tb_writer=writer)
+                                                                optimizer=optimizer, epoch_index=epoch,
+                                                                tb_writer=writer)
             schedular.step()
             model.eval()
             with torch.no_grad():
                 valid_outcomes = [(vlabel.to(self.cfg.env.device), model(vinputs.to(self.cfg.env.device))) for
-                                  vinputs, vlabel in tqdm(valid_loader, desc=f"Validating Epoch {epoch}", leave=True)]
+                                vinputs, vlabel in tqdm(valid_loader, desc=f"Validating Epoch {epoch}", leave=False)]
             target = torch.cat([pair[0] for pair in valid_outcomes], dim=0)
             prediction = torch.cat([pair[1] for pair in valid_outcomes], dim=0)
             # 在该epoch的验证集上获得的指标
@@ -172,12 +170,12 @@ class Trainer:
             # Log the running loss averaged per batch
             # for both training and validation
             writer.add_scalars('Training vs. Validation Loss', {'Training': avg_loss, 'Validation': avg_vloss},
-                               epoch)
+                            epoch)
             writer.add_scalars('Training vs. Validation Accuracy',
-                               {'Training': avg_accuracy, 'Validation': avg_vaccuracy},
-                               epoch)
+                            {'Training': avg_accuracy, 'Validation': avg_vaccuracy},
+                            epoch)
             writer.add_scalars('Training vs. Validation F1', {'Training': avg_f1, 'Validation': avg_vf1},
-                               epoch)
+                            epoch)
             writer.add_text(f'confusion matrix of epoch {epoch}', str(confusion_matrix))
             writer.flush()
 
@@ -188,8 +186,8 @@ class Trainer:
             if avg_vloss < self.best_vloss:
                 self.best_vloss, self.best_vf1, self.best_vaccuracy, self.best_vconfusion_matrix = avg_vloss, avg_vf1, avg_vaccuracy, confusion_matrix
                 info(f"\n############################################################\n"
-                     f"# Validation loss improved to {avg_vloss:.6f} - saving best model #\n"
-                     f"############################################################")
+                    f"# Validation loss improved to {avg_vloss:.6f} - saving best model #\n"
+                    f"############################################################")
                 # 保存checkpoint（包括epoch，model_state_dict，optimizer_state_dict，best_vloss，但仅在best时保存）
                 # 保存断点重训所需的信息（需要包括epoch，model_state_dict，optimizer_state_dict，best_vloss）
                 # 只保留一份最佳指标对应的参数

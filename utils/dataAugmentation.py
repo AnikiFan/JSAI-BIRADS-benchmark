@@ -52,11 +52,13 @@ def make_ratio_table(table: pd.DataFrame, ratio: float) -> pd.DataFrame:
     result = []
     for label, group in table.groupby('label'):
         df = []
-        if np.any(whole!=0):
-            df.append(pd.concat([group.assign(no=int(i)) for i in range(1,whole[label]+1)],axis=0))
-        if np.any(left!=0):
-            df.append(group.iloc[:int(len(group)*left[label]),:].assign(no=int(whole[label]+1)))
-        result.append(pd.concat(df,axis=0))
+        # 针对每个标签单独检查
+        if whole[label] != 0:
+            df.append(pd.concat([group.assign(no=int(i)) for i in range(1, whole[label]+1)], axis=0))
+        if left[label] != 0:
+            df.append(group.iloc[:int(len(group)*left[label]), :].assign(no=int(whole[label]+1)))
+        if df:  # 确保df不为空
+            result.append(pd.concat(df, axis=0))
     return pd.concat(result, axis=0).reset_index(drop=True)
 
 

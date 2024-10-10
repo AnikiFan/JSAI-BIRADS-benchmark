@@ -58,8 +58,8 @@ class Trainer:
             self.accuracy /= fold_num
             info(f"***************** {fold_num} folds' summary *****************")
             info(f'LOSS                 :{self.loss:.10f}')
-            info(f'ACCURACY             :{self.f1_score:.10f}')
-            info(f'F1                   :{self.accuracy:.10f}')
+            info(f'ACCURACY             :{self.accuracy:.10f}')
+            info(f'F1                   :{self.f1_score:.10f}')
             info(f'confusion matrix:\n{str(self.confusion_matrix)}')
         return instantiate(self.cfg.train.choose_strategy, loss=self.loss, accuracy=self.accuracy,
                            f1_score=self.f1_score)

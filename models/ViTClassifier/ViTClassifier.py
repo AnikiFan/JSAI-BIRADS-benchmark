@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import timm
+from logging import info
 
 class ViTClassifier(nn.Module):
     def __init__(self, 
@@ -70,11 +71,13 @@ class ViTClassifier(nn.Module):
         #     nn.Linear(base_model.num_features, num_classes)
         # )
         data_config = timm.data.resolve_model_data_config(self.vit)
-        print(data_config)
         self.transform = timm.data.create_transform(**data_config, is_training=True)
-        print(self.transform)
-        print(type(self.transform))
-
+        info(f"------------------------------------------------------------------") 
+        info(f"info about {model_name}")
+        info(f"数据配置:     {data_config}")
+        info(f"变换:         {self.transform}")
+        info(f"变换类型:     {type(self.transform)}")
+        info(f"------------------------------------------------------------------")
     def forward(self, x):
         """
         前向传播

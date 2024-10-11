@@ -56,7 +56,7 @@ def init_config():
 
     cs.store(group='train', name="cla_task", node=ClaTrainConfig)
     cs.store(group='train', name="fea_task", node=FeaTrainConfig)
-    cs.store(group='train', name="remote", node=RemoteTrainConfig)
+    cs.store(group='train', name="cla_task_remote", node=RemoteTrainConfig)
 
     cs.store(group='model', name="alex_net", node=AlexNetModelConfig)
     cs.store(group='model', name="google_net", node=GoogleNetModelConfig)

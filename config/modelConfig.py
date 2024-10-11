@@ -95,3 +95,24 @@ class PretrainedClassifierModelConfig:
     freeze_backbone:bool=False
     # dropout:float=0.2
     lr:float=0.001
+    
+    
+    
+@dataclass
+class MobileNetV2ClassifierModelConfig(PretrainedModelConfig):
+    _target_:str="models.MobileNet.MobileNet_V2_Classifier.MobileNetV2Classifier"
+    num_classes:int=6
+    feature_extract:bool=False
+    pretrained:bool=True
+    lr:float=0.001
+    
+@dataclass
+class ViTClassifierModelConfig(PretrainedModelConfig):
+    _target_:str="models.ViTClassifier.ViTClassifier.ViTClassifier"
+    model_name:str="vit_base_patch16_224"
+    num_classes:int=6
+    pretrained:bool=True
+    lr:float=0.001
+    drop_rate:float=0.0
+    drop_path_rate:float=0.1
+    

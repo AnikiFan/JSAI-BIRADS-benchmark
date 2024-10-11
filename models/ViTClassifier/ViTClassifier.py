@@ -52,8 +52,10 @@ class ViTClassifier(nn.Module):
         
         pathToCheckpoints = {
         #     'vit_base_patch16_224': 'https://download.pytorch.org/models/vit_base_patch16_224-b5f2ef4d.pth',
-            'vit_base_patch16_224': './model_data/vit_base_patch16_224.bin'
+            'vit_base_patch16_224': './model_data/vit_base_patch16_224.bin',
+            'vit_mediumd_patch16_reg4_gap_256.sbb_in12k_ft_in1k': './model_data/vit_mediumd_patch16_reg4_gap_256.sbb_in12k_ft_in1k.bin'
         }
+        
         
         # 使用 timm 创建预训练的 ViT 模型
         self.vit = timm.create_model(model_name, 

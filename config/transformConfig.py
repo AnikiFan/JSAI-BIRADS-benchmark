@@ -28,7 +28,7 @@ class DefaultValidTransformConfig:
 @dataclass
 class Transform_RandomResizedCropConfig:
     _target_: str = "torchvision.transforms.RandomResizedCrop"
-    size: List[int] = field(default_factory=lambda: [224, 224])
+    size: List[int] = field(default_factory=lambda: [256, 256])
     scale: Tuple[float, float] = field(default_factory=lambda: (0.08, 1.0))
     ratio: Tuple[float, float] = field(default_factory=lambda: (0.75, 1.3333))
     interpolation: InterpolationMode = InterpolationMode.BICUBIC

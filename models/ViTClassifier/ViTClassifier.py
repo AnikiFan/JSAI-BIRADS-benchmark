@@ -73,6 +73,7 @@ class ViTClassifier(nn.Module):
         print(data_config)
         self.transform = timm.data.create_transform(**data_config, is_training=True)
         print(self.transform)
+        print(type(self.transform))
 
     def forward(self, x):
         """
@@ -89,6 +90,7 @@ class ViTClassifier(nn.Module):
         # x = self.vit(x)
         # x = self.classifier(x)
         # return x
+
 
 
 # 示例用法

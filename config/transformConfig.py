@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import *
 from utils.MyCrop import MyCrop
+import timm
+from modelConfig import ViTClassifierModelConfig
 
 """
 图像变换配置
@@ -36,7 +38,7 @@ class ResizeConfig:
     注意，convert只支持转换为list，不支持转换为tuple
     """
     _target_: str = "torchvision.transforms.Resize"
-    size: List[int] = field(default_factory=lambda: [256, 256])
+    size: List[int] = field(default_factory=lambda: [224, 224])
     antialias: bool = True # 显式设置为True，避免警告，抗锯齿
     _convert_: str = "all"
 
@@ -75,3 +77,21 @@ class CustomValidTransformConfig:
         # ToTensorConfig(),
         NormalizeConfig()
     ])
+
+
+# @dataclass
+# class TimmTrainTransformConfig:
+#     _target_: str = "timm.data.create_transform"
+#     is_training: bool = True
+#     transforms: List[Any] = field(default_factory=lambda: [
+#         MyCropConfig(),
+#         ResizeConfig(),
+#         # ToTensorConfig(),
+#         NormalizeConfig()
+#     ])
+
+@dataclass
+class ViTClassifierModelDataConfig:
+    _target_: str = "timm.data.resolve_model_data_config"
+    model_name: str = field(default_factory=lambda: ViTClassifierModelConfig().model_name)
+    

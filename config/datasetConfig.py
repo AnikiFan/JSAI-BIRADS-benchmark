@@ -67,7 +67,7 @@ class ClaAugmentedDatasetConfig:
             
             #balance 
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','HorizontalFlip,ratio=(0.8,0.4,2.7,4.5,5.5,4.6)-1'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Rotate,ratio=(0.4,0.1,2.0,3.4,4.0,3.4)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Rotate,ratio=(0.4,0.1,2.0,3.4,4.0,3.4)-1'),
             
             
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.4,0.1,2.0,3.4,4.0,3.4)-1'),

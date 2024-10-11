@@ -82,6 +82,7 @@ def init_config():
 
     cs.store(group='optimizer', name="SGD", node=SGDOptimizerConfig)
     cs.store(group='optimizer', name="Adam", node=AdamOptimizerConfig)
+    cs.store(group='optimizer', name="AdamW", node=AdamWOptimizerConfig)
 
     cs.store(group='env', name="fx", node=FXEnvConfig)
     cs.store(group='env', name="zhy_local", node=ZHYLocalEnvConfig)

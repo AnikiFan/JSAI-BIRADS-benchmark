@@ -74,8 +74,8 @@ class ViTClassifier(nn.Module):
         self.transform = timm.data.create_transform(**data_config, is_training=True)
         info(f"------------------------------------------------------------------") 
         info(f"info about {model_name}")
-        info(f"数据配置:     {data_config}")
-        info(f"变换:         {self.transform}")
+        info(f"数据配置:\n{data_config}")
+        info(f"预训练模型所用变换:\n{self.transform}")
         info(f"变换类型:     {type(self.transform)}")
         info(f"------------------------------------------------------------------")
     def forward(self, x):

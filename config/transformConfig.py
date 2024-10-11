@@ -160,6 +160,7 @@ class ViTClassifierTransformConfig:
     _target_: str = 'torchvision.transforms.Compose'
     transforms: List[Any] = field(
         default_factory=lambda: [
+        MyCropConfig(),
         # 随机裁剪并调整图像大小，使用双三次插值
         Transform_RandomResizedCropConfig(),
         # 随机水平翻转
@@ -167,7 +168,7 @@ class ViTClassifierTransformConfig:
         # 调整图像的亮度、对比度和饱和度
         Transform_ColorJitterConfig(),
         # 将图像转换为张量
-        Transform_ToTensorConfig(),
+        # Transform_ToTensorConfig(),
         Transform_NormalizeConfig()
         ]
     )

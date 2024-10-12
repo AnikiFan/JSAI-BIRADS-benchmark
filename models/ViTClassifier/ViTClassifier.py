@@ -10,6 +10,7 @@ class ViTClassifier(nn.Module):
                  num_classes=10, 
                  drop_rate=0.0, 
                  drop_path_rate=0.1,
+                 freeze_layers=0,
                  **kwargs):
         """
         Vision Transformer 分类器
@@ -56,7 +57,7 @@ class ViTClassifier(nn.Module):
         }
         
         # 使用 timm 创建预训练的 ViT 模型
-        self.vit = timm.create_model(model_name, 
+        base_model = timm.create_model(model_name, 
                                      pretrained=pretrained, 
                                      pretrained_cfg_overlay=dict(file=pathToCheckpoints[model_name]),
                                      num_classes=num_classes, 
@@ -65,11 +66,18 @@ class ViTClassifier(nn.Module):
         
         # 如果需要自定义分类头，可以取消注释以下部分
         # base_model = timm.create_model(model_name, pretrained=pretrained, num_classes=0)
-        # self.vit = base_model
-        # self.classifier = nn.Sequential(
-        #     nn.Dropout(drop_rate),
-        #     nn.Linear(base_model.num_features, num_classes)
-        # )
+        self.vit = base_model
+        self.classifier = nn.Sequential(
+            nn.Dropout(drop_rate),
+            nn.Linear(base_model.num_features, num_classes)
+        )
+        # 冻结前 freeze_layers 层
+        if freeze_layers > 0:
+            for name, param in self.vit.named_parameters():
+                if int(name.split('.')[1]) < freeze_layers:
+                    param.requires_grad = False
+                    
+        # 打印模型信息
         data_config = timm.data.resolve_model_data_config(self.vit)
         self.transform = timm.data.create_transform(**data_config, is_training=True)
         info(f"------------------------------------------------------------------") 
@@ -88,11 +96,11 @@ class ViTClassifier(nn.Module):
         返回：
         - torch.Tensor: 分类结果，形状为 (batch_size, num_classes)
         """
-        return self.vit(x)
+        # return self.vit(x)
         # 如果自定义了分类头，请使用以下代码
-        # x = self.vit(x)
-        # x = self.classifier(x)
-        # return x
+        x = self.vit(x)
+        x = self.classifier(x)
+        return x
 
 
 

@@ -25,4 +25,5 @@ outputs/*
 *.xlsx
 *.ipynb
 *.xml
+demo.py
 **/.idea/

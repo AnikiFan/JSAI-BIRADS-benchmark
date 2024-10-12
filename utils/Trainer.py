@@ -207,7 +207,7 @@ class Trainer:
                 break
         
         # env=zhy_remote且设置为final时，自动释放远程服务器。
-        if cfg.env == 'zhy_remote' and cfg.env.final:
+        if cfg.env.final:
             print("final complete, release remote server")
             os.system("export $(cat /proc/1/environ |tr '\\0' '\\n' | grep MATCLOUD_CANCELTOKEN)&&/public/script/matncli node cancel -url https://matpool.com/api/public/node")
         return best_loss, best_f1, best_accuracy, best_confusion_matrix

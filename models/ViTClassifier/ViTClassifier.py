@@ -103,7 +103,7 @@ class ViTClassifier(nn.Module):
         """
         # return self.vit(x)
         # 如果自定义了分类头，请使用以下代码
-        x = self.vit(x)
+        x = self.base_model(x)
         x = self.classifier(x)
         return x
 

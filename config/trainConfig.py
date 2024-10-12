@@ -23,7 +23,7 @@ class EarlyStopping:
     _target_: str = 'utils.earlyStopping.EarlyStopping'
     patience: int = 10
     min_delta: float = 0.001
-
+    min_train_loss: float = 0.3
 
 @dataclass
 class MultiClassAccuracy:

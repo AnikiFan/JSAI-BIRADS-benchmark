@@ -64,7 +64,9 @@ class ViTClassifier(nn.Module):
                                      num_classes=num_classes, 
                                      drop_rate=drop_rate, 
                                     drop_path_rate=drop_path_rate)
-        
+        for param in self.vit.parameters():
+            param.requires_grad = True
+            
         # 如果需要自定义分类头，可以取消注释以下部分
         # base_model = timm.create_model(model_name, pretrained=pretrained, num_classes=0)
         # self.vit = base_model

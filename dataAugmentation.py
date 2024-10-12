@@ -61,11 +61,11 @@ if __name__ == '__main__':
         #     A.RandomGamma(gamma_limit=(80, 120), p=0.5)
         # ])
     ]
-
+    
     # 转化成compose
     selected_transforms = [A.Compose([transform]) for transform in selected_transforms]
-
-
+    
+    
     for transform in selected_transforms:
         Preprocess(transform, ratio=ratio).process_image()
     
@@ -81,7 +81,7 @@ if __name__ == '__main__':
         'mixup_0.3'
         # 根据需要添加或移除 MixUp 策略
     ]
-
+    
     for mixup_name in mixup_transforms:
         alpha = float(mixup_name.split('_')[1])  # 提取 MixUp 的 alpha 值
         MixUp(alpha, ratio=mixup_ratio).process_image()

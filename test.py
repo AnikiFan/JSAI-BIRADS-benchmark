@@ -7,8 +7,9 @@ from hydra.utils import instantiate
 import torch
 from utils.TableDataset import TableDataset
 from tqdm import tqdm
-from omegaconf import OmegaConf
 from torch.utils.data import DataLoader
+from torcheval.metrics.functional import multiclass_accuracy, multiclass_f1_score, multiclass_confusion_matrix
+from logging import info
 
 
 class Tester:
@@ -52,7 +53,8 @@ class Tester:
         self.ground_truth.file_name = self.ground_truth.file_name.apply(
             lambda x: os.path.join(self.data_folder_path, 'breast', task, 'test', x))
         self.data_loader = DataLoader(TableDataset(self.ground_truth[["file_name", 'label']], image_format='Tensor',
-                                                   transform=instantiate(self.cfg.valid_transform)), shuffle=False, batch_size=1)
+                                                   transform=instantiate(self.cfg.valid_transform)), shuffle=False,
+                                      batch_size=1)
 
     def test(self):
         checkpoint = torch.load(os.path.join(self.check_point_folder_path, "model.pth"), weights_only=True)
@@ -86,15 +88,42 @@ class Tester:
         self.order.loc[:, ['id', self.image_name_key]].to_csv(
             os.path.join(self.check_point_folder_path, "submit", self.task + "_order.csv"), index=False, )
 
+    def evaluate(self):
+        accuracy, f1_score, confusion_matrix = None, None, None
+        if self.task == 'cla':
+            input, target = torch.Tensor(self.pre.label.astype(np.int_).values).to(torch.int64), torch.Tensor(
+                self.ground_truth.label.astype(np.int_).values).to(torch.int64)
+            accuracy = multiclass_accuracy(input, target, average='macro', num_classes=6)
+            f1_score = multiclass_f1_score(input, target, average='macro', num_classes=6)
+            confusion_matrix = multiclass_confusion_matrix(input, target, num_classes=6)
+        else:
+            inputs = [self.pre.boundary.astype(np.int_).values, self.pre.calcification.astype(np.int_).values,
+                      self.pre.direction.astype(np.int_).values, self.pre['shape'].astype(np.int_).values]
+            targets = [self.ground_truth.boundary.astype(np.int_).values,
+                       self.ground_truth.calcification.astype(np.int_).values,
+                       self.ground_truth.direction.astype(np.int_).values,
+                       self.ground_truth['shape'].astype(np.int_).values]
+            accuracy, f1_score, confusion_matrices = 0, 0, []
+            for input, target in zip(inputs, targets):
+                input, target = torch.Tensor(input).to(torch.int64), torch.Tensor(target).to(torch.int64)
+                accuracy += multiclass_accuracy(input, target, average='macro', num_classes=2) / 4
+                f1_score += multiclass_f1_score(input, target, average='macro', num_classes=2) / 4
+                confusion_matrices.append(multiclass_confusion_matrix(input, target, num_classes=2))
+            confusion_matrix = torch.stack(confusion_matrices, dim=0)
+        info('ACCURACY   {:.10f}'.format(accuracy))
+        info('F1         {:.10f}'.format(f1_score))
+        info(f'confusion matrix:\n{str(confusion_matrix)}')
 
-task = 'cla'
-checkpoint_path = os.path.join(os.curdir, "outputs", "2024-10-10", "18-46-21")
+
+task = 'fea'
+checkpoint_path = os.path.join(os.curdir, "outputs", "2024-10-12", "10-05-09")
 
 
 @main(version_base=None, config_name="config", config_path=os.path.join(checkpoint_path, ".hydra"))
 def test(cfg: Config):
-    print(OmegaConf.to_yaml(cfg))
-    Tester(task, cfg, os.path.join(os.curdir, "data"), checkpoint_path).test()
+    tester = Tester(task, cfg, os.path.join(os.curdir, "data"), checkpoint_path)
+    tester.test()
+    tester.evaluate()
 
 
 init_config()

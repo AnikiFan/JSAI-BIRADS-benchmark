@@ -15,11 +15,64 @@ from utils.TableDataset import TableDataset
 from unittest.mock import mock_open, patch
 from utils.loss_function import MyBCELoss
 from utils.metrics import my_multilabel_accuracy, multilabel_f1_score, multilabel_confusion_matrix
+from utils.dataAugmentation import Preprocess,MixUp
+from glob import glob
+import albumentations as A
+
+class FolderTestCase(unittest.TestCase):
+    def test_official_file(self):
+        """
+        测试是否有官方数据文件夹
+        :return:
+        """
+        self.assertTrue(os.path.exists(os.path.join(os.curdir,'data','breast','cla','official_train')))
+        self.assertTrue(os.path.exists(os.path.join(os.curdir,'data','breast','cla','official_test')))
+        self.assertTrue(os.path.exists(os.path.join(os.curdir, 'data', 'breast', 'fea', 'official_train')))
+        self.assertTrue(os.path.exists(os.path.join(os.curdir, 'data', 'breast', 'fea', 'official_test')))
+        self.assertTrue(os.path.exists(os.path.join(os.curdir,'docs','cla_order.csv')))
+        self.assertTrue(os.path.exists(os.path.join(os.curdir,'docs','fea_order.csv')))
+
+    def test_official_file_tree(self):
+        self.assertCountEqual(['2类','3类','4A类','4B类','4C类','5类'],os.listdir(os.path.join(os.curdir,'data','breast','cla','official_train')))
+        self.assertCountEqual(['2类','3类','4A类','4B类','4C类','5类'],os.listdir(os.path.join(os.curdir,'data','breast','cla','official_test')))
+        self.assertCountEqual(['boundary_labels','calcification_labels','direction_labels','images','shape_labels'],os.listdir(os.path.join(os.curdir,'data','breast','fea','official_train')))
+        self.assertCountEqual(['boundary_labels','calcification_labels','direction_labels','images','shape_labels'],os.listdir(os.path.join(os.curdir,'data','breast','fea','official_train')))
+
+    def test_organized_file(self):
+        """
+        测试是否运行过OfficialDataOrganize.py
+        :return:
+        """
+        self.assertTrue(os.path.exists(os.path.join(os.curdir, 'data', 'breast', 'cla', 'train')))
+        self.assertTrue(os.path.exists(os.path.join(os.curdir, 'data', 'breast', 'cla', 'test')))
+        self.assertTrue(os.path.exists(os.path.join(os.curdir, 'data', 'breast', 'fea', 'train')))
+        self.assertTrue(os.path.exists(os.path.join(os.curdir, 'data', 'breast', 'fea', 'test')))
+        self.assertTrue(os.path.exists(os.path.join(os.curdir, 'data', 'breast', 'cla', 'train','ground_truth.csv')))
+        self.assertTrue(os.path.exists(os.path.join(os.curdir, 'data', 'breast', 'cla', 'test','ground_truth.csv')))
+        self.assertTrue(os.path.exists(os.path.join(os.curdir, 'data', 'breast', 'fea', 'train','ground_truth.csv')))
+        self.assertTrue(os.path.exists(os.path.join(os.curdir, 'data', 'breast', 'fea', 'test','ground_truth.csv')))
 
 
 class CrossValidationTestCase(unittest.TestCase):
     data_folder_path = os.path.join(os.curdir, 'data')
     k_fold = 5
+    if not len(glob(os.path.join(os.curdir, 'data','breast', 'cla','augmented','Mixup,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-*'))):
+        MixUp(0.2,[1,1,1,1,1,1]).process_image()
+    if not len(glob(os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented', 'Mixup,ratio=(2.0,1.0,3.0,4.0,5.0,6.0)-*'))):
+        MixUp(0.2, [2,1,3,4,5,6]).process_image()
+    if not len(glob(os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented',
+                                 'Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-*'))):
+        Preprocess(A.Compose([A.Rotate(limit=15,p=1.0)]), [1, 1, 1, 1, 1, 1]).process_image()
+    if not len(glob(os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented',
+                                 'Rotate,ratio=(2.0,1.0,3.0,4.0,5.0,6.0)-*'))):
+        Preprocess(A.Compose([A.Rotate(limit=15,p=1.0)]), [2, 1, 3, 4, 5, 6]).process_image()
+    if not len(glob(os.path.join(os.curdir, 'data', 'breast', 'fea', 'augmented','Mixup-*'))):
+        MixUp(0.2, official_train=False,BUS=False,USG=False,fea_official_train=True).process_image()
+    cla_mixup_folder1 = glob(os.path.join(os.curdir, 'data','breast', 'cla','augmented','Mixup,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-*'))[0]
+    cla_mixup_folder2 = glob(os.path.join(os.curdir, 'data','breast', 'cla','augmented','Mixup,ratio=(2.0,1.0,3.0,4.0,5.0,6.0)-*'))[0]
+    cla_rotate_folder1 = glob(os.path.join(os.curdir, 'data','breast', 'cla','augmented','Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-*'))[0]
+    cla_rotate_folder2 = glob(os.path.join(os.curdir, 'data','breast', 'cla','augmented','Rotate,ratio=(2.0,1.0,3.0,4.0,5.0,6.0)-*'))[0]
+    fea_mixup_folder = glob(os.path.join(os.curdir, 'data', 'breast', 'fea', 'augmented','Mixup-*'))[0]
 
     def test_len_without_augment(self):
         """
@@ -163,11 +216,7 @@ class CrossValidationTestCase(unittest.TestCase):
         """
         cla_cross_validation_dataset_with_augment = BreastCrossValidationData(data_folder_path=self.data_folder_path,
                                                                               k_fold=self.k_fold,
-                                                                              augmented_folder_list=[
-                                                                                  os.path.join(os.curdir, 'data',
-                                                                                               'breast', 'cla',
-                                                                                               'augmented',
-                                                                                               'Mixup,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)')])
+                                                                              augmented_folder_list=[self.cla_mixup_folder1])
         cla_cross_validation_dataset_without_augment = BreastCrossValidationData(data_folder_path=self.data_folder_path,
                                                                                  k_fold=self.k_fold)
         for train_dataset_with_augment, valid_dataset_with_augment in cla_cross_validation_dataset_with_augment:
@@ -189,27 +238,19 @@ class CrossValidationTestCase(unittest.TestCase):
                                                                                 official_train=official_train, BUS=BUS,
                                                                                 USG=USG,
                                                                                 fea_official_train=fea_official_train,
-                                                                                augmented_folder_list=[
-                                                                                    os.path.join(os.curdir, 'data',
-                                                                                                 'breast', 'cla',
-                                                                                                 'augmented',
-                                                                                                 'Mixup,ratio=(2,1,3,4,5,6)')])
+                                                                                augmented_folder_list=[self.cla_mixup_folder2])
         for train_dataset, valid_dataset in cla_cross_validation_dataset_with_augmented:
             valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
             self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: in_valid(x, valid_list))))
 
         official_train, BUS, USG, fea_official_train = False, False, False, True
-        cla_cross_validation_dataset_with_augmented = BreastCrossValidationData(data_folder_path=self.data_folder_path,
+        fea_cross_validation_dataset_with_augmented = BreastCrossValidationData(data_folder_path=self.data_folder_path,
                                                                                 k_fold=self.k_fold,
                                                                                 official_train=official_train, BUS=BUS,
                                                                                 USG=USG,
                                                                                 fea_official_train=fea_official_train,
-                                                                                augmented_folder_list=[
-                                                                                    os.path.join(os.curdir, 'data',
-                                                                                                 'breast', 'cla',
-                                                                                                 'augmented',
-                                                                                                 'Mixup')])
-        for train_dataset, valid_dataset in cla_cross_validation_dataset_with_augmented:
+                                                                                augmented_folder_list=[self.fea_mixup_folder])
+        for train_dataset, valid_dataset in fea_cross_validation_dataset_with_augmented:
             valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
             self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: in_valid(x, valid_list))))
 
@@ -224,11 +265,7 @@ class CrossValidationTestCase(unittest.TestCase):
                                                                  official_train=official_train, BUS=BUS,
                                                                  USG=USG,
                                                                  fea_official_train=fea_official_train,
-                                                                 augmented_folder_list=[
-                                                                     os.path.join(os.curdir, 'data',
-                                                                                  'breast', 'cla',
-                                                                                  'augmented',
-                                                                                  'Mixup,ratio=(2,1,3,4,5,6)')])
+                                                                 augmented_folder_list=[self.cla_rotate_folder2])
         first = True
         for train_dataset, valid_dataset in cla_cross_validation_dataset:
             if first:
@@ -244,11 +281,7 @@ class CrossValidationTestCase(unittest.TestCase):
                                                                  official_train=official_train, BUS=BUS,
                                                                  USG=USG,
                                                                  fea_official_train=fea_official_train,
-                                                                 augmented_folder_list=[
-                                                                     os.path.join(os.curdir, 'data',
-                                                                                  'breast', 'cla',
-                                                                                  'augmented',
-                                                                                  'Mixup,ratio=(2,1,3,4,5,6)')])
+                                                                 augmented_folder_list=[self.cla_mixup_folder2])
         first = True
         for train_dataset, valid_dataset in cla_cross_validation_dataset:
             if first:
@@ -283,11 +316,7 @@ class CrossValidationTestCase(unittest.TestCase):
         """
         cla_cross_validation_dataset_with_augment = BreastCrossValidationData(data_folder_path=self.data_folder_path,
                                                                               k_fold=self.k_fold,
-                                                                              augmented_folder_list=[
-                                                                                  os.path.join(os.curdir, 'data',
-                                                                                               'breast', 'cla',
-                                                                                               'augmented',
-                                                                                               'Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)')])
+                                                                              augmented_folder_list=[self.cla_rotate_folder1])
         cla_cross_validation_dataset_without_augment = BreastCrossValidationData(data_folder_path=self.data_folder_path,
                                                                                  k_fold=self.k_fold)
         for train_dataset_with_augment, valid_dataset_with_augment in cla_cross_validation_dataset_with_augment:
@@ -303,11 +332,7 @@ class CrossValidationTestCase(unittest.TestCase):
         """
         cla_cross_validation_dataset_with_augmented = BreastCrossValidationData(data_folder_path=self.data_folder_path,
                                                                                 k_fold=self.k_fold,
-                                                                                augmented_folder_list=[
-                                                                                    os.path.join(os.curdir, 'data',
-                                                                                                 'breast', 'cla',
-                                                                                                 'augmented',
-                                                                                                 'Rotate,ratio=(2,1,3,4,5,6)')])
+                                                                                augmented_folder_list=[self.cla_rotate_folder2])
         for train_dataset, valid_dataset in cla_cross_validation_dataset_with_augmented:
             valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
             self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: in_valid(x, valid_list))))
@@ -319,10 +344,7 @@ class CrossValidationTestCase(unittest.TestCase):
         """
         cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
                                                                  k_fold=self.k_fold,
-                                                                 augmented_folder_list=[os.path.join(os.curdir, 'data',
-                                                                                                     'breast', 'cla',
-                                                                                                     'augmented',
-                                                                                                     'Rotate,ratio=(2,1,3,4,5,6)')])
+                                                                 augmented_folder_list=[self.cla_rotate_folder2])
         first = True
         for train_dataset, valid_dataset in cla_cross_validation_dataset:
             if first:

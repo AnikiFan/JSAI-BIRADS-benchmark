@@ -93,26 +93,19 @@ class ClaAugmentedDatasetConfig:
             
             
             # local 
-            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.9,0.5,3.1,4.9,5.6,4.8)-1'),
-            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.9,0.5,3.1,4.9,5.6,4.8)-2'),
-            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(1.9,1.5,4.1,5.9,6.6,5.8)-1'),
-        ]
-    )
-
-@dataclass 
-class FeaAugmentedDatasetConfig:
-    augmented_folder_list: List[Path] = field(
-        default_factory=lambda: [
             os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.9,0.5,3.1,4.9,5.6,4.8)-1'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.9,0.5,3.1,4.9,5.6,4.8)-2'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.9,0.5,3.1,4.9,5.6,4.8)-2'),
             os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(1.9,1.5,4.1,5.9,6.6,5.8)-1'),
         ]
     )
-    
+
+@dataclass
+class FeaAugmentedDatasetConfig:
+    pass
+
 @dataclass
 class ClaSingleFoldDatasetConfig(ClaDatasetConfig,ClaAugmentedDatasetConfig):
     _target_: str = "utils.BreastDataset.getBreastTrainValidData"
-    valid_ratio:float=0.2
 
 
 @dataclass

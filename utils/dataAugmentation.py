@@ -98,7 +98,7 @@ def find_next_augmented_folder(data_folder_path: str, short_description: str, fu
     return i
 
 class MixUp:
-    def __init__(self, mixup_alpha: float, ratio=Optional[Tuple[float]], official_train: bool = True, BUS: bool = True,
+    def __init__(self, mixup_alpha: float, ratio:Optional[Tuple[float]]=None, official_train: bool = True, BUS: bool = True,
                  USG: bool = True,fea_official_train=False, data_folder_path: str = os.path.join(os.curdir, 'data'), seed: str = 42):
         """
         对图像进行 Mixup 增广并保存。
@@ -116,9 +116,11 @@ class MixUp:
         self.data_folder_path = data_folder_path
         self.table = make_table(data_folder_path=data_folder_path, official_train=official_train, BUS=BUS, USG=USG,fea_official_train=fea_official_train)
         if not ratio:
-            ratio = np.ones(self.table.label.nunique(), dtype=np.int_)
+            ratio = np.ones(self.table.label.nunique(), dtype=np.float32)
         if not isinstance(ratio, np.ndarray):
-            ratio = np.array(ratio)
+            ratio = np.array(ratio,dtype=np.float32)
+        else:
+            ratio = ratio.astype(np.float32)
         if fea_official_train:
             ratio = None
         if not fea_official_train:
@@ -129,7 +131,7 @@ class MixUp:
             self.fingerprint = f"\nMixup(mixup_alpha={mixup_alpha},fea_official_train={fea_official_train})\n\n"
             self.short_description,self.full_description = "Mixup",self.fingerprint
         self.lam = np.random.beta(mixup_alpha, mixup_alpha)
-        self.dst_folder = os.path.join(self.data_folder_path, 'breast', 'cla' if not fea_official_train else 'fea', 'augmented', self.short_description)
+        self.task = 'fea' if fea_official_train else 'cla'
         self.ratio = ratio
         tqdm.pandas()  # 初始化 tqdm 的 pandas 支持
 
@@ -143,13 +145,13 @@ class MixUp:
         if i == -1:
             return
 
-        self.dst_folder = os.path.join(self.data_folder_path, 'breast', 'cla', 'augmented', f"{self.short_description}-{i}")
+        self.dst_folder = os.path.join(self.data_folder_path, 'breast', self.task, 'augmented', f"{self.short_description}-{i}")
 
         os.makedirs(self.dst_folder)
         self.table['noise_image'] = np.random.randint(0, len(self.table), (len(self.table), 1))
         self.table.noise_image = self.table.noise_image.apply(lambda x: self.table.file_name[x])
         self.table.file_name = self.table.progress_apply(self.mixup, axis=1)
-        if self.ratio  != None:
+        if type(self.ratio) !=type(None):
             self.table.drop(['noise_image', 'no'], axis=1, inplace=True)
         else:
             self.table.drop(['noise_image'], axis=1, inplace=True)
@@ -188,7 +190,7 @@ class MixUp:
         if self.ratio is None:
             file_name = origin.split(os.sep)[-1] + "__mixup__" + noise.split(os.sep)[-1] + '.jpg'
         else:
-            file_name = origin.split(os.sep)[-1] + "__mixup__" + noise.split(os.sep)[-1] + "("+no+")"+'.jpg'
+            file_name = origin.split(os.sep)[-1] + "__mixup__" + noise.split(os.sep)[-1] + "("+str(no)+")"+'.jpg'
 
         cv2.imwrite(filename=os.path.join(self.dst_folder, file_name), img=mixup_image)
         return file_name
@@ -202,9 +204,11 @@ class Preprocess:
         self.data_folder_path = data_folder_path
         self.table = make_table(data_folder_path=self.data_folder_path, official_train=official_train, BUS=BUS, USG=USG,fea_official_train=fea_official_train)
         if not ratio:
-            ratio = np.ones(self.table.label.nunique())
+            ratio = np.ones(self.table.label.nunique(),dtype=np.float32)
         if not isinstance(ratio, np.ndarray):
-            ratio = np.array(ratio)
+            ratio = np.array(ratio,dtype=np.float32)
+        else:
+            ratio = ratio.astype(np.float32)
         if fea_official_train:
             self.task = 'fea'
             ratio = None
@@ -264,30 +268,4 @@ class Preprocess:
         with open(os.path.join(self.dst_folder, 'README.txt'), 'w') as file:
             file.write(self.full_description)
 
-
-if __name__ == '__main__':
-    transform = A.Compose([A.Rotate(limit=10, always_apply=True)])
-    Preprocess(transform,official_train=False,BUS=False,USG=False,fea_official_train=True).process_image()
-
-    ratio = [2, 1, 3, 4, 5, 6]
-    # MixUp(0.4, ratio=ratio).process_image()
-
-    # transform = A.Compose([A.Rotate(limit=10, always_apply=True), A.HorizontalFlip(always_apply=True)])
-    # Preprocess(transform, ratio=ratio).process_image()
-
-    # transform = A.Compose([A.Rotate(limit=10, always_apply=True)])
-    # Preprocess(transform, ratio=ratio).process_image()
-
-    # transform = A.Compose([A.RandomBrightnessContrast(always_apply=True)])
-    # Preprocess(transform, ratio=ratio).process_image()
-
-    transform = A.Compose([A.VerticalFlip(always_apply=True)])
-    Preprocess(transform, ratio=ratio).process_image()
-
-
-    # transform = A.Compose([A.Perspective(scale=(0.05, 0.1), always_apply=True)])
-    # Preprocess(transform, ratio=ratio).process_image()
-
-    # transform = A.Compose([A.ElasticTransform(alpha=1, sigma=50, always_apply=True)])
-    # Preprocess(transform, ratio=ratio).process_image()
 

@@ -13,4 +13,4 @@ class MyBCELoss:
         pass
 
     def __call__(self, input, target, **kwargs):
-        return BCELoss()(Sigmoid()(input), target)
+        return BCELoss()(Sigmoid()(input[:,0]), target[:,0])

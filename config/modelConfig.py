@@ -110,7 +110,9 @@ class MobileNetV2ClassifierModelConfig(PretrainedModelConfig):
 class ViTClassifierModelConfig(PretrainedModelConfig):
     _target_:str="models.ViTClassifier.ViTClassifier.ViTClassifier"
     # model_name:str="vit_base_patch16_224"
-    model_name:str='vit_mediumd_patch16_reg4_gap_256.sbb_in12k_ft_in1k'
+    # model_name:str='vit_mediumd_patch16_reg4_gap_256.sbb_in12k_ft_in1k'
+    model_name:str='fastvit_ma36.apple_in1k'
+    classifier_head:bool=True
     num_classes:int=6
     pretrained:bool=True
     lr:float=0.001

@@ -27,13 +27,10 @@ import numpy as np
 if __name__ == '__main__':
     # initial_num = np.array([849, 1061, 404, 274, 232, 269])
     initial_num = np.array([1035, 1349, 492, 341, 301, 343])
-    target_num = np.array([2000, 2000, 2000, 2000, 2000, 2000])
+    target_num = np.array([500, 500, 500, 500, 500, 500])
     print("target_num: ", target_num)
     ratio = (target_num) / initial_num
     ratio = ratio.tolist()
-
-    debug("ratio: ")
-    debug(ratio)
 
     # 设置要使用的增广策略
     selected_transforms = [
@@ -81,7 +78,7 @@ if __name__ == '__main__':
     # 单独处理 MixUp
     mixup_transforms = [
         'mixup_0.1',
-        # 'mixup_0.3'
+        'mixup_0.3'
         # 根据需要添加或移除 MixUp 策略
     ]
 

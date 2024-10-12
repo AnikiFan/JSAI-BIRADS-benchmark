@@ -9,6 +9,9 @@ from torchvision import transforms
 图像变换配置
 """
 
+'''
+torchvision 中的transforms 写成config类
+'''
 
 @dataclass
 class DefaultTrainTransformConfig:
@@ -46,6 +49,7 @@ class Transform_ColorJitterConfig:
     brightness: Tuple[float, float] = field(default_factory=lambda: (0.6, 1.4))
     contrast: Tuple[float, float] = field(default_factory=lambda: (0.6, 1.4))
     saturation: Tuple[float, float] = field(default_factory=lambda: (0.6, 1.4))
+    # hue: Optional[Tuple[float, float]] = None
     _convert_: str = "all"
     
 
@@ -195,7 +199,7 @@ class ViTClassifierValidTransformConfig:
         MyCropConfig(),
         # 随机裁剪并调整图像大小，使用双三次插值
         # Transform_RandomResizedCropConfig(),
-        # Transform_CenterCropConfig(),
+        # Transform_CenterCropConfig()x,
         Transform_ResizeConfig(),
         # 随机水平翻转
         # Transform_RandomHorizontalFlipConfig(),
@@ -208,4 +212,56 @@ class ViTClassifierValidTransformConfig:
     )
     _convert_: str = "all"
     
+'''
+fastvit 需要使用timm库中的transforms
+'''
+@dataclass 
+class FasViT_transform_NormalizeConfig:
+    _target_: str = "torchvision.transforms.Normalize"
+    mean: List[float] = field(default_factory=lambda: [0.485, 0.456, 0.406])
+    std: List[float] = field(default_factory=lambda: [0.229, 0.224, 0.225])
+    _convert_: str = "all"
+
+@dataclass
+class FastViT_Transform_RandomResizedCropConfig:
+    _target_: str = "torchvision.transforms.RandomResizedCrop"
+    size: List[int] = field(default_factory=lambda: [256, 256])
+    scale: Tuple[float, float] = field(default_factory=lambda: (0.08, 1.0))
+    ratio: Tuple[float, float] = field(default_factory=lambda: (0.75, 1.3333))
+    interpolation: InterpolationMode = InterpolationMode.BICUBIC
+    _convert_: str = "all"
     
+
+@dataclass
+class FastViT_trainTransformConfig:
+    _target_: str = "torchvision.transforms.Compose"
+    transforms: List[Any] = field(
+        default_factory=lambda: [
+            MyCropConfig(), 
+            FastViT_Transform_RandomResizedCropConfig(),
+            # 随机水平翻转
+            Transform_RandomHorizontalFlipConfig(),
+            # 调整图像的亮度、对比度和饱和度
+            Transform_ColorJitterConfig(),
+            # 将图像转换为张量
+            # Transform_ToTensorConfig(),
+            Transform_NormalizeConfig(),
+            # Normalize for fastvit
+            FasViT_transform_NormalizeConfig()
+        ]
+    )
+    _convert_: str = "all"
+    
+    
+@dataclass
+class FastViT_validTransformConfig:
+    _target_: str = "torchvision.transforms.Compose"
+    transforms: List[Any] = field(
+        default_factory=lambda: [
+            MyCropConfig(), 
+            Transform_ResizeConfig(), 
+            # Transform_NormalizeConfig(), 
+            FasViT_transform_NormalizeConfig()
+        ]
+    )
+    _convert_: str = "all"

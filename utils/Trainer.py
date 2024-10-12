@@ -97,10 +97,8 @@ class Trainer:
                 train_labels.extend(labels)
                 outputs, labels = torch.cat(outputs, dim=0), torch.cat(labels, dim=0)
                 avg_loss = self.loss_fn(input=outputs, target=labels).item()
-                avg_accuracy = instantiate(self.cfg.train.accuracy, input=outputs, target=labels,
-                                           num_classes=self.cfg.dataset.num_classes).item()
-                avg_f1 = instantiate(self.cfg.train.f1_score, input=outputs, target=labels,
-                                     num_classes=self.cfg.dataset.num_classes).item()
+                avg_accuracy = instantiate(self.cfg.train.accuracy, input=outputs, target=labels).item()
+                avg_f1 = instantiate(self.cfg.train.f1_score, input=outputs, target=labels).item()
                 tb_x = (epoch_index - 1) * len(train_loader) + i
                 tb_writer.add_scalar('Loss/train', avg_loss, tb_x)
                 tb_writer.add_scalar('Accuracy/train', avg_accuracy, tb_x)

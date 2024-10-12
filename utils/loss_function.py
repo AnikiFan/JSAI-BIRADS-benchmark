@@ -1,5 +1,6 @@
 from torch.nn import BCELoss, Sigmoid
 from torch import Tensor
+import torch
 
 
 class MyBCELoss:
@@ -14,3 +15,16 @@ class MyBCELoss:
 
     def __call__(self, input, target, **kwargs):
         return BCELoss()(Sigmoid()(input), target)
+
+class MyBinaryCrossEntropyLoss:
+    def __int__(self):
+        """
+        专门针对二元实现的BCELoss，input是一维Tensor，label是二维，需要flatten
+        :param input:
+        :param target:
+        :return:
+        """
+        pass
+
+    def __call__(self, input, target, **kwargs):
+        return BCELoss()(Sigmoid()(input.flatten()), target.to(dtype=torch.float))

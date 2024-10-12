@@ -1,4 +1,6 @@
 import os
+from http.client import UnimplementedFileMode
+
 import pandas as pd
 import numpy as np
 from logging import warning
@@ -10,7 +12,7 @@ from logging import debug
 
 
 def make_table(data_folder_path: str, official_train: bool = True, BUS: bool = True, USG: bool = True,
-               fea_official_train=False, *, seed: int = 42) -> pd.DataFrame:
+               fea_official_train=False,feature='all',ratio:str|Tuple[float]|Tuple[int]='same', *, seed: int = 42) -> pd.DataFrame:
     """
     合成未经变换的数据整合而成的csv，file_name列为图像的路径，label列为对应图像的标签
     :param data_folder_path:
@@ -24,10 +26,12 @@ def make_table(data_folder_path: str, official_train: bool = True, BUS: bool = T
     BUS_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'BUS', 'Images')
     USG_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'USG')
     fea_official_data_path = os.path.join(data_folder_path, 'breast', 'fea', 'train')
-    assert os.path.exists(official_data_path), f"{official_data_path} does not exist! please use OfficialClaDataOrganizer first!"
+    assert os.path.exists(
+        official_data_path), f"{official_data_path} does not exist! please use OfficialClaDataOrganizer first!"
     assert os.path.exists(BUS_data_path), f"{BUS_data_path} does not exist! please run replace.ipynb first!"
     assert os.path.exists(USG_data_path), f"{USG_data_path} does not exist! please run process.ipynb first!"
-    assert os.path.exists(fea_official_data_path), f"{fea_official_data_path} does not exist! please run OfficialFeaDataOrganizer first!"
+    assert os.path.exists(
+        fea_official_data_path), f"{fea_official_data_path} does not exist! please run OfficialFeaDataOrganizer first!"
     if fea_official_train:
         assert not (official_train or BUS or USG), "不能同时选择cla数据和fea数据"
     tables = []
@@ -35,24 +39,54 @@ def make_table(data_folder_path: str, official_train: bool = True, BUS: bool = T
         table = pd.read_csv(os.path.join(official_data_path, 'ground_truth.csv'))
         table.file_name = table.file_name.apply(lambda x: os.path.join(official_data_path, x))
         tables.append(table)
+        debug("append official_train")
     if BUS:
         table = pd.read_csv(os.path.join(BUS_data_path, 'ground_truth.csv'))
         table.file_name = table.file_name.apply(lambda x: os.path.join(BUS_data_path, x))
         tables.append(table)
+        debug("append BUS")
     if USG:
         table = pd.read_csv(os.path.join(USG_data_path, 'ground_truth.csv'))
         table.file_name = table.file_name.apply(lambda x: os.path.join(USG_data_path, x))
         tables.append(table)
+        debug("append USG")
     if fea_official_train:
-        table = pd.read_csv(os.path.join(fea_official_data_path, 'ground_truth.csv'),dtype=str)
+        table = pd.read_csv(os.path.join(fea_official_data_path, 'ground_truth.csv'), dtype=str)
         table.file_name = table.file_name.apply(lambda x: os.path.join(fea_official_data_path, x))
         tables.append(table)
+        debug("append fea_official_train")
     assert len(tables), "No selected dataset!"
     table = pd.concat(tables, axis=0)
     table.reset_index(drop=True, inplace=True)
     idx = np.arange(len(table))
     np.random.default_rng(seed).shuffle(idx)
     table = table.iloc[idx, :]
+    if fea_official_train:
+        if feature == 'boundary':
+            table.label = table.label.str[0].astype(np.int64)
+            debug("only use boundary feature")
+        elif feature == 'calcification':
+            table.label = table.label.str[1].astype(np.int64)
+            debug("only use calcification feature")
+        elif feature == 'direction':
+            table.label = table.label.str[2].astype(np.int64)
+            debug("only use direction feature")
+        elif feature == 'shape':
+            table.label = table.label.str[3].astype(np.int64)
+            debug("only use shape feature")
+        elif feature == 'all':
+            debug("use all features")
+        else:
+            warning("invalid feature selected!")
+    if ratio == 'same':
+        debug('keep original ratio')
+    else:
+        if official_train or BUS or USG :
+            assert len(ratio) == 6,f"invalid ratio length {len(ratio)}"
+        if fea_official_train:
+            assert len(ratio) == 2, f"invalid ratio length {len(ratio)}"
+        debug(f"original distrubution:{table.label.count_values()}")
+        raise UnimplementedFileMode
     return table.reset_index(drop=True)
 
 
@@ -108,7 +142,8 @@ class BreastCrossValidationData:
     def __init__(self, data_folder_path: str, k_fold: int = 5,
                  train_transform: Optional[torchvision.transforms.Compose] = None,
                  valid_transform: Optional[torchvision.transforms.Compose] = None, image_format: str = 'PIL',
-                 official_train: bool = True, BUS: bool = True, USG: bool = True, fea_official_train=False, *,
+                 official_train: bool = True, BUS: bool = True, USG: bool = True, fea_official_train=False,
+                 feature='all', *,
                  seed: int = 42,
                  augmented_folder_list: Optional[List[str]] = None, **kwargs):
         """
@@ -124,7 +159,7 @@ class BreastCrossValidationData:
         :param augmented_folder_list: 增强后的图像所在文件夹的完整路径！
         """
         self.table = make_table(data_folder_path=data_folder_path, official_train=official_train, BUS=BUS, USG=USG,
-                                fea_official_train=fea_official_train, seed=seed)
+                                fea_official_train=fea_official_train, feature=feature, seed=seed)
         self.sep_point = np.round(np.linspace(0, self.table.shape[0], k_fold + 1)).astype(np.int_)
         self.cur_valid_fold = 0
         self.k_fold = k_fold
@@ -166,9 +201,8 @@ class BreastCrossValidationData:
 def getBreastTrainValidData(data_folder_path: str, valid_ratio: float = 0.2,
                             train_transform: Optional[torchvision.transforms.Compose] = None,
                             valid_transform: Optional[torchvision.transforms.Compose] = None,
-                            official_train: bool = True,
-                            BUS: bool = True, USG: bool = True, fea_official_train=False, image_format: str = 'PIL', *,
-                            seed: int = 42,
+                            official_train: bool = True, BUS: bool = True, USG: bool = True, fea_official_train=False,
+                            feature='all', image_format: str = 'PIL', *, seed: int = 42,
                             augmented_folder_list: Optional[List[str]] = None, **kwargs) -> Optional[Tuple[TableDataset, TableDataset]]:
     """
     返回单折按照给定比例划分的训练集和验证集，用yield返回是为了可以和CV一样用for train_ds,valid_ds in dataset一样来获取
@@ -184,7 +218,7 @@ def getBreastTrainValidData(data_folder_path: str, valid_ratio: float = 0.2,
     :return:
     """
     table = make_table(data_folder_path=data_folder_path, official_train=official_train, BUS=BUS, USG=USG,
-                       fea_official_train=fea_official_train, seed=seed)
+                       fea_official_train=fea_official_train,feature=feature, seed=seed)
     sep_point = int(table.shape[0] * valid_ratio)
     valid_table = table.iloc[:sep_point, :]
     train_table = table.iloc[sep_point:, :]

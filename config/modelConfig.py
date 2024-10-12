@@ -89,7 +89,7 @@ class MobileNetModleConfig(PretrainedModelConfig):
 class PretrainedClassifierModelConfig:
     _target_:str="models.UnetClassifer.unet.PretrainedClassifier"
     resnet_type:str="resnet50"
-    num_classes:int=6
+    num_classes:int=MISSING
     pretrained:bool=True
     backbone:str="resnet50"
     freeze_backbone:bool=False
@@ -101,7 +101,7 @@ class PretrainedClassifierModelConfig:
 @dataclass
 class MobileNetV2ClassifierModelConfig(PretrainedModelConfig):
     _target_:str="models.MobileNet.MobileNet_V2_Classifier.MobileNetV2Classifier"
-    num_classes:int=6
+    num_classes:int=MISSING
     feature_extract:bool=False
     pretrained:bool=True
     lr:float=0.001
@@ -110,7 +110,7 @@ class MobileNetV2ClassifierModelConfig(PretrainedModelConfig):
 class ViTClassifierModelConfig(PretrainedModelConfig):
     _target_:str="models.ViTClassifier.ViTClassifier.ViTClassifier"
     model_name:str="vit_base_patch16_224"
-    num_classes:int=6
+    num_classes:int=MISSING
     pretrained:bool=True
     lr:float=0.001
     drop_rate:float=0.0

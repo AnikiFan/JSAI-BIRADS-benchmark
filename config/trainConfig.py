@@ -13,6 +13,11 @@ class CrossEntropyLossConfig:
     _target_: str = 'torch.nn.CrossEntropyLoss'
 
 @dataclass
+class BinaryCrossEntropyLossConfig:
+    _target_: str = 'utils.loss_function.MyBinaryCrossEntropyLoss'
+
+
+@dataclass
 class BCELossConfig:
     _target_: str = 'utils.loss_function.MyBCELoss'
 
@@ -30,7 +35,7 @@ class MultiClassAccuracy:
     input: Any = MISSING
     target: Any = MISSING
     average: str = 'macro'
-    num_classes: int = MISSING
+    num_classes: int = 6
 
 
 @dataclass
@@ -39,7 +44,7 @@ class MultiClassF1Score:
     input: Any = MISSING
     target: Any = MISSING
     average: str = 'macro'
-    num_classes: int = MISSING
+    num_classes: int = 6
 
 
 @dataclass
@@ -47,7 +52,28 @@ class MultiClassConfusionMatrix:
     _target_: str = "torcheval.metrics.functional.multiclass_confusion_matrix"
     input: Any = MISSING
     target: Any = MISSING
-    num_classes: int = MISSING
+    num_classes: int = 6
+
+@dataclass
+class BinaryClassAccuracy:
+    _target_: str = "utils.metrics.my_binary_accuracy"
+    input: Any = MISSING
+    target: Any = MISSING
+
+
+@dataclass
+class BinaryClassF1Score:
+    _target_: str = "utils.metrics.my_binary_f1_score"
+    input: Any = MISSING
+    target: Any = MISSING
+
+
+@dataclass
+class BinaryClassConfusionMatrix:
+    _target_: str = "utils.metrics.my_binary_confusion_matrix"
+    input: Any = MISSING
+    target: Any = MISSING
+
 
 
 @dataclass
@@ -71,6 +97,7 @@ class MultiLabelConfusionMatrix:
     input: Any = MISSING
     target: Any = MISSING
 
+
 @dataclass
 class ScoreOrientedConfig:
     _target_:str="utils.ChooseStrategy.score_oriented"
@@ -83,7 +110,6 @@ class MultiClassTrainConfig:
     accuracy:MultiClassAccuracy = field(default_factory=MultiClassAccuracy)
     f1_score:MultiClassF1Score = field(default_factory=MultiClassF1Score)
     confusion_matrix:MultiClassConfusionMatrix = field(default_factory=MultiClassConfusionMatrix)
-    choose_strategy:ScoreOrientedConfig = field(default_factory=ScoreOrientedConfig)
 
 
 @dataclass
@@ -91,7 +117,6 @@ class MultiLabelTrainConfig:
     accuracy: MultiLabelAccuracy = field(default_factory=MultiLabelAccuracy)
     f1_score: MultiLabelF1Score = field(default_factory=MultiLabelF1Score)
     confusion_matrix: MultiLabelConfusionMatrix = field(default_factory=MultiLabelConfusionMatrix)
-    choose_strategy:ScoreOrientedConfig = field(default_factory=ScoreOrientedConfig)
 
 @dataclass
 class DefaultTrainConfig:
@@ -100,6 +125,7 @@ class DefaultTrainConfig:
     batch_size: int = 16
     info_frequency: int = 100
     early_stopping: EarlyStopping = field(default_factory=EarlyStopping)
+    choose_strategy:ScoreOrientedConfig = field(default_factory=ScoreOrientedConfig)
 
 
 @dataclass
@@ -111,6 +137,29 @@ class ClaTrainConfig(MultiClassTrainConfig, DefaultTrainConfig):
 class FeaTrainConfig(MultiLabelTrainConfig, DefaultTrainConfig):
     loss_function: BCELossConfig = field(default_factory=BCELossConfig)
 
+@dataclass
+class SingleFeaTrainConfig(ClaTrainConfig,DefaultTrainConfig):
+    loss_function:BinaryCrossEntropyLossConfig = field(default_factory=BinaryCrossEntropyLossConfig)
+    accuracy:BinaryClassAccuracy = field(default_factory=BinaryClassAccuracy)
+    f1_score:BinaryClassF1Score = field(default_factory=BinaryClassF1Score)
+    confusion_matrix:BinaryClassConfusionMatrix = field(default_factory=BinaryClassConfusionMatrix)
+
+
+@dataclass
+class BoundaryTrainConfig(SingleFeaTrainConfig):
+    pass
+
+@dataclass
+class CalcificationTrainConfig(SingleFeaTrainConfig):
+    pass
+
+@dataclass
+class DirectionTrainConfig(SingleFeaTrainConfig):
+    pass
+
+@dataclass
+class ShapeTrainConfig(SingleFeaTrainConfig):
+    pass
 
 @dataclass
 class RemoteTrainConfig(ClaTrainConfig):

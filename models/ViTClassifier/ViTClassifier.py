@@ -11,6 +11,7 @@ class ViTClassifier(nn.Module):
                  drop_rate=0.0, 
                  drop_path_rate=0.1,
                  freeze_layers=0,
+                 classifier_head=False,
                  **kwargs):
         """
         Vision Transformer 分类器
@@ -60,30 +61,35 @@ class ViTClassifier(nn.Module):
         
         
         # 使用 timm 创建预训练的 ViT 模型
-        base_model = timm.create_model(model_name, 
+        self.base_model = timm.create_model(model_name, 
                                      pretrained=pretrained, 
                                      pretrained_cfg_overlay=dict(file=pathToCheckpoints[model_name]),
-                                     num_classes=num_classes, 
+                                     num_classes=num_classes if not classifier_head else 0,
                                      drop_rate=drop_rate, 
-                                    drop_path_rate=drop_path_rate)
-        for param in self.vit.parameters():
+                                     drop_path_rate=drop_path_rate)
+        for param in self.base_model.parameters():
             param.requires_grad = True
             
         # 如果需要自定义分类头，可以取消注释以下部分
         # base_model = timm.create_model(model_name, pretrained=pretrained, num_classes=0)
-        self.vit = base_model
-        self.classifier = nn.Sequential(
-            nn.Dropout(drop_rate),
-            nn.Linear(base_model.num_features, num_classes)
-        )
+        self.classifier_head = classifier_head
+        if self.classifier_head:
+            self.classifier = nn.Sequential(
+                nn.Dropout(drop_rate),
+                nn.Linear(self.base_model.num_features, 256),
+                nn.BatchNorm1d(256),
+                nn.ReLU(),
+                nn.Dropout(drop_rate),
+                nn.Linear(256, num_classes)
+            )
         # 冻结前 freeze_layers 层
         if freeze_layers > 0:
-            for name, param in self.vit.named_parameters():
+            for name, param in self.base_model.named_parameters():
                 if int(name.split('.')[1]) < freeze_layers:
                     param.requires_grad = False
                     
         # 打印模型信息
-        data_config = timm.data.resolve_model_data_config(self.vit)
+        data_config = timm.data.resolve_model_data_config(self.base_model)
         self.transform = timm.data.create_transform(**data_config, is_training=True)
         info(f"------------------------------------------------------------------") 
         info(f"info about {model_name}")
@@ -104,7 +110,8 @@ class ViTClassifier(nn.Module):
         # return self.vit(x)
         # 如果自定义了分类头，请使用以下代码
         x = self.base_model(x)
-        x = self.classifier(x)
+        if self.classifier_head:
+            x = self.classifier(x)
         return x
 
 

@@ -213,7 +213,7 @@ class ViTClassifierValidTransformConfig:
     _convert_: str = "all"
     
 '''
-fastvit 需要使用timm库中的transforms
+fastvit 
 '''
 @dataclass 
 class FasViT_transform_NormalizeConfig:

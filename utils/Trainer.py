@@ -65,7 +65,7 @@ class Trainer:
                            f1_score=self.f1_score)
 
     def train_one_epoch(self, *, model, train_loader: DataLoader, optimizer, epoch_index: int,
-                        tb_writer: SummaryWriter) -> Tuple[float, float, float]:
+                        tb_writer: SummaryWriter) -> Tuple[float, float, float, torch.Tensor]:
         '''
         训练一个 epoch
         :param model: 模型
@@ -110,8 +110,12 @@ class Trainer:
         train_outputs = torch.cat(train_outputs, dim=0)
         train_labels = torch.cat(train_labels, dim=0)
         return (self.loss(input=train_outputs, label=train_labels).item(),
-                instantiate(self.cfg.train.accuracy,input=train_outputs, target=train_labels,num_classes=self.cfg.dataset.num_classes).item(),
-                instantiate(self.cfg.train.f1_score, input=train_outputs, target=train_labels, num_classes=self.cfg.dataset.num_classes).item())
+                instantiate(self.cfg.train.accuracy, input=train_outputs, target=train_labels,
+                            num_classes=self.cfg.dataset.num_classes).item(),
+                instantiate(self.cfg.train.f1_score, input=train_outputs, target=train_labels,
+                            num_classes=self.cfg.dataset.num_classes).item(),
+                instantiate(self.cfg.train.confusion_matrix, input=train_outputs, target=train_labels,
+                            num_classes=self.cfg.dataset.num_classes))
 
     def make_writer_title(self) -> str:
         """
@@ -153,9 +157,11 @@ class Trainer:
         early_stopping = instantiate(self.cfg.train.early_stopping)
         for epoch in range(1, self.cfg.train.epoch_num + 1):
             # 训练一个epoch，获取在上面的指标
-            avg_loss, avg_accuracy, avg_f1 = self.train_one_epoch(model=model, train_loader=train_loader,
-                                                                  optimizer=optimizer, epoch_index=epoch,
-                                                                  tb_writer=writer)
+            avg_loss, avg_accuracy, avg_f1, train_confusion_matrix = self.train_one_epoch(model=model,
+                                                                                          train_loader=train_loader,
+                                                                                          optimizer=optimizer,
+                                                                                          epoch_index=epoch,
+                                                                                          tb_writer=writer)
             schedular.step()
             model.eval()
             with torch.no_grad():
@@ -175,7 +181,8 @@ class Trainer:
             info('LOSS      train {:.10f} valid {:.10f}'.format(avg_loss, avg_vloss))
             info('ACCURACY  train {:.10f} valid {:.10f}'.format(avg_accuracy, avg_vaccuracy))
             info('F1        train {:.10f} valid {:.10f}'.format(avg_f1, avg_vf1))
-            info(f'confusion matrix:\n{str(confusion_matrix)}')
+            info(f'confusion matrix train:\n{str(train_confusion_matrix)}')
+            info(f'confusion matrix valid:\n{str(confusion_matrix)}')
             # Log the running loss averaged per batch
             # for both training and validation
             writer.add_scalars('Training vs. Validation Loss', {'Training': avg_loss, 'Validation': avg_vloss},

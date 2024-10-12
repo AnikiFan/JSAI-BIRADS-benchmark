@@ -91,11 +91,11 @@ def init_config():
 
     cs.store(group='train_transform', name="default", node=DefaultTrainTransformConfig)
     cs.store(group='train_transform', name="custom", node=CustomTrainTransformConfig)
-    cs.store(group='train_transform', name="vit", node=ViTClassifierTransformConfig)
+    cs.store(group='train_transform', name="vit", node=ViTClassifierTrainTransformConfig)
 
     cs.store(group='valid_transform', name="default", node=DefaultValidTransformConfig)
     cs.store(group='valid_transform', name="custom", node=CustomValidTransformConfig)
-    cs.store(group='valid_transform', name="vit", node=ViTClassifierTransformConfig)
+    cs.store(group='valid_transform', name="vit", node=ViTClassifierValidTransformConfig)
 
     cs.store(group='schedular', name="exponential", node=ExponentialLRConfig)
     cs.store(group='schedular', name="dummy", node=DummySchedularConfig)

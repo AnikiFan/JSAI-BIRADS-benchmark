@@ -156,7 +156,7 @@ class CustomValidTransformConfig:
 
 
 @dataclass
-class ViTClassifierTransformConfig:
+class ViTClassifierTrainTransformConfig:
     _target_: str = 'torchvision.transforms.Compose'
     transforms: List[Any] = field(
         default_factory=lambda: [
@@ -174,3 +174,38 @@ class ViTClassifierTransformConfig:
     )
     _convert_: str = "all"
 
+@dataclass
+class Transform_CenterCropConfig:
+    _target_: str = "torchvision.transforms.CenterCrop"
+    size: List[int] = field(default_factory=lambda: [224, 224])
+    _convert_: str = "all"
+
+@dataclass
+class Transform_ResizeConfig:
+    _target_: str = "torchvision.transforms.Resize"
+    size: List[int] = field(default_factory=lambda: [256, 256])
+    antialias: bool = True
+    _convert_: str = "all"
+    
+@dataclass
+class ViTClassifierValidTransformConfig:
+    _target_: str = 'torchvision.transforms.Compose'
+    transforms: List[Any] = field(
+        default_factory=lambda: [
+        MyCropConfig(),
+        # 随机裁剪并调整图像大小，使用双三次插值
+        # Transform_RandomResizedCropConfig(),
+        # Transform_CenterCropConfig(),
+        Transform_ResizeConfig(),
+        # 随机水平翻转
+        # Transform_RandomHorizontalFlipConfig(),
+        # 调整图像的亮度、对比度和饱和度
+        # Transform_ColorJitterConfig(),
+        # 将图像转换为张量
+        # Transform_ToTensorConfig(),
+        Transform_NormalizeConfig()
+        ]
+    )
+    _convert_: str = "all"
+    
+    

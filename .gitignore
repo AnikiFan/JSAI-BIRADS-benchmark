@@ -26,3 +26,4 @@ outputs/*
 *.ipynb
 *.xml
 **/.idea/
+nohup.out

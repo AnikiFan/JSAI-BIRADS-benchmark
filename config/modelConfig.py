@@ -114,6 +114,6 @@ class ViTClassifierModelConfig(PretrainedModelConfig):
     num_classes:int=6
     pretrained:bool=True
     lr:float=0.001
-    drop_rate:float=0.0
+    drop_rate:float=0.2
     drop_path_rate:float=0.1
     

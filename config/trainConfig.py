@@ -21,7 +21,7 @@ class BCELossConfig:
 @dataclass
 class EarlyStopping:
     _target_: str = 'utils.earlyStopping.EarlyStopping'
-    patience: int = 20
+    patience: int = 10
     min_delta: float = 0.001
 
 
@@ -114,7 +114,7 @@ class FeaTrainConfig(MultiLabelTrainConfig, DefaultTrainConfig):
 
 
 @dataclass
-class RemoteTrainConfig(DefaultTrainConfig):
+class RemoteTrainConfig(ClaTrainConfig):
     checkpoint_path: Path = MISSING
     epoch_num: int = 1000
     num_workers: int = 10

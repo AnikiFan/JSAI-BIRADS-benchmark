@@ -56,7 +56,7 @@ def init_config():
 
     cs.store(group='train', name="cla_task", node=ClaTrainConfig)
     cs.store(group='train', name="fea_task", node=FeaTrainConfig)
-    cs.store(group='train', name="remote", node=RemoteTrainConfig)
+    cs.store(group='train', name="cla_task_remote", node=RemoteTrainConfig)
 
     cs.store(group='model', name="alex_net", node=AlexNetModelConfig)
     cs.store(group='model', name="google_net", node=GoogleNetModelConfig)
@@ -69,6 +69,8 @@ def init_config():
     cs.store(group='model', name="resnet_classifier", node=ResNetClassifierModelConfig)
     cs.store(group='model', name="mobilenet_v2", node=MobileNetModleConfig)
     cs.store(group='model', name="pretrained_classifier", node=PretrainedClassifierModelConfig)
+    cs.store(group='model', name="mobilenet_v2_classifier", node=MobileNetV2ClassifierModelConfig)
+    cs.store(group='model', name="vit_classifier", node=ViTClassifierModelConfig)
 
     cs.store(group='dataset', name="fashion_mnist", node=FashionMNISTDatasetConfig)
     cs.store(group='dataset', name="mnist", node=MNISTDatasetConfig)
@@ -79,6 +81,7 @@ def init_config():
     cs.store(group='dataset', name="fea_multiple", node=FeaCrossValidationDatasetConfig)
 
     cs.store(group='optimizer', name="SGD", node=SGDOptimizerConfig)
+    cs.store(group='optimizer', name="Adam", node=AdamOptimizerConfig)
 
     cs.store(group='env', name="fx", node=FXEnvConfig)
     cs.store(group='env', name="zhy_local", node=ZHYLocalEnvConfig)
@@ -87,9 +90,11 @@ def init_config():
 
     cs.store(group='train_transform', name="default", node=DefaultTrainTransformConfig)
     cs.store(group='train_transform', name="custom", node=CustomTrainTransformConfig)
+    cs.store(group='train_transform', name="vit", node=ViTClassifierTransformConfig)
 
     cs.store(group='valid_transform', name="default", node=DefaultValidTransformConfig)
     cs.store(group='valid_transform', name="custom", node=CustomValidTransformConfig)
+    cs.store(group='valid_transform', name="vit", node=ViTClassifierTransformConfig)
 
     cs.store(group='schedular', name="exponential", node=ExponentialLRConfig)
     cs.store(group='schedular', name="dummy", node=DummySchedularConfig)

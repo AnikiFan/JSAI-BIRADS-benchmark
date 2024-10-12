@@ -58,8 +58,8 @@ class Trainer:
             self.accuracy /= fold_num
             info(f"***************** {fold_num} folds' summary *****************")
             info(f'LOSS                 :{self.loss:.10f}')
-            info(f'ACCURACY             :{self.f1_score:.10f}')
-            info(f'F1                   :{self.accuracy:.10f}')
+            info(f'ACCURACY             :{self.accuracy:.10f}')
+            info(f'F1                   :{self.f1_score:.10f}')
             info(f'confusion matrix:\n{str(self.confusion_matrix)}')
         return instantiate(self.cfg.train.choose_strategy,loss=self.loss,accuracy=self.accuracy,f1_score=self.f1_score)
 
@@ -140,6 +140,7 @@ class Trainer:
         optimizer = instantiate(self.cfg.optimizer, params=model.parameters())
         schedular = instantiate(self.cfg.schedular, optimizer=optimizer)
         writer = SummaryWriter(os.path.join('runs', self.make_writer_title()))
+        # model.to(torch.device(self.cfg.env.device)) 初始化已经设置了device
         # 定义检查点路径
         early_stopping = instantiate(self.cfg.train.early_stopping)
         for epoch in range(1, self.cfg.train.epoch_num + 1):

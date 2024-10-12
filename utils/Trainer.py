@@ -109,7 +109,7 @@ class Trainer:
         # 为了避免指标出现大幅波动，不对尾部剩余的一小部分计算指标
         train_outputs = torch.cat(train_outputs, dim=0)
         train_labels = torch.cat(train_labels, dim=0)
-        return (self.loss(input=train_outputs, label=train_labels).item(),
+        return (self.loss_fn(train_outputs,train_labels).item(),
                 instantiate(self.cfg.train.accuracy, input=train_outputs, target=train_labels,
                             num_classes=self.cfg.dataset.num_classes).item(),
                 instantiate(self.cfg.train.f1_score, input=train_outputs, target=train_labels,

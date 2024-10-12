@@ -110,7 +110,7 @@ class Trainer:
         制作tensorboard的标题
         :return:
         """
-        return '_'.join(map(str, [self.cfg.model._target_, self.cfg.model.lr,
+        return '_'.join(map(str, [self.cfg.model._target_.split('.')[-1], self.cfg.model.lr,
                                   '-'.join(HydraConfig.get().runtime.output_dir.split(os.sep)[-2:]), self.cur_fold,
                                   'fold']))
 

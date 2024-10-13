@@ -107,8 +107,8 @@ class MobileNetV2ClassifierModelConfig(PretrainedModelConfig):
     lr:float=0.001
     
 @dataclass
-class PretrainedClassifier_timmModelConfig(PretrainedModelConfig):
-    _target_:str="models.timm.PretrainedClassifier.PretrainedClassifier_timm"
+class ViTClassifier_timm_ModelConfig(PretrainedModelConfig):
+    _target_:str="models.timm.ViT.ViTClassifier_timm"
     # model_name:str="vit_base_patch16_224"
     # model_name:str='vit_mediumd_patch16_reg4_gap_256.sbb_in12k_ft_in1k'
     # model_name:str='fastvit_ma36.apple_in1k'
@@ -119,4 +119,9 @@ class PretrainedClassifier_timmModelConfig(PretrainedModelConfig):
     lr:float=0.001
     drop_rate:float=0.2
     drop_path_rate:float=0.1
-    
+
+
+@dataclass
+class DenseNetClassifier_timm_ModelConfig(PretrainedModelConfig):
+    _target_:str="models.timm.denseNet.DenseNetClassifier"
+    lr:float=0.001

@@ -3,12 +3,12 @@ import torch.nn as nn
 from torchvision import models
 
 class MobileNetV2Classifier(nn.Module):
-    def __init__(self, num_classes, feature_extract=True, pretrained=True,**kwargs):
+    def __init__(self, num_classes, feature_extract=False, pretrained=True, **kwargs):
         """
         初始化预训练的 MobileNet v2 模型，并根据需要修改分类器。
 
         参数:
-        - num_classes (int): 你的分类任务的类别数。
+        - num_classes (int): 分类任务的类别数。
         - feature_extract (bool): 是否冻结特征提取层。True 表示冻结，False 表示微调整个模型。
         - pretrained (bool): 是否使用预训练权重。
         """
@@ -35,12 +35,29 @@ class MobileNetV2Classifier(nn.Module):
 
     def modify_classifier(self):
         """
-        修改分类器的最后一层，以适应新的类别数。
+        修改分类器的最后几层，以适应新的类别数。
         """
-        # 获取原分类器的输入特征数
-        num_ftrs = self.model.classifier[1].in_features
-        # 替换分类器的最后一层
-        self.model.classifier[1] = nn.Linear(num_ftrs, self.num_classes)
+        dropout_rates = [0.5, 0.5]  # 根据需要调整 dropout 率
+
+        # 获取特征提取部分的输出特征数
+        num_ftrs = self.model.last_channel  # MobileNetV2 的最后输出通道数
+
+        # 定义新的分类器
+        self.model.classifier = nn.Sequential(
+            nn.Flatten(),  # 展平成一维向量
+            nn.Linear(num_ftrs, 1024),  # 全连接层 1
+            nn.ReLU(),
+            nn.Dropout(dropout_rates[0]),
+            nn.Linear(1024, 1024),  # 全连接层 2
+            nn.ReLU(),
+            nn.Dropout(dropout_rates[1]),
+            nn.Linear(1024, 512),  # 全连接层 3
+            nn.ReLU(),
+            nn.Linear(512, 128),  # 全连接层 4
+            nn.ReLU(),
+            nn.Linear(128, self.num_classes),  # 输出层
+            # nn.Softmax(dim=1),  # 如果使用 CrossEntropyLoss，可以省略 Softmax
+        )
 
     def forward(self, x):
         """
@@ -59,7 +76,7 @@ class MobileNetV2Classifier(nn.Module):
         获取需要优化的参数组。
 
         返回:
-        - list: 需要优化的参数
+        - iterator: 需要优化的参数
         """
         if self.feature_extract:
             # 仅返回分类器的参数

@@ -28,6 +28,11 @@ class DefaultValidTransformConfig:
     )
 
 @dataclass
+class EmptyTransformConfig:
+    _target_: str = "torchvision.transforms.Compose"
+    transforms: List[Any] = field(default_factory=lambda: [])
+    
+@dataclass
 class Transform_RandomResizedCropConfig:
     _target_: str = "torchvision.transforms.RandomResizedCrop"
     size: List[int] = field(default_factory=lambda: [256, 256])

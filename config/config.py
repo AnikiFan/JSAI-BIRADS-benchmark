@@ -70,7 +70,8 @@ def init_config():
     cs.store(group='model', name="mobilenet_v2", node=MobileNetModleConfig)
     cs.store(group='model', name="pretrained_classifier", node=PretrainedClassifierModelConfig)
     cs.store(group='model', name="mobilenet_v2_classifier", node=MobileNetV2ClassifierModelConfig)
-    cs.store(group='model', name="pretrained_classifier_timm", node=PretrainedClassifier_timmModelConfig)
+    cs.store(group='model', name="vit_classifier_timm", node=ViTClassifier_timm_ModelConfig)
+    cs.store(group='model', name="dense_classifier_timm", node=DenseNetClassifier_timm_ModelConfig)
 
     cs.store(group='dataset', name="fashion_mnist", node=FashionMNISTDatasetConfig)
     cs.store(group='dataset', name="mnist", node=MNISTDatasetConfig)
@@ -93,11 +94,13 @@ def init_config():
     cs.store(group='train_transform', name="custom", node=CustomTrainTransformConfig)
     cs.store(group='train_transform', name="vit", node=ViTClassifierTrainTransformConfig)
     cs.store(group='train_transform', name="fastvit", node=FastViT_trainTransformConfig)
+    cs.store(group='train_transform', name="empty", node=EmptyTransformConfig)
 
     cs.store(group='valid_transform', name="default", node=DefaultValidTransformConfig)
     cs.store(group='valid_transform', name="custom", node=CustomValidTransformConfig)
     cs.store(group='valid_transform', name="vit", node=ViTClassifierValidTransformConfig)
     cs.store(group='valid_transform', name="fastvit", node=FastViT_validTransformConfig)
+    cs.store(group='valid_transform', name="empty", node=EmptyTransformConfig)
 
     cs.store(group='schedular', name="exponential", node=ExponentialLRConfig)
     cs.store(group='schedular', name="dummy", node=DummySchedularConfig)

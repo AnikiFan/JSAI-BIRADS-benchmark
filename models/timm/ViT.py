@@ -5,7 +5,7 @@ from logging import info
 
 
 # class ViTClassifier(nn.Module):
-class PretrainedClassifier_timm(nn.Module):
+class ViTClassifier_timm(nn.Module):
     def __init__(
         self,
         model_name="vit_base_patch16_224",
@@ -53,8 +53,14 @@ class PretrainedClassifier_timm(nn.Module):
                               num_classes=10)
         ```
         """
-
-        super(PretrainedClassifier_timm, self).__init__()
+        model_config = {
+            "vit_base_patch16_224":{
+                "crea"
+                "checkpoint_path":"./model_data/vit_base_patch16_224.bin"
+            }
+            
+        }
+        super(ViTClassifier_timm, self).__init__()
 
         pathToCheckpoints = {
             #     'vit_base_patch16_224': 'https://download.pytorch.org/models/vit_base_patch16_224-b5f2ef4d.pth',

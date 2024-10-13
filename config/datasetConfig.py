@@ -184,6 +184,8 @@ class BoundaryCrossValidationDatasetConfig(BoundaryDatasetConfig, BoundaryAugmen
 
 @dataclass
 class CalcificationSingleFoldDatasetConfig(CalcificationDatasetConfig, CalcificationAugmentedDatasetConfig):
+    feature: str = 'calcification'
+    ratio: List[int] = field(default_factory=lambda:[1,1])
     _target_: str = "utils.BreastDataset.getBreastTrainValidData"
 
 
@@ -194,6 +196,7 @@ class CalcificationCrossValidationDatasetConfig(CalcificationDatasetConfig, Calc
 
 @dataclass
 class DirectionSingleFoldDatasetConfig(DirectionDatasetConfig, DirectionAugmentedDatasetConfig):
+    feature: str = 'direction'
     _target_: str = "utils.BreastDataset.getBreastTrainValidData"
 
 

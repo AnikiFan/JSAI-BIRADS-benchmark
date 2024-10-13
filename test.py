@@ -145,6 +145,7 @@ class Tester:
                 info("注意左上方是TN,右下方是TP")
         info('ACCURACY   {:.10f}'.format(accuracy))
         info('F1         {:.10f}'.format(f1_score))
+        info('OVERALL    {:.10f}'.format(accuracy*0.6+f1_score*0.4))
         info(f'confusion matrix:\n{str(confusion_matrix)}')
 
 

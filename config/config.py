@@ -79,7 +79,7 @@ shape_defaults = [
 
 @dataclass
 class Config:
-    defaults: List[Any] = field(default_factory=lambda:shape_defaults)
+    defaults: List[Any] = field(default_factory=lambda:boundary_defaults)
     train: Any = MISSING
     model: Any = MISSING
     dataset: Any = MISSING

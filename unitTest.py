@@ -482,7 +482,7 @@ class ClaSplitAugmentedImageTestCase(unittest.TestCase):
         :return:
         """
         mock_read_csv.return_value = self.mock_augmented_ground_truth.copy()
-        not_in_valid_augmented_image = split_augmented_image(self.mock_valid_dataset, [
+        not_in_valid_augmented_image = split_augmented_image(self.mock_valid_dataset, 'cla',[
             os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented')])
         self.assertEqual(0, len(np.intersect1d(not_in_valid_augmented_image.file_name, self.not_in_valid_list)))
 
@@ -494,7 +494,7 @@ class ClaSplitAugmentedImageTestCase(unittest.TestCase):
         :return:
         """
         mock_read_csv.return_value = self.mock_augmented_ground_truth.copy()
-        not_in_valid_augmented_image = split_augmented_image(self.mock_valid_dataset, [
+        not_in_valid_augmented_image = split_augmented_image(self.mock_valid_dataset, 'cla',[
             os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented')])
         self.assertEqual(
             set([os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented', x) for x in self.not_in_valid_list]),
@@ -585,6 +585,39 @@ class GetBreastTrainValidDataTestCase(unittest.TestCase):
         train_dataset, valid_dataset = next(
             getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
                                     BUS=BUS, USG=USG, fea_official_train=fea_official_train))
+        self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
+
+        official_train, BUS, USG = True, True, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG,ratio=[1,1,1,1,1,1]))
+        self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train,feature='boundary',ratio=[1,1]))
+        self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train, feature='calcification',
+                                    ratio=[1, 1]))
+        self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train, feature='direction',
+                                    ratio=[1, 1]))
+        self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train, feature='shape',
+                                    ratio=[1, 1]))
         self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
 
 

@@ -29,6 +29,7 @@ class ZHYLocalEnvConfig(EnvConfig):
     
 @dataclass
 class ZhyRemoteEnvConfig(EnvConfig):
+    final: bool = False
     pass
     
 

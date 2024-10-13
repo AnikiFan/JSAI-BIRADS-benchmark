@@ -32,9 +32,6 @@ if __name__ == '__main__':
     ratio = (target_num) / initial_num
     ratio = ratio.tolist()
 
-    print("ratio: ")
-    print(ratio)
-
     # 设置要使用的增广策略
     selected_transforms = [
         # A.Rotate(limit=10, p=1.0),

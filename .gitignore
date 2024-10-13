@@ -25,4 +25,6 @@ outputs/*
 *.xlsx
 *.ipynb
 *.xml
+demo.py
 **/.idea/
+nohup.out

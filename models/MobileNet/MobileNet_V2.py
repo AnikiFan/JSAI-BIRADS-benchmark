@@ -20,6 +20,10 @@ class MyMobileNetV2(nn.Module):
         model_dict.update(pretrained_dict)
         # 加载过滤后的参数
         model.load_state_dict(model_dict)
+        # 冻结除全连接层之外的所有参数
+        #for name, param in model.named_parameters():
+        #    if "fc" not in name:  # 跳过全连接层的参数
+        #        param.requires_grad = False
         #######################################3四个分支全连接层
         model.fc1[1] = torch.nn.Linear(model.fc1[1].in_features, 1)
         model.fc2[1] = torch.nn.Linear(model.fc2[1].in_features, 1)

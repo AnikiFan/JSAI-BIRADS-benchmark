@@ -3,6 +3,8 @@ from config.config import init_config, Config
 from utils.Trainer import Trainer
 from hydra import main
 from omegaconf import OmegaConf
+import os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
 @main(version_base=None, config_name="config",config_path="config")
 def main(cfg:Config):

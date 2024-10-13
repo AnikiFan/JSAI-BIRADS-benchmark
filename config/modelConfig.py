@@ -89,9 +89,39 @@ class MobileNetModleConfig(PretrainedModelConfig):
 class PretrainedClassifierModelConfig:
     _target_:str="models.UnetClassifer.unet.PretrainedClassifier"
     resnet_type:str="resnet50"
-    num_classes:int=6
+    num_classes:int=MISSING
     pretrained:bool=True
     backbone:str="resnet50"
     freeze_backbone:bool=False
     # dropout:float=0.2
+    lr:float=0.001
+    
+    
+    
+@dataclass
+class MobileNetV2ClassifierModelConfig(PretrainedModelConfig):
+    _target_:str="models.MobileNet.MobileNet_V2_Classifier.MobileNetV2Classifier"
+    num_classes:int=MISSING
+    feature_extract:bool=False
+    pretrained:bool=True
+    lr:float=0.001
+    
+@dataclass
+class ViTClassifier_timm_ModelConfig(PretrainedModelConfig):
+    _target_:str="models.timm.ViT.ViTClassifier_timm"
+    # model_name:str="vit_base_patch16_224"
+    # model_name:str='vit_mediumd_patch16_reg4_gap_256.sbb_in12k_ft_in1k'
+    # model_name:str='fastvit_ma36.apple_in1k'
+    model_name:str='densenet121.ra_in1k'
+    classifier_head:bool=True
+    num_classes:int=6
+    pretrained:bool=True
+    lr:float=0.001
+    drop_rate:float=0.0
+    drop_path_rate:float=0.1
+    
+
+@dataclass
+class DenseNetClassifier_timm_ModelConfig(PretrainedModelConfig):
+    _target_:str="models.timm.denseNet.DenseNetClassifier"
     lr:float=0.001

@@ -1,6 +1,17 @@
 from torch import Tensor,argmax
 import torch
-from torcheval.metrics.functional import multilabel_accuracy
+from torcheval.metrics.functional import multilabel_accuracy, binary_accuracy, binary_confusion_matrix, binary_f1_score
+
+
+def my_binary_accuracy(input: Tensor, target: Tensor, **kwargs):
+    return binary_accuracy(input.flatten(), target)
+
+def my_binary_f1_score(input: Tensor, target: Tensor, **kwargs):
+    return binary_f1_score(input.flatten(), target)
+
+def my_binary_confusion_matrix(input: Tensor, target: Tensor, **kwargs):
+    return binary_confusion_matrix(input.flatten(), target)
+
 def my_multilabel_accuracy(input:Tensor,target:Tensor,**kwargs):
     return multilabel_accuracy(input,target,criteria='hamming',threshold=0)
     

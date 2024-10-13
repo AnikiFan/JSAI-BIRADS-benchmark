@@ -33,3 +33,6 @@ class MyMobileNetV2(nn.Module):
 
     def forward(self, x):
         return self.net(x)
+    
+    
+

@@ -33,9 +33,53 @@ fea_defaults = [
         {"schedular": "exponential"},
     ]
 
+boundary_defaults = [
+        {"train": "boundary_task"},
+        {"model": "linear_sanity_check"},
+        {"dataset": "boundary_single"},
+        {"optimizer": "SGD"},
+        {"env": "fx"},
+        {"train_transform": "default"},
+        {"valid_transform": "default"},
+        {"schedular": "exponential"},
+    ]
+
+calcification_defaults = [
+        {"train": "calcification_task"},
+        {"model": "linear_sanity_check"},
+        {"dataset": "calcification_single"},
+        {"optimizer": "SGD"},
+        {"env": "fx"},
+        {"train_transform": "default"},
+        {"valid_transform": "default"},
+        {"schedular": "exponential"},
+    ]
+
+direction_defaults = [
+        {"train": "direction_task"},
+        {"model": "linear_sanity_check"},
+        {"dataset": "direction_single"},
+        {"optimizer": "SGD"},
+        {"env": "fx"},
+        {"train_transform": "default"},
+        {"valid_transform": "default"},
+        {"schedular": "exponential"},
+    ]
+
+shape_defaults = [
+        {"train": "shape_task"},
+        {"model": "linear_sanity_check"},
+        {"dataset": "shape_single"},
+        {"optimizer": "SGD"},
+        {"env": "fx"},
+        {"train_transform": "default"},
+        {"valid_transform": "default"},
+        {"schedular": "exponential"},
+    ]
+
 @dataclass
 class Config:
-    defaults: List[Any] = field(default_factory=lambda:fea_defaults)
+    defaults: List[Any] = field(default_factory=lambda:boundary_defaults)
     train: Any = MISSING
     model: Any = MISSING
     dataset: Any = MISSING
@@ -56,7 +100,11 @@ def init_config():
 
     cs.store(group='train', name="cla_task", node=ClaTrainConfig)
     cs.store(group='train', name="fea_task", node=FeaTrainConfig)
-    cs.store(group='train', name="remote", node=RemoteTrainConfig)
+    cs.store(group='train', name="boundary_task", node=BoundaryTrainConfig)
+    cs.store(group='train', name="calcification_task", node=CalcificationTrainConfig)
+    cs.store(group='train', name="direction_task", node=DirectionTrainConfig)
+    cs.store(group='train', name="shape_task", node=ShapeTrainConfig)
+    cs.store(group='train', name="cla_task_remote", node=RemoteTrainConfig)
 
     cs.store(group='model', name="alex_net", node=AlexNetModelConfig)
     cs.store(group='model', name="google_net", node=GoogleNetModelConfig)
@@ -69,6 +117,9 @@ def init_config():
     cs.store(group='model', name="resnet_classifier", node=ResNetClassifierModelConfig)
     cs.store(group='model', name="mobilenet_v2", node=MobileNetModleConfig)
     cs.store(group='model', name="pretrained_classifier", node=PretrainedClassifierModelConfig)
+    cs.store(group='model', name="mobilenet_v2_classifier", node=MobileNetV2ClassifierModelConfig)
+    cs.store(group='model', name="vit_classifier_timm", node=ViTClassifier_timm_ModelConfig)
+    cs.store(group='model', name="denseNet_classifier_timm", node=DenseNetClassifier_timm_ModelConfig)
 
     cs.store(group='dataset', name="fashion_mnist", node=FashionMNISTDatasetConfig)
     cs.store(group='dataset', name="mnist", node=MNISTDatasetConfig)
@@ -77,8 +128,18 @@ def init_config():
     cs.store(group='dataset', name="cla_multiple", node=ClaCrossValidationDatasetConfig)
     cs.store(group='dataset', name="fea_single", node=FeaSingleFoldDatasetConfig)
     cs.store(group='dataset', name="fea_multiple", node=FeaCrossValidationDatasetConfig)
+    cs.store(group='dataset', name="boundary_single", node=BoundarySingleFoldDatasetConfig)
+    cs.store(group='dataset', name="boundary_multiple", node=BoundaryCrossValidationDatasetConfig)
+    cs.store(group='dataset', name="calcification_single", node=CalcificationSingleFoldDatasetConfig)
+    cs.store(group='dataset', name="calcification_multiple", node=CalcificationCrossValidationDatasetConfig)
+    cs.store(group='dataset', name="direction_single", node=DirectionSingleFoldDatasetConfig)
+    cs.store(group='dataset', name="direction_multiple", node=DirectionCrossValidationDatasetConfig)
+    cs.store(group='dataset', name="shape_single", node=ShapeSingleFoldDatasetConfig)
+    cs.store(group='dataset', name="shape_multiple", node=ShapeCrossValidationDatasetConfig)
 
     cs.store(group='optimizer', name="SGD", node=SGDOptimizerConfig)
+    cs.store(group='optimizer', name="Adam", node=AdamOptimizerConfig)
+    cs.store(group='optimizer', name="AdamW", node=AdamWOptimizerConfig)
 
     cs.store(group='env', name="fx", node=FXEnvConfig)
     cs.store(group='env', name="zhy_local", node=ZHYLocalEnvConfig)
@@ -87,9 +148,15 @@ def init_config():
 
     cs.store(group='train_transform', name="default", node=DefaultTrainTransformConfig)
     cs.store(group='train_transform', name="custom", node=CustomTrainTransformConfig)
+    cs.store(group='train_transform', name="vit", node=ViTClassifierTrainTransformConfig)
+    cs.store(group='train_transform', name="fastvit", node=FastViT_trainTransformConfig)
+    cs.store(group='train_transform', name="empty", node=EmptyTransformConfig)
 
     cs.store(group='valid_transform', name="default", node=DefaultValidTransformConfig)
     cs.store(group='valid_transform', name="custom", node=CustomValidTransformConfig)
+    cs.store(group='valid_transform', name="vit", node=ViTClassifierValidTransformConfig)
+    cs.store(group='valid_transform', name="fastvit", node=FastViT_validTransformConfig)
+    cs.store(group='valid_transform', name="empty", node=EmptyTransformConfig)
 
     cs.store(group='schedular', name="exponential", node=ExponentialLRConfig)
     cs.store(group='schedular', name="dummy", node=DummySchedularConfig)

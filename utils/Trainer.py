@@ -107,7 +107,7 @@ class Trainer:
                 outputs, labels = [], []
         # 为了避免指标出现大幅波动，不对尾部剩余的一小部分计算指标
         train_outputs.extend(outputs)
-        train_labels.extend(outputs)
+        train_labels.extend(labels)
         train_outputs = torch.cat(train_outputs, dim=0)
         train_labels = torch.cat(train_labels, dim=0)
         return (self.loss_fn(train_outputs,train_labels).item(),

@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from typing import *
 from utils.MyCrop import MyCrop
 import timm
-from config.modelConfig import ViTClassifierModelConfig
 from torchvision.transforms import InterpolationMode
 from torchvision import transforms
 """

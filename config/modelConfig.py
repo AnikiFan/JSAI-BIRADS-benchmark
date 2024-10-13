@@ -111,7 +111,8 @@ class PretrainedClassifier_timmModelConfig(PretrainedModelConfig):
     _target_:str="models.timm.PretrainedClassifier.PretrainedClassifier_timm"
     # model_name:str="vit_base_patch16_224"
     # model_name:str='vit_mediumd_patch16_reg4_gap_256.sbb_in12k_ft_in1k'
-    model_name:str='fastvit_ma36.apple_in1k'
+    # model_name:str='fastvit_ma36.apple_in1k'
+    model_name:str='densenet121.ra_in1k'
     classifier_head:bool=True
     num_classes:int=6
     pretrained:bool=True

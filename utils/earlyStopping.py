@@ -18,7 +18,7 @@ class EarlyStopping:
         if val_loss < self.best_loss - self.min_delta:
             self.best_loss = val_loss
             self.counter = 0
-        elif train_loss < self.min_train_loss and val_loss < self.min_val_loss:
+        elif train_loss < self.min_train_loss and val_loss < self.best_loss:
             # 如果验证损失没有改善，计数器加1
             self.counter += 1
             # 如果计数器达到耐心值，设置早停标志

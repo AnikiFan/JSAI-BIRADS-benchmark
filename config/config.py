@@ -71,7 +71,7 @@ def init_config():
     cs.store(group='model', name="pretrained_classifier", node=PretrainedClassifierModelConfig)
     cs.store(group='model', name="mobilenet_v2_classifier", node=MobileNetV2ClassifierModelConfig)
     cs.store(group='model', name="vit_classifier_timm", node=ViTClassifier_timm_ModelConfig)
-    cs.store(group='model', name="dense_classifier_timm", node=DenseNetClassifier_timm_ModelConfig)
+    cs.store(group='model', name="denseNet_classifier_timm", node=DenseNetClassifier_timm_ModelConfig)
 
     cs.store(group='dataset', name="fashion_mnist", node=FashionMNISTDatasetConfig)
     cs.store(group='dataset', name="mnist", node=MNISTDatasetConfig)

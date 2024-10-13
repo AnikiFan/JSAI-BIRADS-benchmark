@@ -86,30 +86,30 @@ class ViTClassifier_timm(nn.Module):
         # base_model = timm.create_model(model_name, pretrained=pretrained, num_classes=0)
         self.classifier_head = classifier_head
         if self.classifier_head:
-            # self.classifier = nn.Sequential(
-            #     nn.Dropout(drop_rate),
-            #     nn.Linear(self.base_model.num_features, 256),
-            #     nn.BatchNorm1d(256),
-            #     nn.ReLU(),
-            #     nn.Dropout(drop_rate),
-            #     nn.Linear(256, num_classes)
-            # )
-            dropout_rates = (0.5, 0.3)
             self.classifier = nn.Sequential(
-                nn.Flatten(),  # 展平特征
-                nn.Linear(self.base_model.num_features, 1024),  # Dense Layer 1
+                nn.Dropout(drop_rate),
+                nn.Linear(self.base_model.num_features, 256),
+                nn.BatchNorm1d(256),
                 nn.ReLU(),
-                nn.Dropout(dropout_rates[0]),
-                nn.Linear(1024, 1024),  # Dense Layer 2
-                nn.ReLU(),
-                nn.Dropout(dropout_rates[1]),
-                nn.Linear(1024, 512),  # Dense Layer 3
-                nn.ReLU(),
-                nn.Linear(512, 128),  # Dense Layer 4
-                nn.ReLU(),
-                nn.Linear(128, num_classes),  # Dense Output Layer
-                nn.Softmax(dim=1),  # Softmax 激活函数
+                nn.Dropout(drop_rate),
+                nn.Linear(256, num_classes)
             )
+            # dropout_rates = (0.5, 0.3)
+            # self.classifier = nn.Sequential(
+            #     nn.Flatten(),  # 展平特征
+            #     nn.Linear(self.base_model.num_features, 1024),  # Dense Layer 1
+            #     nn.ReLU(),
+            #     nn.Dropout(dropout_rates[0]),
+            #     nn.Linear(1024, 1024),  # Dense Layer 2
+            #     nn.ReLU(),
+            #     nn.Dropout(dropout_rates[1]),
+            #     nn.Linear(1024, 512),  # Dense Layer 3
+            #     nn.ReLU(),
+            #     nn.Linear(512, 128),  # Dense Layer 4
+            #     nn.ReLU(),
+            #     nn.Linear(128, num_classes),  # Dense Output Layer
+            #     nn.Softmax(dim=1),  # Softmax 激活函数
+            # )
 
         # 冻结前 freeze_layers 层
         if freeze_layers > 0:
@@ -126,7 +126,13 @@ class ViTClassifier_timm(nn.Module):
         info(f"预训练模型所用变换:\n{self.transform}")
         info(f"变换类型:     {type(self.transform)}")
         info(f"------------------------------------------------------------------")
-
+    
+    def get_transform(self):
+        data_config = timm.data.resolve_model_data_config(self.base_model)
+        train_transform = timm.data.create_transform(**data_config, is_training=True)
+        val_transform = timm.data.create_transform(**data_config, is_training=False)
+        return train_transform, val_transform
+    
     def forward(self, x):
         """
         前向传播
@@ -137,14 +143,13 @@ class ViTClassifier_timm(nn.Module):
         返回：
         - torch.Tensor: 分类结果，形状为 (batch_size, num_classes)
         """
-        # return self.vit(x)
-        # 如果自定义了分类头，请使用以下代码
-        x = self.base_model(x)
+        if self.training:
+            x = self.train_transform(x)
+        else:
+            x = self.val_transform(x)
         if self.classifier_head:
-            x = self.classifier(x)
+            x = self.classifier(self.base_model(x))
         return x
-
-
 # 示例用法
 if __name__ == "__main__":
     # 假设有10个类别

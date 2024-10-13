@@ -60,6 +60,7 @@ class Trainer:
             info(f'LOSS                 :{self.loss:.10f}')
             info(f'ACCURACY             :{self.accuracy:.10f}')
             info(f'F1                   :{self.f1_score:.10f}')
+            info(f'OVERALL SCORE        :{self.accuracy *0.6+self.f1_score*0.4:.10f}')
             info(f'confusion matrix:\n{str(self.confusion_matrix)}')
         return instantiate(self.cfg.train.choose_strategy, loss=self.loss, accuracy=self.accuracy,
                            f1_score=self.f1_score)
@@ -176,9 +177,10 @@ class Trainer:
             confusion_matrix = instantiate(self.cfg.train.confusion_matrix, input=prediction.cpu(), target=target.cpu(),
                                            num_classes=self.cfg.dataset.num_classes)
             info(f"----------------- Epoch {epoch} Summary -----------------")
-            info('LOSS      train {:.10f} valid {:.10f}'.format(avg_loss, avg_vloss))
-            info('ACCURACY  train {:.10f} valid {:.10f}'.format(avg_accuracy, avg_vaccuracy))
-            info('F1        train {:.10f} valid {:.10f}'.format(avg_f1, avg_vf1))
+            info('LOSS           train {:.10f} valid {:.10f}'.format(avg_loss, avg_vloss))
+            info('ACCURACY       train {:.10f} valid {:.10f}'.format(avg_accuracy, avg_vaccuracy))
+            info('F1             train {:.10f} valid {:.10f}'.format(avg_f1, avg_vf1))
+            info('OVERALL SCORE  train {:.10f} valid {:.10f}'.format(avg_accuracy*0.6+avg_f1*0.4, avg_vaccuracy*0.6+avg_vf1*0.4))
             info(f'confusion matrix train:\n{str(train_confusion_matrix)}')
             info(f'confusion matrix valid:\n{str(confusion_matrix)}')
             # Log the running loss averaged per batch
@@ -190,7 +192,10 @@ class Trainer:
                                epoch)
             writer.add_scalars('Training vs. Validation F1', {'Training': avg_f1, 'Validation': avg_vf1},
                                epoch)
-            writer.add_text(f'confusion matrix of epoch {epoch}', str(confusion_matrix))
+            writer.add_scalars('Training vs. Validation Overall', {'Training': avg_f1*0.4+avg_accuracy*0.6, 'Validation': avg_vf1*0.4+avg_vaccuracy*0.6},
+                               epoch)
+            writer.add_text(f'train confusion matrix of epoch {epoch}', str(train_confusion_matrix))
+            writer.add_text(f'valid confusion matrix of epoch {epoch}', str(confusion_matrix))
             writer.flush()
 
             # 判断是否要更新在本折上获取的最佳指标

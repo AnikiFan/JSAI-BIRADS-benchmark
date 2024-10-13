@@ -12,7 +12,7 @@ from logging import debug
 
 
 def make_table(data_folder_path: str, official_train: bool = True, BUS: bool = True, USG: bool = True,
-               fea_official_train=False,feature='all', *, seed: int = 42) -> pd.DataFrame:
+               fea_official_train=False, feature='all', *, seed: int = 42) -> pd.DataFrame:
     """
     合成未经变换的数据整合而成的csv，file_name列为图像的路径，label列为对应图像的标签
     :param data_folder_path:
@@ -82,8 +82,8 @@ def make_table(data_folder_path: str, official_train: bool = True, BUS: bool = T
     return table.reset_index(drop=True)
 
 
-def split_augmented_image(valid_dataset: pd.DataFrame,
-                          augmented_folder_list: Optional[List[str]] = None) -> pd.DataFrame:
+def split_augmented_image(valid_dataset: pd.DataFrame, task,
+                          augmented_folder_list: Optional[List[str]] = None, feature='all') -> pd.DataFrame:
     """
     根据在未经变换的数据集上得到的验证集，将经过数据增广的数据划分为
     1. 不能加入训练集
@@ -105,14 +105,35 @@ def split_augmented_image(valid_dataset: pd.DataFrame,
         if not os.path.exists(augmented_folder):
             warning(f"augmented image folder {augmented_folder} doesn't exist!")
             continue
-        augmented_ground_truth = pd.read_csv(os.path.join(augmented_folder, "ground_truth.csv"))
+        if task == 'fea':
+            augmented_ground_truth = pd.read_csv(os.path.join(augmented_folder, "ground_truth.csv"), dtype=str)
+        else:
+            augmented_ground_truth = pd.read_csv(os.path.join(augmented_folder, "ground_truth.csv"))
+        debug(f"using augmented data in folder {augmented_folder}")
         # print(augmented_ground_truth)
         augmented_ground_truth.file_name = augmented_ground_truth.file_name.apply(
             lambda x: os.path.join(augmented_folder, x))
         augmented_ground_truths.append(augmented_ground_truth)
     augmented_image_table = pd.concat(augmented_ground_truths, axis=0)
     mask = ~augmented_image_table.file_name.apply(lambda x: in_valid(x, taboo_list))
-    return augmented_image_table.loc[mask, :]
+    augmented_image_table = augmented_image_table.loc[mask, :]
+    if feature == 'boundary':
+        augmented_image_table.label = augmented_image_table.label.str[0].astype(np.int64)
+        debug("only use boundary feature in augmented image")
+    elif feature == 'calcification':
+        augmented_image_table.label = augmented_image_table.label.str[1].astype(np.int64)
+        debug("only use calcification feature in augmented image")
+    elif feature == 'direction':
+        augmented_image_table.label = augmented_image_table.label.str[2].astype(np.int64)
+        debug("only use direction feature in augmented image")
+    elif feature == 'shape':
+        augmented_image_table.label = augmented_image_table.label.str[3].astype(np.int64)
+        debug("only use shape feature in augmented image")
+    elif feature == 'all':
+        debug("use all features in augmented image")
+    else:
+        warning("invalid feature selected!")
+    return augmented_image_table
 
 
 def in_valid(file_name: str, valid_list: List[str]) -> bool:
@@ -129,23 +150,25 @@ def in_valid(file_name: str, valid_list: List[str]) -> bool:
     file_name1, file_name2 = file_name[:-4].split('__mixup__')
     return file_name1 in valid_list or file_name2 in valid_list
 
-def adjust_ratio(train:pd.DataFrame,ratio:str|Tuple[float]|Tuple[int])->pd.DataFrame:
+
+def adjust_ratio(train: pd.DataFrame, ratio: str | Tuple[float] | Tuple[int]) -> pd.DataFrame:
     debug('original train distribution:')
     debug(train.label.value_counts())
     if ratio == 'same':
         debug('keep original distribution')
         return train
     else:
-        assert len(ratio) == train.label.nunique(), f"there are { train.label.nunique()} different labels, but the length of ratio is {len(ratio)}"
+        assert len(
+            ratio) == train.label.nunique(), f"there are {train.label.nunique()} different labels, but the length of ratio is {len(ratio)}"
         ratio = np.array(ratio)
-        relative = train.label.value_counts(sort=False)/ratio
+        relative = train.label.value_counts(sort=False) / ratio
         keep_time = relative.min()
         final_distribution = np.floor(keep_time * ratio).astype(np.int64)
         debug("expected final distribution:")
         debug(final_distribution)
         tables = []
-        for idx,label in enumerate(np.sort(np.unique(train.label))):
-            tables.append(train[train['label'] == label].iloc[:final_distribution[idx],:])
+        for idx, label in enumerate(np.sort(np.unique(train.label))):
+            tables.append(train[train['label'] == label].iloc[:final_distribution[idx], :])
         table = pd.concat(tables, axis=0).sort_index()
         debug("actual final distribution")
         debug(table.label.value_counts())
@@ -157,7 +180,7 @@ class BreastCrossValidationData:
                  train_transform: Optional[torchvision.transforms.Compose] = None,
                  valid_transform: Optional[torchvision.transforms.Compose] = None, image_format: str = 'PIL',
                  official_train: bool = True, BUS: bool = True, USG: bool = True, fea_official_train=False,
-                 feature='all',ratio:str|Tuple[float]|Tuple[int]='same' ,*,
+                 feature='all', ratio: str | Tuple[float] | Tuple[int] = 'same', *,
                  seed: int = 42,
                  augmented_folder_list: Optional[List[str]] = None, **kwargs):
         """
@@ -183,6 +206,8 @@ class BreastCrossValidationData:
         self.augmented_folder_list = augmented_folder_list
         self.seed = seed
         self.ratio = ratio
+        self.feature = feature
+        self.task = 'fea' if fea_official_train else 'cla'
 
     def __len__(self) -> int:
         return self.k_fold
@@ -199,9 +224,9 @@ class BreastCrossValidationData:
                                      self.table.iloc[self.sep_point[self.cur_valid_fold]:, :]])
             if self.augmented_folder_list:
                 train_table = pd.concat([train_table,
-                                         split_augmented_image(valid_table, self.augmented_folder_list).sample(frac=1,
-                                                                                                               random_state=self.seed)])
-            train_table = adjust_ratio(train_table,self.ratio)
+                                         split_augmented_image(valid_table, task=self.task,augmented_folder_list= self.augmented_folder_list,
+                                                feature=self.feature).sample(frac=1,random_state=self.seed)])
+            train_table = adjust_ratio(train_table, self.ratio)
             debug(f"fold {self.cur_valid_fold - 1} sample distribution:")
             debug(f"train:")
             debug(train_table.label.value_counts())
@@ -218,8 +243,10 @@ def getBreastTrainValidData(data_folder_path: str, valid_ratio: float = 0.2,
                             train_transform: Optional[torchvision.transforms.Compose] = None,
                             valid_transform: Optional[torchvision.transforms.Compose] = None,
                             official_train: bool = True, BUS: bool = True, USG: bool = True, fea_official_train=False,
-                            feature='all', image_format: str = 'PIL',ratio:str|Tuple[float]|Tuple[int]='same' ,*, seed: int = 42,
-                            augmented_folder_list: Optional[List[str]] = None, **kwargs) -> Optional[Tuple[TableDataset, TableDataset]]:
+                            feature='all', image_format: str = 'PIL', ratio: str | Tuple[float] | Tuple[int] = 'same',
+                            *, seed: int = 42,
+                            augmented_folder_list: Optional[List[str]] = None, **kwargs) -> Optional[
+    Tuple[TableDataset, TableDataset]]:
     """
     返回单折按照给定比例划分的训练集和验证集，用yield返回是为了可以和CV一样用for train_ds,valid_ds in dataset一样来获取
     :param data_folder_path:
@@ -234,14 +261,15 @@ def getBreastTrainValidData(data_folder_path: str, valid_ratio: float = 0.2,
     :return:
     """
     table = make_table(data_folder_path=data_folder_path, official_train=official_train, BUS=BUS, USG=USG,
-                       fea_official_train=fea_official_train,feature=feature, seed=seed)
+                       fea_official_train=fea_official_train, feature=feature, seed=seed)
     sep_point = int(table.shape[0] * valid_ratio)
     valid_table = table.iloc[:sep_point, :]
     train_table = table.iloc[sep_point:, :]
     if augmented_folder_list:
         train_table = pd.concat(
-            [train_table, split_augmented_image(valid_table, augmented_folder_list).sample(frac=1, random_state=seed)])
-    train_table = adjust_ratio(train_table,ratio)
+            [train_table, split_augmented_image(valid_table, task='fea' if fea_official_train else 'cla',
+                augmented_folder_list=augmented_folder_list, feature=feature).sample(frac=1, random_state=seed)])
+    train_table = adjust_ratio(train_table, ratio)
     debug(f"single fold sample distribution:")
     debug(f"train:")
     debug(train_table.label.value_counts())

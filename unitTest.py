@@ -3,9 +3,10 @@ import unittest
 import pandas as pd
 import numpy as np
 import os
-
+import re
 import torch
 from PIL.Image import Image
+from numpy.ma.testutils import assert_equal
 from torch import Tensor
 from numpy import ndarray
 from torchvision.transforms import Compose, RandomCrop, RandomHorizontalFlip
@@ -60,19 +61,21 @@ class CrossValidationTestCase(unittest.TestCase):
         MixUp(0.2,[1,1,1,1,1,1]).process_image()
     if not len(glob(os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented', 'Mixup,ratio=(2.0,1.0,3.0,4.0,5.0,6.0)-*'))):
         MixUp(0.2, [2,1,3,4,5,6]).process_image()
-    if not len(glob(os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented',
-                                 'Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-*'))):
+    if not len(glob(os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented','Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-*'))):
         Preprocess(A.Compose([A.Rotate(limit=15,p=1.0)]), [1, 1, 1, 1, 1, 1]).process_image()
-    if not len(glob(os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented',
-                                 'Rotate,ratio=(2.0,1.0,3.0,4.0,5.0,6.0)-*'))):
+    if not len(glob(os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented','Rotate,ratio=(2.0,1.0,3.0,4.0,5.0,6.0)-*'))):
         Preprocess(A.Compose([A.Rotate(limit=15,p=1.0)]), [2, 1, 3, 4, 5, 6]).process_image()
     if not len(glob(os.path.join(os.curdir, 'data', 'breast', 'fea', 'augmented','Mixup-*'))):
         MixUp(0.2, official_train=False,BUS=False,USG=False,fea_official_train=True).process_image()
+    if not len(glob(os.path.join(os.curdir, 'data', 'breast', 'fea', 'augmented', 'VerticalFlip-*'))):
+        Preprocess(A.Compose([A.VerticalFlip(p=1)]), official_train=False, BUS=False, USG=False, fea_official_train=True).process_image()
+
     cla_mixup_folder1 = glob(os.path.join(os.curdir, 'data','breast', 'cla','augmented','Mixup,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-*'))[0]
     cla_mixup_folder2 = glob(os.path.join(os.curdir, 'data','breast', 'cla','augmented','Mixup,ratio=(2.0,1.0,3.0,4.0,5.0,6.0)-*'))[0]
     cla_rotate_folder1 = glob(os.path.join(os.curdir, 'data','breast', 'cla','augmented','Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-*'))[0]
     cla_rotate_folder2 = glob(os.path.join(os.curdir, 'data','breast', 'cla','augmented','Rotate,ratio=(2.0,1.0,3.0,4.0,5.0,6.0)-*'))[0]
     fea_mixup_folder = glob(os.path.join(os.curdir, 'data', 'breast', 'fea', 'augmented','Mixup-*'))[0]
+    fea_flip_folder = glob(os.path.join(os.curdir, 'data', 'breast', 'fea', 'augmented','VerticalFlip-*'))[0]
 
     def test_len_without_augment(self):
         """
@@ -96,8 +99,8 @@ class CrossValidationTestCase(unittest.TestCase):
                                                                  BUS=BUS, USG=USG,
                                                                  fea_official_train=fea_official_train)
         for train_dataset, valid_dataset in cla_cross_validation_dataset:
-            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
-            self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: in_valid(x, valid_list))))
+            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+            self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x:re.sub(r"\(\d\)","",x.split(os.sep)[-1][:-4])).apply(lambda x: any([valid == x for valid in valid_list]))))
 
         official_train, BUS, USG, fea_official_train = True, False, False, False
         cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
@@ -105,8 +108,8 @@ class CrossValidationTestCase(unittest.TestCase):
                                                                  BUS=BUS, USG=USG,
                                                                  fea_official_train=fea_official_train)
         for train_dataset, valid_dataset in cla_cross_validation_dataset:
-            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
-            self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: in_valid(x, valid_list))))
+            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+            self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x:re.sub(r"\(\d\)","",x.split(os.sep)[-1][:-4])).apply(lambda x: any([valid == x for valid in valid_list]))))
 
         official_train, BUS, USG, fea_official_train = False, True, False, False
         cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
@@ -114,7 +117,8 @@ class CrossValidationTestCase(unittest.TestCase):
                                                                  BUS=BUS, USG=USG,
                                                                  fea_official_train=fea_official_train)
         for train_dataset, valid_dataset in cla_cross_validation_dataset:
-            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
+            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+            self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x:re.sub(r"\(\d\)","",x.split(os.sep)[-1][:-4])).apply(lambda x: any([valid == x for valid in valid_list]))))
 
         official_train, BUS, USG, fea_official_train = False, False, True, False
         cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
@@ -122,7 +126,8 @@ class CrossValidationTestCase(unittest.TestCase):
                                                                  BUS=BUS, USG=USG,
                                                                  fea_official_train=fea_official_train)
         for train_dataset, valid_dataset in cla_cross_validation_dataset:
-            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
+            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+            self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x:re.sub(r"\(\d\)","",x.split(os.sep)[-1][:-4])).apply(lambda x: any([valid == x for valid in valid_list]))))
 
         official_train, BUS, USG, fea_official_train = False, False, False, True
         cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
@@ -130,7 +135,8 @@ class CrossValidationTestCase(unittest.TestCase):
                                                                  BUS=BUS, USG=USG,
                                                                  fea_official_train=fea_official_train)
         for train_dataset, valid_dataset in cla_cross_validation_dataset:
-            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
+            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+            self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x:re.sub(r"\(\d\)","",x.split(os.sep)[-1][:-4])).apply(lambda x: any([valid == x for valid in valid_list]))))
 
     def test_overlap_without_augment(self):
         """
@@ -240,8 +246,8 @@ class CrossValidationTestCase(unittest.TestCase):
                                                                                 fea_official_train=fea_official_train,
                                                                                 augmented_folder_list=[self.cla_mixup_folder2])
         for train_dataset, valid_dataset in cla_cross_validation_dataset_with_augmented:
-            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
-            self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: in_valid(x, valid_list))))
+            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+            self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x:list(map(lambda x:x.replace('.png','').replace('.jpg',''),re.sub(r"\(\d\)","",x.split(os.sep)[-1][:-4]).split('__mixup__')))).apply(lambda x: any([valid in x for valid in valid_list]))))
 
         official_train, BUS, USG, fea_official_train = False, False, False, True
         fea_cross_validation_dataset_with_augmented = BreastCrossValidationData(data_folder_path=self.data_folder_path,
@@ -251,8 +257,8 @@ class CrossValidationTestCase(unittest.TestCase):
                                                                                 fea_official_train=fea_official_train,
                                                                                 augmented_folder_list=[self.fea_mixup_folder])
         for train_dataset, valid_dataset in fea_cross_validation_dataset_with_augmented:
-            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
-            self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: in_valid(x, valid_list))))
+            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+            self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x:list(map(lambda x:x.replace('.png','').replace('.jpg',''),re.sub(r"\(\d\)","",x.split(os.sep)[-1][:-4]).split('__mixup__')))).apply(lambda x: any([valid in x for valid in valid_list]))))
 
     def test_overlap_with_mixup_augment(self):
         """
@@ -291,21 +297,33 @@ class CrossValidationTestCase(unittest.TestCase):
             valid_datasets = np.intersect1d(valid_datasets, valid_dataset.table.file_name)
         self.assertEqual(0, len(valid_datasets))
 
-    def test_overlap_without_augment(self):
+    def test_leakage_with_normal_augment(self):
         """
-        不引入数据增广数据集的情况下，测试各折的验证集之间是否存在重叠的情况
+        引入数据增广数据集的情况下，测试是否发生信息泄露
         :return:
         """
-        cla_cross_validation_dataset = BreastCrossValidationData(data_folder_path=self.data_folder_path,
-                                                                 k_fold=self.k_fold)
-        first = True
-        for train_dataset, valid_dataset in cla_cross_validation_dataset:
-            if first:
-                valid_datasets = valid_dataset.table.file_name
-                first = False
-                continue
-            valid_datasets = np.intersect1d(valid_datasets, valid_dataset.table.file_name)
-        self.assertEqual(0, len(valid_datasets))
+        official_train, BUS, USG, fea_official_train = True, True, True, False
+        cla_cross_validation_dataset_with_augmented = BreastCrossValidationData(data_folder_path=self.data_folder_path,
+                                                                                k_fold=self.k_fold,
+                                                                                official_train=official_train, BUS=BUS,
+                                                                                USG=USG,
+                                                                                fea_official_train=fea_official_train,
+                                                                                augmented_folder_list=[self.cla_rotate_folder1])
+        for train_dataset, valid_dataset in cla_cross_validation_dataset_with_augmented:
+            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+            self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x:re.sub(r"\(\d\)","",x.split(os.sep)[-1][:-4])).apply(lambda x: any([valid == x for valid in valid_list]))))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        fea_cross_validation_dataset_with_augmented = BreastCrossValidationData(data_folder_path=self.data_folder_path,
+                                                                                k_fold=self.k_fold,
+                                                                                official_train=official_train, BUS=BUS,
+                                                                                USG=USG,
+                                                                                fea_official_train=fea_official_train,
+                                                                                augmented_folder_list=[self.fea_flip_folder])
+        for train_dataset, valid_dataset in fea_cross_validation_dataset_with_augmented:
+            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+            self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x:re.sub(r"\(\d\)","",x.split(os.sep)[-1][:-4])).apply(lambda x: any([valid == x for valid in valid_list]))))
+
 
     def test_len_with_normal_augment(self):
         """
@@ -325,17 +343,6 @@ class CrossValidationTestCase(unittest.TestCase):
             self.assertAlmostEqual(len(train_dataset_with_augment) - len(train_dataset_without_augment),
                                    len(train_dataset_without_augment))
 
-    def test_leakage_with_mixup_augment(self):
-        """
-        引入数据增广数据集的情况下，测试是否发生信息泄露
-        :return:
-        """
-        cla_cross_validation_dataset_with_augmented = BreastCrossValidationData(data_folder_path=self.data_folder_path,
-                                                                                k_fold=self.k_fold,
-                                                                                augmented_folder_list=[self.cla_rotate_folder2])
-        for train_dataset, valid_dataset in cla_cross_validation_dataset_with_augmented:
-            valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].tolist()
-            self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: in_valid(x, valid_list))))
 
     def test_overlap_with_normal_augment(self):
         """
@@ -419,6 +426,71 @@ class ClaInValidTestCase(unittest.TestCase):
         """
         for file_name in self.not_in_valid_list:
             self.assertFalse(in_valid(file_name, self.valid_list), file_name)
+
+class TestLeakageMethod(unittest.TestCase):
+    """
+    用于测试测试信息泄露的方法是否正确
+    """
+    raw_train_image_without_augment_list = [
+        ".\\data\\breast\\cla\\BUS\\Images\\bus_0101-l.png",
+        ".\\data\\breast\\cla\\train\\hcjz_birads3_0051_0001.jpg",
+        ".\\data\\breast\\cla\\train\\BUSI_0456.png",
+        ".\\data\\breast\\cla\\train\\1056.jpg"
+    ]
+    train_image_without_augment_list = [
+        "bus_0101-l",
+        "hcjz_birads3_0051_0001",
+        "BUSI_0456",
+        "1056"
+    ]
+    raw_train_image_with_normal_augment_list = [
+        ".\\data\\breast\\cla\\augmented\\Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-1\\0705(1).jpg",
+        ".\\data\\breast\\cla\\augmented\\Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-1\\hcjz_birads3_0014_0003(1).jpg",
+        ".\\data\\breast\\cla\\augmented\\Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-1\\bus_0814-s(1).png",
+        ".\\data\\breast\\cla\\augmented\\Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-1\\case020(1).png"
+    ]
+    train_image_with_with_normal_augment_list = [
+        "0705",
+        "hcjz_birads3_0014_0003",
+        "bus_0814-s",
+        "case020"
+    ]
+    raw_valid_image_list = [
+        ".\\data\\breast\\cla\\augmented\\Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-1\\0705.jpg",
+        ".\\data\\breast\\cla\\augmented\\Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-1\\hcjz_birads3_0014_0003.jpg",
+        ".\\data\\breast\\cla\\augmented\\Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-1\\bus_0814-s.png",
+        ".\\data\\breast\\cla\\augmented\\Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-1\\case020.png"
+    ]
+    valid_image_list = [
+        "0705",
+        "hcjz_birads3_0014_0003",
+        "bus_0814-s",
+        "case020"
+    ]
+    raw_train_image_with_mixup_augment_list = [
+        ".\\data\\breast\\fea\\augmented\\Mixup-1\\hcjz_malignant_0548_0011.jpg__mixup__hcjz_malignant_0650_0004.jpg.jpg",
+        ".\\data\\breast\\fea\\train\\sec_0042.jpg",
+        ".\\data\\breast\\fea\\augmented\\Mixup-1\\hcjz_birads4C_0075_0006.jpg__mixup__hcjz_benigh_0745_0003.jpg.jpg",
+        ".\\data\\breast\\fea\\train\\thi_0212.jpg"
+    ]
+    train_image_with_with_mixup_augment_list = [
+        ["hcjz_malignant_0548_0011","hcjz_malignant_0650_0004"],
+        ["sec_0042"],
+        ["hcjz_birads4C_0075_0006","hcjz_benigh_0745_0003"],
+        ["thi_0212"]
+    ]
+    def test_test_image_without_augment(self):
+        for raw,processed in zip(self.raw_train_image_without_augment_list,self.train_image_without_augment_list):
+            self.assertEqual(processed,re.sub(r"\(\d\)","",raw.split(os.sep)[-1][:-4]))
+    def test_test_image_with_normal_augment(self):
+        for raw,processed in zip(self.raw_train_image_with_normal_augment_list,self.train_image_with_with_normal_augment_list):
+            self.assertEqual(processed,re.sub(r"\(\d\)","",raw.split(os.sep)[-1][:-4]))
+    def test_test_valid_image_without_augment(self):
+        for raw, processed in zip(self.raw_valid_image_list, self.valid_image_list):
+            self.assertEqual(processed, raw.split(os.sep)[-1][:-4])
+    def test_test_image_with_mixup_augment(self):
+        for raw, processed in zip(self.raw_train_image_with_mixup_augment_list,self.train_image_with_with_mixup_augment_list):
+            self.assertEqual(processed, list(map(lambda x: x.replace('.png', '').replace('.jpg', ''),re.sub(r"\(\d\)", "", raw.split(os.sep)[-1][:-4]).split('__mixup__'))))
 
 
 class ClaSplitAugmentedImageTestCase(unittest.TestCase):
@@ -505,6 +577,26 @@ class ClaSplitAugmentedImageTestCase(unittest.TestCase):
 class GetBreastTrainValidDataTestCase(unittest.TestCase):
     valid_ratio = 0.3
     data_folder_path = os.path.join(os.curdir, 'data')
+    if not len(glob(os.path.join(os.curdir, 'data','breast', 'cla','augmented','Mixup,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-*'))):
+        MixUp(0.2,[1,1,1,1,1,1]).process_image()
+    if not len(glob(os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented', 'Mixup,ratio=(2.0,1.0,3.0,4.0,5.0,6.0)-*'))):
+        MixUp(0.2, [2,1,3,4,5,6]).process_image()
+    if not len(glob(os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented','Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-*'))):
+        Preprocess(A.Compose([A.Rotate(limit=15,p=1.0)]), [1, 1, 1, 1, 1, 1]).process_image()
+    if not len(glob(os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented','Rotate,ratio=(2.0,1.0,3.0,4.0,5.0,6.0)-*'))):
+        Preprocess(A.Compose([A.Rotate(limit=15,p=1.0)]), [2, 1, 3, 4, 5, 6]).process_image()
+    if not len(glob(os.path.join(os.curdir, 'data', 'breast', 'fea', 'augmented','Mixup-*'))):
+        MixUp(0.2, official_train=False,BUS=False,USG=False,fea_official_train=True).process_image()
+    if not len(glob(os.path.join(os.curdir, 'data', 'breast', 'fea', 'augmented', 'VerticalFlip-*'))):
+        Preprocess(A.Compose([A.VerticalFlip(p=1)]), official_train=False, BUS=False, USG=False, fea_official_train=True).process_image()
+
+    cla_mixup_folder1 = glob(os.path.join(os.curdir, 'data','breast', 'cla','augmented','Mixup,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-*'))[0]
+    cla_mixup_folder2 = glob(os.path.join(os.curdir, 'data','breast', 'cla','augmented','Mixup,ratio=(2.0,1.0,3.0,4.0,5.0,6.0)-*'))[0]
+    cla_rotate_folder1 = glob(os.path.join(os.curdir, 'data','breast', 'cla','augmented','Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-*'))[0]
+    cla_rotate_folder2 = glob(os.path.join(os.curdir, 'data','breast', 'cla','augmented','Rotate,ratio=(2.0,1.0,3.0,4.0,5.0,6.0)-*'))[0]
+    fea_mixup_folder = glob(os.path.join(os.curdir, 'data', 'breast', 'fea', 'augmented','Mixup-*'))[0]
+    fea_flip_folder = glob(os.path.join(os.curdir, 'data', 'breast', 'fea', 'augmented','VerticalFlip-*'))[0]
+
 
     def test_len(self):
         """
@@ -552,7 +644,7 @@ class GetBreastTrainValidDataTestCase(unittest.TestCase):
         self.assertEqual(len(table), len(train_dataset) + len(valid_dataset))
         self.assertEqual(int(len(table) * self.valid_ratio), len(valid_dataset))
 
-    def test_leakage(self):
+    def test_leakage_without_augment(self):
         """
         测试是否存在信息泄露
         :return:
@@ -561,65 +653,353 @@ class GetBreastTrainValidDataTestCase(unittest.TestCase):
         train_dataset, valid_dataset = next(
             getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
                                     BUS=BUS, USG=USG))
-        self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x:re.sub(r"\(\d\)","",x.split(os.sep)[-1][:-4])).apply(lambda x: any([valid == x for valid in valid_list]))))
 
         official_train, BUS, USG = True, False, False
         train_dataset, valid_dataset = next(
             getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
                                     BUS=BUS, USG=USG))
-        self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x:re.sub(r"\(\d\)","",x.split(os.sep)[-1][:-4])).apply(lambda x: any([valid == x for valid in valid_list]))))
 
         official_train, BUS, USG = False, True, False
         train_dataset, valid_dataset = next(
             getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
                                     BUS=BUS, USG=USG))
-        self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x:re.sub(r"\(\d\)","",x.split(os.sep)[-1][:-4])).apply(lambda x: any([valid == x for valid in valid_list]))))
 
         official_train, BUS, USG = False, False, True
         train_dataset, valid_dataset = next(
             getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
                                     BUS=BUS, USG=USG))
-        self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x:re.sub(r"\(\d\)","",x.split(os.sep)[-1][:-4])).apply(lambda x: any([valid == x for valid in valid_list]))))
 
         official_train, BUS, USG, fea_official_train = False, False, False, True
         train_dataset, valid_dataset = next(
             getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
                                     BUS=BUS, USG=USG, fea_official_train=fea_official_train))
-        self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x:re.sub(r"\(\d\)","",x.split(os.sep)[-1][:-4])).apply(lambda x: any([valid == x for valid in valid_list]))))
 
         official_train, BUS, USG = True, True, True
         train_dataset, valid_dataset = next(
             getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
                                     BUS=BUS, USG=USG,ratio=[1,1,1,1,1,1]))
-        self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x:re.sub(r"\(\d\)","",x.split(os.sep)[-1][:-4])).apply(lambda x: any([valid == x for valid in valid_list]))))
 
         official_train, BUS, USG, fea_official_train = False, False, False, True
         train_dataset, valid_dataset = next(
             getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
                                     BUS=BUS, USG=USG, fea_official_train=fea_official_train,feature='boundary',ratio=[1,1]))
-        self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x:re.sub(r"\(\d\)","",x.split(os.sep)[-1][:-4])).apply(lambda x: any([valid == x for valid in valid_list]))))
 
         official_train, BUS, USG, fea_official_train = False, False, False, True
         train_dataset, valid_dataset = next(
             getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
                                     BUS=BUS, USG=USG, fea_official_train=fea_official_train, feature='calcification',
                                     ratio=[1, 1]))
-        self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x:re.sub(r"\(\d\)","",x.split(os.sep)[-1][:-4])).apply(lambda x: any([valid == x for valid in valid_list]))))
 
         official_train, BUS, USG, fea_official_train = False, False, False, True
         train_dataset, valid_dataset = next(
             getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
                                     BUS=BUS, USG=USG, fea_official_train=fea_official_train, feature='direction',
                                     ratio=[1, 1]))
-        self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x:re.sub(r"\(\d\)","",x.split(os.sep)[-1][:-4])).apply(lambda x: any([valid == x for valid in valid_list]))))
 
         official_train, BUS, USG, fea_official_train = False, False, False, True
         train_dataset, valid_dataset = next(
             getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
                                     BUS=BUS, USG=USG, fea_official_train=fea_official_train, feature='shape',
                                     ratio=[1, 1]))
-        self.assertEqual(0, len(np.intersect1d(train_dataset.table.file_name, valid_dataset.table.file_name)))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x:re.sub(r"\(\d\)","",x.split(os.sep)[-1][:-4])).apply(lambda x: any([valid == x for valid in valid_list]))))
 
+    def test_leakage_with_normal_augment(self):
+        """
+        测试是否存在信息泄露
+        :return:
+        """
+        official_train, BUS, USG = True, True, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG,augmented_folder_list=[self.cla_rotate_folder1]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(
+            train_dataset.table.file_name.apply(lambda x: re.sub(r"\(\d\)", "", x.split(os.sep)[-1][:-4])).apply(
+                lambda x: any([valid == x for valid in valid_list]))))
+
+        official_train, BUS, USG = True, True, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG,augmented_folder_list=[self.cla_rotate_folder1,self.cla_rotate_folder2]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(
+            train_dataset.table.file_name.apply(lambda x: re.sub(r"\(\d\)", "", x.split(os.sep)[-1][:-4])).apply(
+                lambda x: any([valid == x for valid in valid_list]))))
+
+        official_train, BUS, USG = True, False, False
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG,augmented_folder_list=[self.cla_rotate_folder1]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(
+            train_dataset.table.file_name.apply(lambda x: re.sub(r"\(\d\)", "", x.split(os.sep)[-1][:-4])).apply(
+                lambda x: any([valid == x for valid in valid_list]))))
+
+        official_train, BUS, USG = False, True, False
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG,augmented_folder_list=[self.cla_rotate_folder1]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(
+            train_dataset.table.file_name.apply(lambda x: re.sub(r"\(\d\)", "", x.split(os.sep)[-1][:-4])).apply(
+                lambda x: any([valid == x for valid in valid_list]))))
+
+        official_train, BUS, USG = False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG,augmented_folder_list=[self.cla_rotate_folder1]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(
+            train_dataset.table.file_name.apply(lambda x: re.sub(r"\(\d\)", "", x.split(os.sep)[-1][:-4])).apply(
+                lambda x: any([valid == x for valid in valid_list]))))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train,augmented_folder_list=[self.fea_flip_folder]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(
+            train_dataset.table.file_name.apply(lambda x: re.sub(r"\(\d\)", "", x.split(os.sep)[-1][:-4])).apply(
+                lambda x: any([valid == x for valid in valid_list]))))
+
+
+
+        official_train, BUS, USG = True, True, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG,ratio=[1,1,1,1,1,1],augmented_folder_list=[self.cla_rotate_folder1,self.cla_rotate_folder2]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(
+            train_dataset.table.file_name.apply(lambda x: re.sub(r"\(\d\)", "", x.split(os.sep)[-1][:-4])).apply(
+                lambda x: any([valid == x for valid in valid_list]))))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train,feature='boundary',ratio=[1,1],augmented_folder_list=[self.fea_flip_folder]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(
+            train_dataset.table.file_name.apply(lambda x: re.sub(r"\(\d\)", "", x.split(os.sep)[-1][:-4])).apply(
+                lambda x: any([valid == x for valid in valid_list]))))
+
+
+
+    def test_leakage_with_mixup_augment(self):
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train, feature='calcification',
+                                    ratio=[1, 1],augmented_folder_list=[self.fea_mixup_folder]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: list(
+            map(lambda x: x.replace('.png', '').replace('.jpg', ''),
+                re.sub(r"\(\d\)", "", x.split(os.sep)[-1][:-4]).split('__mixup__')))).apply(
+            lambda x: any([valid in x for valid in valid_list]))))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train, feature='direction',
+                                    ratio=[1, 1],augmented_folder_list=[self.fea_flip_folder,self.fea_mixup_folder]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: list(
+            map(lambda x: x.replace('.png', '').replace('.jpg', ''),
+                re.sub(r"\(\d\)", "", x.split(os.sep)[-1][:-4]).split('__mixup__')))).apply(
+            lambda x: any([valid in x for valid in valid_list]))))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train, feature='shape',
+                                    ratio=[1, 1],augmented_folder_list=[self.fea_flip_folder,self.fea_mixup_folder]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: list(
+            map(lambda x: x.replace('.png', '').replace('.jpg', ''),
+                re.sub(r"\(\d\)", "", x.split(os.sep)[-1][:-4]).split('__mixup__')))).apply(
+            lambda x: any([valid in x for valid in valid_list]))))
+
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train,augmented_folder_list=[self.fea_mixup_folder]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(np.any(train_dataset.table.file_name.apply(lambda x: list(
+            map(lambda x: x.replace('.png', '').replace('.jpg', ''),
+                re.sub(r"\(\d\)", "", x.split(os.sep)[-1][:-4]).split('__mixup__')))).apply(
+            lambda x: any([valid in x for valid in valid_list]))))
+
+    def test_valid_source(self):
+        """
+        测试验证集中没有通过数据增广得到的数据
+        :return:
+        """
+        official_train, BUS, USG = True, True, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG,augmented_folder_list=[self.cla_rotate_folder1]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(any(['('in x for x in valid_list]))
+
+        official_train, BUS, USG = True, False, False
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(any(['('in x for x in valid_list]))
+
+        official_train, BUS, USG = False, True, False
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(any(['('in x for x in valid_list]))
+
+        official_train, BUS, USG = False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(any(['('in x for x in valid_list]))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(any(['('in x for x in valid_list]))
+
+        official_train, BUS, USG = True, True, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG,ratio=[1,1,1,1,1,1]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(any(['('in x for x in valid_list]))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train,feature='boundary',ratio=[1,1]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(any(['('in x for x in valid_list]))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train, feature='calcification',
+                                    ratio=[1, 1]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(any(['('in x for x in valid_list]))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train, feature='direction',
+                                    ratio=[1, 1]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(any(['('in x for x in valid_list]))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train, feature='shape',
+                                    ratio=[1, 1]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(any(['('in x for x in valid_list]))
+
+        official_train, BUS, USG = True, True, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG,augmented_folder_list=[self.cla_rotate_folder1]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(any(['('in x for x in valid_list]))
+
+
+        official_train, BUS, USG = True, True, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG,augmented_folder_list=[self.cla_rotate_folder1,self.cla_rotate_folder2]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(any(['('in x for x in valid_list]))
+
+        official_train, BUS, USG = True, False, False
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG,augmented_folder_list=[self.cla_rotate_folder1]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(any(['('in x for x in valid_list]))
+
+        official_train, BUS, USG = False, True, False
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG,augmented_folder_list=[self.cla_rotate_folder1]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(any(['('in x for x in valid_list]))
+
+        official_train, BUS, USG = False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG,augmented_folder_list=[self.cla_rotate_folder1]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(any(['('in x for x in valid_list]))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train,augmented_folder_list=[self.fea_flip_folder]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(any(['('in x for x in valid_list]))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train, feature='calcification',
+                                    ratio=[1, 1], augmented_folder_list=[self.fea_mixup_folder]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(any(['('in x for x in valid_list]))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train, feature='direction',
+                                    ratio=[1, 1], augmented_folder_list=[self.fea_flip_folder, self.fea_mixup_folder]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(any(['('in x for x in valid_list]))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train, feature='shape',
+                                    ratio=[1, 1], augmented_folder_list=[self.fea_flip_folder, self.fea_mixup_folder]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(any(['('in x for x in valid_list]))
+
+        official_train, BUS, USG, fea_official_train = False, False, False, True
+        train_dataset, valid_dataset = next(
+            getBreastTrainValidData(self.data_folder_path, valid_ratio=self.valid_ratio, official_train=official_train,
+                                    BUS=BUS, USG=USG, fea_official_train=fea_official_train,
+                                    augmented_folder_list=[self.fea_mixup_folder]))
+        valid_list = valid_dataset.table.file_name.str.split(os.sep).str[-1].str[:-4].tolist()
+        self.assertFalse(any(['('in x for x in valid_list]))
 
 class ClaMakeTableTestCase(unittest.TestCase):
     num_official_train = 2210 + 217  # jpg+png

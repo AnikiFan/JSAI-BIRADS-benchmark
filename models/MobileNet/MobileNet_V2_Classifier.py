@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torchvision import models
+from torchvision.models import MobileNet_V2_Weights
 
 class MobileNetV2Classifier(nn.Module):
     def __init__(self, num_classes, feature_extract=False, pretrained=True, **kwargs):
@@ -18,7 +19,7 @@ class MobileNetV2Classifier(nn.Module):
         self.pretrained = pretrained
 
         # 加载预训练的 MobileNet v2 模型
-        self.model = models.mobilenet_v2(pretrained=self.pretrained)
+        self.model = models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT)
 
         if self.feature_extract:
             self.freeze_features()

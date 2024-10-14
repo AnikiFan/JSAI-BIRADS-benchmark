@@ -190,10 +190,15 @@ class BreastCrossValidationData:
         :param train_transform:
         :param valid_transform:
         :param image_format:
+        :param official_train:
         :param BUS:
         :param USG:
+        :param fea_official_train:
+        :param feature: 选择使用fea任务的某个特征进行训练，默认为'all'，即使用全部
+        :param ratio: 指定训练集中的标签比例，若为'same'，即保持不变
         :param seed:
         :param augmented_folder_list: 增强后的图像所在文件夹的完整路径！
+        :param kwargs:
         """
         self.table = make_table(data_folder_path=data_folder_path, official_train=official_train, BUS=BUS, USG=USG,
                                 fea_official_train=fea_official_train, feature=feature, seed=seed)
@@ -253,11 +258,16 @@ def getBreastTrainValidData(data_folder_path: str, valid_ratio: float = 0.2,
     :param valid_ratio:
     :param train_transform:
     :param valid_transform:
+    :param official_train:
     :param BUS:
     :param USG:
+    :param fea_official_train:
+    :param feature: 选择使用fea任务的某个特征进行训练，默认为'all'，即使用全部
     :param image_format:
+    :param ratio: 指定训练集中的标签比例，若为'same'，即保持不变
     :param seed:
     :param augmented_folder_list:
+    :param kwargs:
     :return:
     """
     table = make_table(data_folder_path=data_folder_path, official_train=official_train, BUS=BUS, USG=USG,

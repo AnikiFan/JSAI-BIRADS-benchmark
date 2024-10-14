@@ -19,6 +19,14 @@ from typing import *
 
 class Tester:
     def __init__(self, task, cfg: Config, data_folder_path: str, check_point_folder_path: str,feature:Optional[str]=None):
+        """
+
+        :param task: 是fea还是cla
+        :param cfg:
+        :param data_folder_path:
+        :param check_point_folder_path:
+        :param feature: fea中的某个特征，只有在测试单个特征时需要
+        """
         assert task in ['cla', 'fea'], "task should be either cla or fea!"
         assert os.path.exists(
             os.path.join(data_folder_path, os.pardir, 'docs', 'cla_order.csv')), "cla_order.csv doesn't exist!"
@@ -150,9 +158,9 @@ class Tester:
 
 
 task = 'fea'
-feature = 'calcification'
-day = '13'
-time = '14-47-39'
+feature = 'boundary'
+day = '14'
+time = '09-12-09'
 checkpoint_path = os.path.join(os.curdir, "outputs", '2024-10-'+day, time)
 
 

@@ -77,8 +77,18 @@ class OfficialClaDataOrganizer:
         legal_folders = ["2类", "3类", "4A类", "4B类", "4C类", "5类"]
         folders = list(filter(lambda x: x in legal_folders, folders))
         assert len(folders) == len(legal_folders), "folders not match! current folders:{}".format(folders) # 检查是否包含所有合法文件夹
-        
-        for label, folder in tqdm(enumerate(folders), total=len(folders)):
+        class_dict = {
+            "2类":0,
+            "3类":1,
+            "4A类":2,
+            "4B类":3,
+            "4C类":4,
+            "5类":5
+        }
+        # for label, folder in tqdm(enumerate(folders), total=len(folders)):
+        for folder in tqdm(folders,total=len(folders)):
+            label = class_dict[folder]
+            print("organizing folder:{} with label:{}".format(folder,label))
             if ignore:
                 valid_labels = os.listdir(os.path.join(self.src, folder, 'labels'))
             if not ignore:

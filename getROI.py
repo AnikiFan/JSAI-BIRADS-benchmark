@@ -154,9 +154,6 @@ def getROIImageSet(imageSet_src:str,
             try:
                 # 获取ROI信息
                 roi_info = ground_truth_ROI.loc[ground_truth_ROI['file_name'] == image_name, 'x':'height'].values[0]
-                # if len(roi_info) != 4:
-                #     print(f"警告：图像 {image_name} 的ROI信息不完整，跳过处理")
-                #     continue
                 assert len(roi_info) == 4,f"图像 {image_name} 的ROI信息不完整"
                 
                 x, y, width, height = roi_info
@@ -190,10 +187,10 @@ if __name__ == '__main__':
 #                ratio=2)
 
     getROIImageSet(os.path.join(os.curdir,'data','breast','cla','train'),
-                os.path.join(os.curdir,'data','breast','cla','trainROI'),
+                os.path.join(os.curdir,'data','breast','cla','trainROI_3'),
                 overwrite=True,
                 save=True,
-                ratio=1)
+                ratio=3)
 
 
 

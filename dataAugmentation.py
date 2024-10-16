@@ -26,7 +26,8 @@ import numpy as np
 if __name__ == '__main__':
     # initial_num = np.array([849, 1061, 404, 274, 232, 269])
     initial_num = np.array([1035, 1349, 492, 341, 301, 343])
-    target_num = np.array([1200-1035, 1200-1349, 1200-492, 1200-341, 1200-301, 1200-343])
+    # target_num = np.array([1500-1035, 1500-1349, 1500-492, 1500-341, 1500-301, 1500-343])
+    target_num = np.array([500, 500, 500, 500, 500, 500])
     print("target_num: ", target_num)
     ratio = (target_num) / initial_num
     ratio = ratio.tolist()

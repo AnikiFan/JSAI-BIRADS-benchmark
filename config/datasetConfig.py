@@ -19,22 +19,54 @@ class ClaDatasetConfig:
     data_folder_path: Path = MISSING
     image_format: str = "Tensor"
     num_classes: int = 6
-    official_train:bool=True
-    BUS:bool=True
-    USG:bool=True
+    official_train: bool = True
+    BUS: bool = True
+    USG: bool = True
     trainROI:bool=True
-    fea_official_train:bool=False
+    
+    fea_official_train: bool = False
+    ratio: List[int] = field(default_factory=lambda :[1,1,1,1,1,1])
+    _convert_:str = "all"
+
 
 @dataclass
 class FeaDatasetConfig:
     data_folder_path: Path = MISSING
     image_format: str = "Tensor"
-    num_classes: int = 2
-    official_train:bool=False
-    BUS:bool=False
-    USG:bool=False
+    num_classes: int = 1
+    official_train: bool = False
+    BUS: bool = False
+    USG: bool = False
     trainROI:bool=False
-    fea_official_train:bool=True
+    fea_official_train: bool = True
+    feature: str = 'all'
+
+@dataclass
+class SingleFeaDatasetConfig:
+    data_folder_path: Path = MISSING
+    image_format: str = "Tensor"
+    num_classes: int = 1
+    official_train: bool = False
+    BUS: bool = False
+    USG: bool = False
+    fea_official_train: bool = True
+
+
+class BoundaryDatasetConfig(SingleFeaDatasetConfig):
+    # BUG： 不知道为什么在这里写的配置无法被继承
+    feature: str = 'boundary'
+
+
+class CalcificationDatasetConfig(SingleFeaDatasetConfig):
+    feature: str = 'calcification'
+
+
+class DirectionDatasetConfig(SingleFeaDatasetConfig):
+    feature: str = 'direction'
+
+
+class ShapeDatasetConfig(SingleFeaDatasetConfig):
+    feature: str = 'shape'
 
 
 @dataclass
@@ -68,7 +100,7 @@ class ClaAugmentedDatasetConfig:
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'VerticalFlip,ratio=(2,1,8,7,7,6)-1'),
             
             #balance 
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','HorizontalFlip,ratio=(0.8,0.4,2.7,4.5,5.5,4.6)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','HorizontalFlip,ratio=(0.8,0.4,2.7,4.5,5.5,4.6)-1'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Rotate,ratio=(0.4,0.1,2.0,3.4,4.0,3.4)-1'),
             # balance 
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.9,0.5,3.1,4.9,5.6,4.8)-1'),
@@ -81,11 +113,10 @@ class ClaAugmentedDatasetConfig:
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.4,0.1,2.0,3.4,4.0,3.4)-2'),
             
             # 200
-            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
-            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','ElasticTransform,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'), #! 一般
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','ElasticTransform,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','GaussNoise,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','HorizontalFlip,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
-            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','RandomBrightnessContrast,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),  #note! bad influence on train
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','RandomBrightnessContrast,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
             # os.path.join(os.curdir,"data", 'breast', 'cla', 'augmented','RandomGamma,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Rotate,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','ShiftScaleRotate,ratio=(0.2,0.1,0.4,0.6,0.7,0.6)-1'),
@@ -119,6 +150,24 @@ class ClaAugmentedDatasetConfig:
 class FeaAugmentedDatasetConfig:
     pass
 
+
+@dataclass
+class BoundaryAugmentedDatasetConfig:
+    pass
+
+@dataclass
+class CalcificationAugmentedDatasetConfig:
+    pass
+
+@dataclass
+class DirectionAugmentedDatasetConfig:
+    pass
+
+@dataclass
+class ShapeAugmentedDatasetConfig:
+    pass
+
+
 @dataclass
 class ClaSingleFoldDatasetConfig(ClaDatasetConfig,ClaAugmentedDatasetConfig):
     _target_: str = "utils.BreastDataset.getBreastTrainValidData"
@@ -136,6 +185,51 @@ class FeaSingleFoldDatasetConfig(FeaDatasetConfig, FeaAugmentedDatasetConfig):
 
 @dataclass
 class FeaCrossValidationDatasetConfig(FeaDatasetConfig,FeaAugmentedDatasetConfig):
+    _target_: str = "utils.BreastDataset.BreastCrossValidationData"
+
+
+@dataclass
+class BoundarySingleFoldDatasetConfig(BoundaryDatasetConfig, BoundaryAugmentedDatasetConfig):
+    feature: str = 'boundary'
+    ratio: List[int] = field(default_factory=lambda:[1,1])
+    _target_: str = "utils.BreastDataset.getBreastTrainValidData"
+
+
+@dataclass
+class BoundaryCrossValidationDatasetConfig(BoundaryDatasetConfig, BoundaryAugmentedDatasetConfig):
+    _target_: str = "utils.BreastDataset.BreastCrossValidationData"
+
+
+@dataclass
+class CalcificationSingleFoldDatasetConfig(CalcificationDatasetConfig, CalcificationAugmentedDatasetConfig):
+    feature: str = 'calcification'
+    ratio: List[int] = field(default_factory=lambda:[1,1])
+    _target_: str = "utils.BreastDataset.getBreastTrainValidData"
+
+
+@dataclass
+class CalcificationCrossValidationDatasetConfig(CalcificationDatasetConfig, CalcificationAugmentedDatasetConfig):
+    _target_: str = "utils.BreastDataset.BreastCrossValidationData"
+
+
+@dataclass
+class DirectionSingleFoldDatasetConfig(DirectionDatasetConfig, DirectionAugmentedDatasetConfig):
+    feature: str = 'direction'
+    _target_: str = "utils.BreastDataset.getBreastTrainValidData"
+
+
+@dataclass
+class DirectionCrossValidationDatasetConfig(DirectionDatasetConfig, DirectionAugmentedDatasetConfig):
+    _target_: str = "utils.BreastDataset.BreastCrossValidationData"
+
+
+@dataclass
+class ShapeSingleFoldDatasetConfig(ShapeDatasetConfig, ShapeAugmentedDatasetConfig):
+    _target_: str = "utils.BreastDataset.getBreastTrainValidData"
+
+
+@dataclass
+class ShapeCrossValidationDatasetConfig(ShapeDatasetConfig, ShapeAugmentedDatasetConfig):
     _target_: str = "utils.BreastDataset.BreastCrossValidationData"
 
 

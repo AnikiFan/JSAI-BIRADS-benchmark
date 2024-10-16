@@ -96,6 +96,7 @@ if __name__ == '__main__':
     mixup_transforms = [
         'mixup_0.1',
         # 'mixup_0.3'
+        # 'mixup_0.3'
         # 根据需要添加或移除 MixUp 策略
     ]
     

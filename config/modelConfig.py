@@ -129,4 +129,4 @@ class DenseNetClassifier_timm_ModelConfig(PretrainedModelConfig):
     features_only:bool=False
     num_classes:int=6
     pretrained:bool=True
-    freeze_backbone:bool=True
+    freeze_backbone:bool=False

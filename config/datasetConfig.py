@@ -101,7 +101,7 @@ class ClaAugmentedDatasetConfig:
             
             #balance 
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','HorizontalFlip,ratio=(0.8,0.4,2.7,4.5,5.5,4.6)-1'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Rotate,ratio=(0.4,0.1,2.0,3.4,4.0,3.4)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Rotate,ratio=(0.4,0.1,2.0,3.4,4.0,3.4)-1'),
             # balance 
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.9,0.5,3.1,4.9,5.6,4.8)-1'),
             
@@ -141,7 +141,7 @@ class ClaAugmentedDatasetConfig:
             
             # os.path.join(os.curdir, "data", 'breast', 
             # 'cla', 'trainROI'),
-            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_1.5'),
+            os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_1.5'),
             
             
             #!augmented_ROI 
@@ -152,8 +152,8 @@ class ClaAugmentedDatasetConfig:
             
             # 500
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','ElasticTransform,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
-            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','GaussNoise,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
-            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','HorizontalFlip,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
+            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','GaussNoise,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
+            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','HorizontalFlip,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','RandomBrightnessContrast,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','RandomGamma,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','Rotate,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-2'),

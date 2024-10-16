@@ -11,6 +11,7 @@ from typing import *
 class SGDOptimizerConfig:
     _target_: str = "torch.optim.SGD"
     params:Any=MISSING
+# 先从这个开始调看看
 
 @dataclass
 class AdamOptimizerConfig:
@@ -23,6 +24,6 @@ class AdamWOptimizerConfig:
     _target_: str = "torch.optim.AdamW"
     params:Any=MISSING
     lr:float=1e-4
-    weight_decay:float=1e-2
+    weight_decay:float=1e-4 #1e-2？
     betas:Tuple[float,float]=(0.9,0.999)
     eps:float=1e-8

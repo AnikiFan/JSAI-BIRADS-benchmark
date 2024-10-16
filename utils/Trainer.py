@@ -162,8 +162,12 @@ class Trainer:
                                                                                           train_loader=train_loader,
                                                                                           optimizer=optimizer,
                                                                                           epoch_index=epoch,
-                                                                                          tb_writer=writer)
-            schedular.step(avg_loss)
+            
+            # 更新学习率调度器
+            if isinstance(self.schedular, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                self.schedular.step(avg_vloss)  # 使用验证损失作为指标
+            else:
+                self.schedular.step()
             model.eval()
             with torch.no_grad():
                 valid_outcomes = [(vlabel.to(self.cfg.env.device), model(vinputs.to(self.cfg.env.device))) for

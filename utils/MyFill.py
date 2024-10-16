@@ -26,7 +26,7 @@ def show(imgs):
     plt.show()
 
 
-class MyCrop(nn.Module):
+class MyFill(nn.Module):
     """自定义裁剪模块，将图片变成宽高一致的正方形图片，使用黑色填充空白部分。"""
 
     def __init__(self):
@@ -67,18 +67,24 @@ if __name__ == '__main__':
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+
     # 读取测试图像
     testImages = []
+    i = 5
     for image_name in os.listdir(os.path.join('data', 'breast', 'cla', 'train')):
-        image_path = os.path.join('data', 'test', image_name)
+        image_path = os.path.join('data', 'breast', 'cla', 'train', image_name)
         image = Image.open(image_path).convert('RGB')
         testImages.append(image)
+        i += 1
+        if i == 10:
+            break
 
     transforms = torch.nn.Sequential(
-        MyCrop(),
+        MyFill(),
         # 其他变换操作
     )
 
     for image in testImages:
         transformed_image = transforms(image)
+        print(transformed_image.size)
         show([image, transformed_image])

@@ -67,6 +67,17 @@ def print_transformations_info(full_description: str):
     info(f"{full_description}\n")
     info(f"-------------------------------------------------------------------\n")
 
+def getFolderSuffix(official_train: bool = True, BUS: bool = True, USG: bool = True, trainROI:bool=True):
+    suffix = ""
+    if official_train:
+        suffix += "_official"
+    if BUS:
+        suffix += "_BUS"
+    if USG:
+        suffix += "_USG"
+    if trainROI:
+        suffix += "_ROI"
+    return suffix
 
 def find_next_augmented_folder(data_folder_path: str, short_description: str, full_description: str) -> int:
     """
@@ -99,7 +110,11 @@ def find_next_augmented_folder(data_folder_path: str, short_description: str, fu
 
 class MixUp:
     def __init__(self, mixup_alpha: float, ratio:Optional[Tuple[float]]=None, official_train: bool = True, BUS: bool = True,
-                 USG: bool = True,fea_official_train=False, data_folder_path: str = os.path.join(os.curdir, 'data'), seed: str = 42):
+                 USG: bool = True,
+                 trainROI:bool=True,
+                 fea_official_train=False, 
+                 data_folder_path: str = os.path.join(os.curdir, 'data'),
+                 seed: str = 42):
         """
         对图像进行 Mixup 增广并保存。
         划分验证集和训练集时，若图片A在验证集中，则训练集中不能含有任何包含该图片的mixup，当每个样本通过mixup生成s张图片时，
@@ -110,11 +125,16 @@ class MixUp:
         :param official_train:
         :param BUS:
         :param USG:
+        :param trainROI:
         :param data_folder_path:
         :param seed:
         """
         self.data_folder_path = data_folder_path
-        self.table = make_table(data_folder_path=data_folder_path, official_train=official_train, BUS=BUS, USG=USG,fea_official_train=fea_official_train)
+        self.table = make_table(data_folder_path=data_folder_path, official_train=official_train, BUS=BUS, USG=USG,trainROI=trainROI,
+                                fea_official_train=fea_official_train)
+        
+        self.folder_suffix = getFolderSuffix(official_train, BUS, USG, trainROI)
+        
         if not ratio:
             ratio = np.ones(self.table.label.nunique(), dtype=np.float32)
         if not isinstance(ratio, np.ndarray):
@@ -125,7 +145,7 @@ class MixUp:
             ratio = None
         if not fea_official_train:
             self.table = make_ratio_table(self.table, ratio)
-            self.fingerprint = f"\nMixup(mixup_alpha={mixup_alpha},official_train={official_train},BUS={BUS},USG={USG}),\n\n"
+            self.fingerprint = f"\nMixup(mixup_alpha={mixup_alpha},official_train={official_train},BUS={BUS},USG={USG},trainROI={trainROI}),\n\n"
             self.short_description, self.full_description = make_fingerprint(self, ratio)
         else:
             self.fingerprint = f"\nMixup(mixup_alpha={mixup_alpha},fea_official_train={fea_official_train})\n\n"
@@ -144,8 +164,9 @@ class MixUp:
         i = find_next_augmented_folder(self.data_folder_path, self.short_description, self.full_description)
         if i == -1:
             return
-
-        self.dst_folder = os.path.join(self.data_folder_path, 'breast', self.task, 'augmented', f"{self.short_description}-{i}")
+        
+        
+        self.dst_folder = os.path.join(self.data_folder_path, 'breast', self.task, 'augmented'+self.folder_suffix, f"{self.short_description}-{i}")
 
         os.makedirs(self.dst_folder)
         self.table['noise_image'] = np.random.randint(0, len(self.table), (len(self.table), 1))
@@ -199,10 +220,16 @@ class MixUp:
 class Preprocess:
     def __init__(self, transform: A.Compose, ratio: Optional[Tuple[float]] = None,
                  data_folder_path: str = os.path.join(os.getcwd(), 'data'), official_train: bool = True, BUS: bool = True,
-                 USG: bool = True,fea_official_train:bool=False):
+                 USG: bool = True, trainROI:bool=True,
+                 fea_official_train:bool=False):
         self.transform = transform
         self.data_folder_path = data_folder_path
-        self.table = make_table(data_folder_path=self.data_folder_path, official_train=official_train, BUS=BUS, USG=USG,fea_official_train=fea_official_train)
+        self.table = make_table(data_folder_path=self.data_folder_path, 
+                                official_train=official_train, BUS=BUS, USG=USG,trainROI=trainROI,
+                                fea_official_train=fea_official_train)
+        
+        self.folder_suffix = getFolderSuffix(official_train, BUS, USG, trainROI)
+        
         if not ratio:
             ratio = np.ones(self.table.label.nunique(),dtype=np.float32)
         if not isinstance(ratio, np.ndarray):
@@ -218,7 +245,7 @@ class Preprocess:
         self.short_description, self.full_description = make_fingerprint(transform, ratio)
         if not fea_official_train:
             self.table = make_ratio_table(self.table, ratio)
-        self.dst_folder = os.path.join(self.data_folder_path, 'breast', self.task, 'augmented', f"{self.short_description}-{1}")
+        self.dst_folder = os.path.join(self.data_folder_path, 'breast', self.task, 'augmented'+self.folder_suffix, f"{self.short_description}-{1}")
         self.ratio = ratio
         tqdm.pandas()  # 初始化 tqdm 的 pandas 支持
 
@@ -245,7 +272,7 @@ class Preprocess:
         if i == -1:
             return
 
-        self.dst_folder = os.path.join(self.data_folder_path, 'breast', self.task, 'augmented', f"{self.short_description}-{i}")
+        self.dst_folder = os.path.join(self.data_folder_path, 'breast', self.task, 'augmented'+self.folder_suffix, f"{self.short_description}-{i}")
 
         os.makedirs(self.dst_folder)
         if self.task == 'cla':

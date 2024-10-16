@@ -79,7 +79,7 @@ def getFolderSuffix(official_train: bool = True, BUS: bool = True, USG: bool = T
         suffix += "_ROI"
     return suffix
 
-def find_next_augmented_folder(data_folder_path: str, short_description: str, full_description: str) -> int:
+def find_next_augmented_folder(data_folder_path: str, short_description: str, full_description: str, folder_suffix: str) -> int:
     """
     查找下一个可用的增强文件夹编号。如果存在相同描述的文件夹，则发出警告并停止增强。
 
@@ -89,8 +89,8 @@ def find_next_augmented_folder(data_folder_path: str, short_description: str, fu
     :return: 下一个可用的文件夹编号。
     """
     i = 1
-    while os.path.exists(os.path.join(data_folder_path, 'breast', 'cla', 'augmented', f"{short_description}-{i}")):
-        augmented_path = os.path.join(data_folder_path, 'breast', 'cla', 'augmented', f"{short_description}-{i}")
+    while os.path.exists(os.path.join(data_folder_path, 'breast', 'cla', 'augmented'+folder_suffix, f"{short_description}-{i}")):
+        augmented_path = os.path.join(data_folder_path, 'breast', 'cla', 'augmented'+folder_suffix, f"{short_description}-{i}")
         readme_path = os.path.join(augmented_path, 'README.txt')
 
         # 检查 README.txt 是否存在
@@ -161,7 +161,7 @@ class MixUp:
     def process_image(self) -> None:
         print_transformations_info(self.full_description)
 
-        i = find_next_augmented_folder(self.data_folder_path, self.short_description, self.full_description)
+        i = find_next_augmented_folder(self.data_folder_path, self.short_description, self.full_description, self.folder_suffix)
         if i == -1:
             return
         
@@ -268,7 +268,7 @@ class Preprocess:
         #     return
         print_transformations_info(self.full_description)
 
-        i = find_next_augmented_folder(self.data_folder_path, self.short_description, self.full_description)
+        i = find_next_augmented_folder(self.data_folder_path, self.short_description, self.full_description, self.folder_suffix)
         if i == -1:
             return
 

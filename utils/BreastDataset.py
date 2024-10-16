@@ -9,7 +9,11 @@ import re
 from logging import debug
 
 
-def make_table(data_folder_path: str, official_train: bool = True, BUS: bool = True, USG: bool = True,
+def make_table(data_folder_path: str, 
+               official_train: bool = True, 
+               BUS: bool = True, 
+               USG: bool = True,
+               trainROI: bool = False,
                fea_official_train=False, *, seed: int = 42) -> pd.DataFrame:
     """
     合成未经变换的数据整合而成的csv，file_name列为图像的路径，label列为对应图像的标签
@@ -23,6 +27,7 @@ def make_table(data_folder_path: str, official_train: bool = True, BUS: bool = T
     official_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'train')
     BUS_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'BUS', 'Images')
     USG_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'USG')
+    trainROI_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'trainROI')
     fea_official_data_path = os.path.join(data_folder_path, 'breast', 'fea', 'train')
     assert os.path.exists(official_data_path), f"{official_data_path} does not exist! please use OfficialClaDataOrganizer first!"
     assert os.path.exists(BUS_data_path), f"{BUS_data_path} does not exist! please run replace.ipynb first!"
@@ -47,6 +52,13 @@ def make_table(data_folder_path: str, official_train: bool = True, BUS: bool = T
         table = pd.read_csv(os.path.join(fea_official_data_path, 'ground_truth.csv'),dtype=str)
         table.file_name = table.file_name.apply(lambda x: os.path.join(fea_official_data_path, x))
         tables.append(table)
+    if trainROI:
+        table = pd.read_csv(os.path.join(trainROI_data_path, 'ground_truth.csv'),dtype=str)
+        table['label'] = table['label'].apply(lambda x: int(x))
+        table.file_name = table.file_name.apply(lambda x: os.path.join(trainROI_data_path, x))
+        tables.append(table)
+
+
     assert len(tables), "No selected dataset!"
     table = pd.concat(tables, axis=0)
     table.reset_index(drop=True, inplace=True)
@@ -124,7 +136,7 @@ class BreastCrossValidationData:
         :param augmented_folder_list: 增强后的图像所在文件夹的完整路径！
         """
         self.table = make_table(data_folder_path=data_folder_path, official_train=official_train, BUS=BUS, USG=USG,
-                                fea_official_train=fea_official_train, seed=seed)
+                                trainROI=trainROI, fea_official_train=fea_official_train, seed=seed)
         self.sep_point = np.round(np.linspace(0, self.table.shape[0], k_fold + 1)).astype(np.int_)
         self.cur_valid_fold = 0
         self.k_fold = k_fold
@@ -167,7 +179,11 @@ def getBreastTrainValidData(data_folder_path: str, valid_ratio: float = 0.2,
                             train_transform: Optional[torchvision.transforms.Compose] = None,
                             valid_transform: Optional[torchvision.transforms.Compose] = None,
                             official_train: bool = True,
-                            BUS: bool = True, USG: bool = True, fea_official_train=False, image_format: str = 'PIL', *,
+                            BUS: bool = True, 
+                            USG: bool = True, 
+                            trainROI: bool = False,
+                            fea_official_train=False, 
+                            image_format: str = 'PIL', *,
                             seed: int = 42,
                             augmented_folder_list: Optional[List[str]] = None, **kwargs) -> Optional[Tuple[TableDataset, TableDataset]]:
     """
@@ -178,13 +194,15 @@ def getBreastTrainValidData(data_folder_path: str, valid_ratio: float = 0.2,
     :param valid_transform:
     :param BUS:
     :param USG:
+    :param trainROI:
+    :param fea_official_train:
     :param image_format:
     :param seed:
     :param augmented_folder_list:
     :return:
     """
     table = make_table(data_folder_path=data_folder_path, official_train=official_train, BUS=BUS, USG=USG,
-                       fea_official_train=fea_official_train, seed=seed)
+                        trainROI=trainROI, fea_official_train=fea_official_train, seed=seed)
     sep_point = int(table.shape[0] * valid_ratio)
     valid_table = table.iloc[:sep_point, :]
     train_table = table.iloc[sep_point:, :]

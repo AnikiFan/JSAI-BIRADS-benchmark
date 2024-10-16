@@ -163,7 +163,7 @@ class Trainer:
                                                                                           optimizer=optimizer,
                                                                                           epoch_index=epoch,
                                                                                           tb_writer=writer)
-            schedular.step()
+            schedular.step(avg_loss)
             model.eval()
             with torch.no_grad():
                 valid_outcomes = [(vlabel.to(self.cfg.env.device), model(vinputs.to(self.cfg.env.device))) for

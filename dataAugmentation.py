@@ -26,12 +26,20 @@ import numpy as np
 if __name__ == '__main__':
     # initial_num = np.array([849, 1061, 404, 274, 232, 269])
     initial_num = np.array([1035, 1349, 492, 341, 301, 343])
-    target_num = np.array([3000-1035, 3000-1349, 3000-492, 3000-341, 3000-301, 3000-343])
+    target_num = np.array([1200-1035, 1200-1349, 1200-492, 1200-341, 1200-301, 1200-343])
     print("target_num: ", target_num)
     ratio = (target_num) / initial_num
     ratio = ratio.tolist()
     print("ratio: ", ratio)
 
+    
+    dataset = {
+        'official_train':False,
+        'BUS':False,
+        'USG':False,
+        'trainROI':True,
+    }
+    
     # 设置要使用的增广策略
     selected_transforms = [
         # A.Rotate(limit=10, p=1.0),
@@ -84,24 +92,21 @@ if __name__ == '__main__':
     
     
     for transform in selected_transforms:
-        Preprocess(transform, ratio=ratio).process_image()
+        Preprocess(transform, ratio=ratio, **dataset).process_image()
     
-    # allData_num = 
-    mixup_target_num = np.array([200, 200, 200, 200, 200, 200])
-    # mixup_ratio = mixup_target_num / initial_num
+
     mixup_ratio = ratio
-    # mixup_ratio = mixup_ratio.tolist()
     
     # 单独处理 MixUp
-    mixup_transforms = [
+    mixups = [
         'mixup_0.1',
         # 'mixup_0.3'
         # 'mixup_0.3'
         # 根据需要添加或移除 MixUp 策略
     ]
     
-    for mixup_name in mixup_transforms:
+    for mixup_name in mixups:
         alpha = float(mixup_name.split('_')[1])  # 提取 MixUp 的 alpha 值
-        MixUp(alpha, ratio=mixup_ratio).process_image()
+        MixUp(alpha, ratio=mixup_ratio, **dataset).process_image()
     
     

@@ -22,6 +22,7 @@ class ClaDatasetConfig:
     official_train:bool=True
     BUS:bool=True
     USG:bool=True
+    trainROI:bool=True
     fea_official_train:bool=False
 
 @dataclass
@@ -32,6 +33,7 @@ class FeaDatasetConfig:
     official_train:bool=False
     BUS:bool=False
     USG:bool=False
+    trainROI:bool=False
     fea_official_train:bool=True
 
 
@@ -68,9 +70,14 @@ class ClaAugmentedDatasetConfig:
             #balance 
             os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','HorizontalFlip,ratio=(0.8,0.4,2.7,4.5,5.5,4.6)-1'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Rotate,ratio=(0.4,0.1,2.0,3.4,4.0,3.4)-1'),
+            # balance 
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.9,0.5,3.1,4.9,5.6,4.8)-1'),
             
+            # balance
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(1.9,1.2,5.1,7.8,9.0,7.7)-2'),
             
-            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.4,0.1,2.0,3.4,4.0,3.4)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'au
+            # gmented','Mixup,ratio=(0.4,0.1,2.0,3.4,4.0,3.4)-1'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.4,0.1,2.0,3.4,4.0,3.4)-2'),
             
             # 200
@@ -91,11 +98,20 @@ class ClaAugmentedDatasetConfig:
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Rotate,ratio=(0.2,0.2,0.5,0.7,0.9,0.7)-1'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','ShiftScaleRotate,ratio=(0.2,0.2,0.5,0.7,0.9,0.7)-1'),
             
+            #500
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Rotate,ratio=(0.5,0.4,1.0,1.5,1.7,1.5)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','HorizontalFlip,ratio=(0.5,0.4,1.0,1.5,1.7,1.5)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.5,0.4,1.0,1.5,1.7,1.5)-1'),
             
             # local 
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.9,0.5,3.1,4.9,5.6,4.8)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.9,0.5,3.1,4.9,5.6,4.8)-1'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.9,0.5,3.1,4.9,5.6,4.8)-2'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(1.9,1.5,4.1,5.9,6.6,5.8)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(1.9,1.5,4.1,5.9,6.6,5.8)-1'),
+            
+            # os.path.join(os.curdir, "data", 'breast', 
+            # 'cla', 'trainROI'),
+            os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_1.5'),
+
         ]
     )
 
@@ -111,6 +127,8 @@ class ClaSingleFoldDatasetConfig(ClaDatasetConfig,ClaAugmentedDatasetConfig):
 @dataclass
 class ClaCrossValidationDatasetConfig(ClaDatasetConfig,ClaAugmentedDatasetConfig):
     _target_: str = "utils.BreastDataset.BreastCrossValidationData"
+    k_fold:int=5
+    
 
 @dataclass
 class FeaSingleFoldDatasetConfig(FeaDatasetConfig, FeaAugmentedDatasetConfig):

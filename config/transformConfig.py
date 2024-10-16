@@ -30,8 +30,10 @@ class DefaultValidTransformConfig:
 @dataclass
 class EmptyTransformConfig:
     _target_: str = "torchvision.transforms.Compose"
-    transforms: List[Any] = field(default_factory=lambda: [])
-    
+    transforms: List[Any] =field(
+        default_factory=lambda: [ResizeConfig()]
+    )
+
 @dataclass
 class Transform_RandomResizedCropConfig:
     _target_: str = "torchvision.transforms.RandomResizedCrop"
@@ -89,7 +91,7 @@ class ResizeConfig:
     """
 
     _target_: str = "torchvision.transforms.Resize"
-    size: List[int] = field(default_factory=lambda: [400, 400])
+    size: List[int] = field(default_factory=lambda: [800, 800])
     antialias: bool = True  # 显式设置为True，避免警告，抗锯齿
     _convert_: str = "all"
 

@@ -120,7 +120,8 @@ class BreastCrossValidationData:
     def __init__(self, data_folder_path: str, k_fold: int = 5,
                  train_transform: Optional[torchvision.transforms.Compose] = None,
                  valid_transform: Optional[torchvision.transforms.Compose] = None, image_format: str = 'PIL',
-                 official_train: bool = True, BUS: bool = True, USG: bool = True, fea_official_train=False, *,
+                 official_train: bool = True, BUS: bool = True, USG: bool = True, trainROI:bool=False,
+                 fea_official_train=False, *,
                  seed: int = 42,
                  augmented_folder_list: Optional[List[str]] = None, **kwargs):
         """
@@ -132,6 +133,8 @@ class BreastCrossValidationData:
         :param image_format:
         :param BUS:
         :param USG:
+        :param trainROI:
+        :param fea_official_train:
         :param seed:
         :param augmented_folder_list: 增强后的图像所在文件夹的完整路径！
         """

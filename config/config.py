@@ -160,6 +160,10 @@ def init_config():
 
     cs.store(group='schedular', name="exponential", node=ExponentialLRConfig)
     cs.store(group='schedular', name="dummy", node=DummySchedularConfig)
+    cs.store(group='schedular', name="multi_step", node=MultiStepLRConfig)
+    cs.store(group='schedular', name="cosine", node=CosineAnnealingLRConfig)
+    cs.store(group='schedular', name="plateau", node=ReduceLROnPlateauConfig)
+    cs.store(group='schedular', name="step", node=StepLRConfig)
 
     # 初始化
     cs.store(name="my_config", node=Config)

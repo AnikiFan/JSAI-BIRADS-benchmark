@@ -180,8 +180,8 @@ class BreastCrossValidationData:
                  train_transform: Optional[torchvision.transforms.Compose] = None,
                  valid_transform: Optional[torchvision.transforms.Compose] = None, image_format: str = 'PIL',
                  official_train: bool = True, BUS: bool = True, USG: bool = True, fea_official_train=False,
-                 feature='all', ratio: str | Tuple[float] | Tuple[int] = 'same', *,
-                 seed: int = 42,
+                 feature='all', ratio: str | Tuple[float] | Tuple[int] = 'same',
+                 selected_class: List[bool] = [True, True, True, True, True, True], *, seed: int = 42,
                  augmented_folder_list: Optional[List[str]] = None, **kwargs):
         """
         初始化返回k折叫交叉验证数据集的迭代器
@@ -213,6 +213,8 @@ class BreastCrossValidationData:
         self.ratio = ratio
         self.feature = feature
         self.task = 'fea' if fea_official_train else 'cla'
+        self.selected_class = selected_class
+        self.official_train = official_train
 
     def __len__(self) -> int:
         return self.k_fold
@@ -229,9 +231,15 @@ class BreastCrossValidationData:
                                      self.table.iloc[self.sep_point[self.cur_valid_fold]:, :]])
             if self.augmented_folder_list:
                 train_table = pd.concat([train_table,
-                                         split_augmented_image(valid_table, task=self.task,augmented_folder_list= self.augmented_folder_list,
-                                                feature=self.feature).sample(frac=1,random_state=self.seed)])
+                                         split_augmented_image(valid_table, task=self.task,
+                                                               augmented_folder_list=self.augmented_folder_list,
+                                                               feature=self.feature).sample(frac=1,
+                                                                                            random_state=self.seed)])
             train_table = adjust_ratio(train_table, self.ratio)
+            if self.official_train:
+                debug(f"selected class:{self.selected_class}")
+                train_table = train_table.loc[train_table.label.apply(lambda x: self.selected_class[x]), :]
+                valid_table = valid_table.loc[valid_table.label.apply(lambda x: self.selected_class[x]), :]
             debug(f"fold {self.cur_valid_fold - 1} sample distribution:")
             debug(f"train:")
             debug(train_table.label.value_counts())
@@ -249,7 +257,7 @@ def getBreastTrainValidData(data_folder_path: str, valid_ratio: float = 0.2,
                             valid_transform: Optional[torchvision.transforms.Compose] = None,
                             official_train: bool = True, BUS: bool = True, USG: bool = True, fea_official_train=False,
                             feature='all', image_format: str = 'PIL', ratio: str | Tuple[float] | Tuple[int] = 'same',
-                            *, seed: int = 42,
+                            selected_class: List[bool] = [True, True, True, True, True, True], *, seed: int = 42,
                             augmented_folder_list: Optional[List[str]] = None, **kwargs) -> Optional[
     Tuple[TableDataset, TableDataset]]:
     """
@@ -278,8 +286,13 @@ def getBreastTrainValidData(data_folder_path: str, valid_ratio: float = 0.2,
     if augmented_folder_list:
         train_table = pd.concat(
             [train_table, split_augmented_image(valid_table, task='fea' if fea_official_train else 'cla',
-                augmented_folder_list=augmented_folder_list, feature=feature).sample(frac=1, random_state=seed)])
+                                                augmented_folder_list=augmented_folder_list, feature=feature).sample(
+                frac=1, random_state=seed)])
     train_table = adjust_ratio(train_table, ratio)
+    if official_train:
+        debug(f"selected class:{selected_class}")
+        train_table = train_table.loc[train_table.label.apply(lambda x:selected_class[x]),:]
+        valid_table = valid_table.loc[valid_table.label.apply(lambda x:selected_class[x]),:]
     debug(f"single fold sample distribution:")
     debug(f"train:")
     debug(train_table.label.value_counts())

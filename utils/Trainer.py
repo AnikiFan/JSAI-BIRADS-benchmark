@@ -98,14 +98,13 @@ class Trainer:
                 train_labels.extend(labels)
                 outputs, labels = torch.cat(outputs, dim=0), torch.cat(labels, dim=0)
                 avg_loss = self.loss_fn(input=outputs, target=labels).item()
-                avg_accuracy = instantiate(self.cfg.train.accuracy, input=outputs, target=labels).item()
-                avg_f1 = instantiate(self.cfg.train.f1_score, input=outputs, target=labels).item()
+                avg_accuracy = instantiate(self.cfg.train.accuracy, input=outputs, target=labels,num_classes=self.cfg.dataset.num_classes).item()
+                avg_f1 = instantiate(self.cfg.train.f1_score, input=outputs, target=labels,num_classes=self.cfg.dataset.num_classes).item()
                 tb_x = (epoch_index - 1) * len(train_loader) + i
                 tb_writer.add_scalar('Loss/train', avg_loss, tb_x)
                 tb_writer.add_scalar('Accuracy/train', avg_accuracy, tb_x)
                 tb_writer.add_scalar('F1/train', avg_f1, tb_x)
                 outputs, labels = [], []
-        # 为了避免指标出现大幅波动，不对尾部剩余的一小部分计算指标
         train_outputs.extend(outputs)
         train_labels.extend(labels)
         train_outputs = torch.cat(train_outputs, dim=0)
@@ -148,6 +147,7 @@ class Trainer:
         # 为了初始化lazy layer，先传入一张图片
         # 初始化权重
         if not self.cfg.model.pretrained:
+            info('initialize model with xavier method')
             model.forward(next(iter(train_loader))[0].to(self.cfg.env.device))
             model.apply(Trainer.init_weights)
         optimizer = instantiate(self.cfg.optimizer, params=model.parameters())

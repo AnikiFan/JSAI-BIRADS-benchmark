@@ -13,7 +13,7 @@ class UnpretrainedModelConfig:
 
 @dataclass
 class PretrainedModelConfig:
-    pretrained: bool = False
+    pretrained: bool = True
 
 
 @dataclass
@@ -104,8 +104,7 @@ class MobileNetV2ClassifierModelConfig(PretrainedModelConfig):
     _target_:str="models.MobileNet.MobileNet_V2_Classifier.MobileNetV2Classifier"
     num_classes:int=MISSING
     feature_extract:bool=False
-    pretrained:bool=True
-    lr:float=0.001
+    lr:float=0.01
     
 @dataclass
 class ViTClassifier_timm_ModelConfig(PretrainedModelConfig):

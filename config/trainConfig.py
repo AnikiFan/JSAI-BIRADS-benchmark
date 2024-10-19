@@ -42,7 +42,7 @@ class BCELossConfig:
 @dataclass
 class EarlyStopping:
     _target_: str = 'utils.earlyStopping.EarlyStopping'
-    patience: int = 200
+    patience: int = 300
     min_delta: float = 0.001
     min_train_loss: float = 1.5 #现象：无论是否设置，其实只要10个epoch内loss不下降，模型基本上就不会再提升了（比如loss=1.2时也只是在1.2附近震荡）
 
@@ -191,7 +191,7 @@ class ShapeTrainConfig(SingleFeaTrainConfig):
 @dataclass
 class RemoteTrainConfig(ClaTrainConfig):
     checkpoint_path: Path = MISSING
-    epoch_num: int = 1000
+    epoch_num: int = 400
     num_workers: int = 10
     batch_size: int = 16
     info_frequency: int = 100

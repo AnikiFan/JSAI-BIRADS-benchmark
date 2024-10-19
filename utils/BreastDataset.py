@@ -174,6 +174,17 @@ def adjust_ratio(train: pd.DataFrame, ratio: str | Tuple[float] | Tuple[int]) ->
         debug(table.label.value_counts())
         return table
 
+def convert_class(table:pd.DataFrame,selected_class:List[bool]) -> pd.DataFrame:
+    to = 0
+    for idx,flag in enumerate(selected_class):
+        if not flag:
+            continue
+        table.loc[table.label==idx,'label'] = to
+        to += 1
+    return table
+
+
+
 
 class BreastCrossValidationData:
     def __init__(self, data_folder_path: str, k_fold: int = 5,
@@ -240,6 +251,8 @@ class BreastCrossValidationData:
                 debug(f"selected class:{self.selected_class}")
                 train_table = train_table.loc[train_table.label.apply(lambda x: self.selected_class[x]), :]
                 valid_table = valid_table.loc[valid_table.label.apply(lambda x: self.selected_class[x]), :]
+                train_table = convert_class(train_table, selected_class=self.selected_class)
+                valid_table = convert_class(valid_table, selected_class=self.selected_class)
             debug(f"fold {self.cur_valid_fold - 1} sample distribution:")
             debug(f"train:")
             debug(train_table.label.value_counts())
@@ -293,6 +306,8 @@ def getBreastTrainValidData(data_folder_path: str, valid_ratio: float = 0.2,
         debug(f"selected class:{selected_class}")
         train_table = train_table.loc[train_table.label.apply(lambda x:selected_class[x]),:]
         valid_table = valid_table.loc[valid_table.label.apply(lambda x:selected_class[x]),:]
+        train_table = convert_class(train_table,selected_class)
+        valid_table = convert_class(valid_table,selected_class)
     debug(f"single fold sample distribution:")
     debug(f"train:")
     debug(train_table.label.value_counts())

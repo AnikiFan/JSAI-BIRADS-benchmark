@@ -132,6 +132,7 @@ class ShapeAugmentedDatasetConfig:
 class Cla4SingleFoldDatasetConfig(ClaDatasetConfig,ClaAugmentedDatasetConfig):
     _target_: str = "utils.BreastDataset.getBreastTrainValidData"
     selected_class: List[bool] = field(default_factory=lambda: [False,False,True,True,True,False])
+    num_classes:int= 3
 
 
 @dataclass

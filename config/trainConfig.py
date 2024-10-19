@@ -52,7 +52,7 @@ class MultiClassAccuracy:
     input: Any = MISSING
     target: Any = MISSING
     average: str = 'macro'
-    num_classes: int = 6
+    num_classes: Any = MISSING
 
 
 @dataclass
@@ -61,7 +61,7 @@ class MultiClassF1Score:
     input: Any = MISSING
     target: Any = MISSING
     average: str = 'macro'
-    num_classes: int = 6
+    num_classes: Any  = MISSING
 
 
 @dataclass
@@ -69,7 +69,7 @@ class MultiClassConfusionMatrix:
     _target_: str = "torcheval.metrics.functional.multiclass_confusion_matrix"
     input: Any = MISSING
     target: Any = MISSING
-    num_classes: int = 6
+    num_classes: Any = MISSING
 
 
 @dataclass
@@ -177,10 +177,11 @@ class CalcificationTrainConfig(SingleFeaTrainConfig):
 
 @dataclass
 class DirectionTrainConfig(SingleFeaTrainConfig):
-    loss_function:BinaryFocalLossConfig = field(default_factory=lambda:BinaryFocalLossConfig(
-        alpha = 0.8,
-        gamma=2
-    ))
+    pass
+    # loss_function:BinaryFocalLossConfig = field(default_factory=lambda:BinaryFocalLossConfig(
+    #     alpha = 0.8,
+    #     gamma=2
+    # ))
 
 
 @dataclass

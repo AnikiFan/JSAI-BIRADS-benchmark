@@ -149,7 +149,7 @@ def getROIImageSet(imageSet_src:str,
     os.makedirs(imageSet_dst, exist_ok=overwrite)
     # 假设这个函数返回一个DataFrame，包含文件名和ROI信息
     ground_truth_ROI = add_ROI_to_ground_truth(os.path.join(imageSet_src, 'ground_truth.csv'), save=False)
-    for image_name in tqdm(ground_truth_ROI['file_name']): # 此处需要ground_truth_ROI['file_name']因为train中可能有来自BUSI的图片，而BUSI的图片没有ROI
+    for image_name in tqdm(ground_truth_ROI['file_name'],desc=f"Processing with ratio {ratio}"): # 此处需要ground_truth_ROI['file_name']因为train中可能有来自BUSI的图片，而BUSI的图片没有ROI
         if image_name.lower().endswith(('.png', '.jpg', '.jpeg')):
             try:
                 # 获取ROI信息
@@ -186,12 +186,30 @@ if __name__ == '__main__':
 #                save=True,
 #                ratio=2)
 
-    getROIImageSet(os.path.join(os.curdir,'data','breast','cla','train'),
-                os.path.join(os.curdir,'data','breast','cla','trainROI_3'),
-                overwrite=True,
+    # getROIImageSet(os.path.join(os.curdir,'data','breast','cla','train'),
+    #             os.path.join(os.curdir,'data','breast','cla','trainROI_2'),
+    #             overwrite=False,
+    #             save=True,
+    #             ratio=2)
+    
+    ratio_list = [
+                #   2,
+                  2.5,
+                  #3,
+                  3.5,
+                #   4,
+                  4.5,
+                #   5,
+                  5.5,
+                #   6,
+                  6.5,
+                #   7
+                  ]
+
+    for ratio in ratio_list:
+        getROIImageSet(os.path.join(os.curdir,'data','breast','cla','train'),
+                os.path.join(os.curdir,'data','breast','cla','trainROI_'+str(ratio)),
+                overwrite=False,
                 save=True,
-                ratio=3)
-
-
-
-
+                ratio=ratio)
+        

@@ -230,6 +230,16 @@ class Trainer:
             early_stopping(train_loss=avg_loss,val_loss=avg_vloss)
             # 检查早停条件
             if early_stopping.early_stop:
+                # 保存最终模型
+                info("保存最终模型...")
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'scheduler_state_dict': schedular.state_dict(),
+                    'best_vloss': self.best_vloss
+                }, os.path.join(HydraConfig.get().runtime.output_dir, "final_model.pth"))
+                info("最终模型已保存。")
                 info("Early stopping triggered!")
                 break
         

@@ -75,15 +75,17 @@ class ShapeDatasetConfig(SingleFeaDatasetConfig):
 
 @dataclass
 class ClaAugmentedDatasetConfig:
-    # augmented_folder_list: List[Path] = field(
-    #     default_factory=lambda: [
-    #         os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented',
-    #                      'VerticalFlip,ratio=(1.9,1.5,4.1,5.9,6.6,5.8)-1'),
-    #         os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'Mixup,ratio=(0.9,0.5,3.1,4.9,5.6,4.8)-1'),
-    #         os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented', 'Mixup,ratio=(1.9,1.5,4.1,5.9,6.6,5.8)-1'),
-    #     ]
-    # )
-    pass
+    augmented_folder_list: List[Path] = field(
+        default_factory=lambda: [
+            os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented','Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-1'),
+            os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented', 'Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-2'),
+            os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented', 'Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-3'),
+            os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented', 'Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-4'),
+            os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented', 'Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-5'),
+            os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented', 'Rotate,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-6'),
+            os.path.join(os.curdir, 'data', 'breast', 'cla', 'augmented', 'HorizontalFlip,ratio=(1.0,1.0,1.0,1.0,1.0,1.0)-1'),
+        ]
+    )
 
 
 @dataclass
@@ -132,6 +134,7 @@ class ShapeAugmentedDatasetConfig:
 class Cla4SingleFoldDatasetConfig(ClaDatasetConfig,ClaAugmentedDatasetConfig):
     _target_: str = "utils.BreastDataset.getBreastTrainValidData"
     selected_class: List[bool] = field(default_factory=lambda: [False,False,True,True,True,False])
+    ratio:List[int]= field(default_factory=lambda:[1,1,1,1,1,1])
     num_classes:int= 3
 
 

@@ -69,6 +69,23 @@ class PretrainedResNetModelConfig(PretrainedModelConfig):
     num_classes:int=MISSING
     lr:float=0.001
 
+@dataclass
+class IDNetModelConfig(UnpretrainedModelConfig):
+    _target_:str="models.IDCNet.IDCNet.IDNet"
+    num_classes:int=MISSING
+    lr:float=0.001
+
+@dataclass
+class IDCNetModelConfig(UnpretrainedModelConfig):
+    _target_:str="models.IDCNet.IDCNet.IDCNet"
+    num_classes:int=MISSING
+    lr:float=0.001
+
+@dataclass
+class TDSNetModelConfig(UnpretrainedModelConfig):
+    _target_:str="models.TDSNet.TDSNet.TDSNet"
+    num_classes:int=MISSING
+    lr:float=0.001
 
 @dataclass
 class ResNetClassifierModelConfig(PretrainedModelConfig):

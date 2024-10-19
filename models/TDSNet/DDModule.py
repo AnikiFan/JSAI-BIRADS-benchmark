@@ -7,11 +7,8 @@ class DDPath(nn.Module):
     def __init__(self, out_channels, kernel_size, dilation):
         super().__init__()
         self.net = nn.Sequential(
-            nn.LazyConv2d(out_channels, kernel_size=1),
-            nn.LazyBatchNorm2d(),
-            nn.LazyConv2d(out_channels, kernel_size=kernel_size, dilation=dilation,
-                          padding=(kernel_size // 2) * dilation),
-            nn.LazyBatchNorm2d()
+            nn.LazyConv2d(out_channels, kernel_size=1),nn.LazyBatchNorm2d(),nn.ReLU(),
+            nn.LazyConv2d(out_channels, kernel_size=kernel_size, dilation=dilation,padding=(kernel_size // 2) * dilation),nn.LazyBatchNorm2d(),nn.ReLU(),
         )
         if torch.cuda.is_available():
             self.net = self.net.to(torch.device('cuda'))
@@ -26,19 +23,15 @@ class DDModel(nn.Module):
         super().__init__()
         self.path = []  # 为了调试可能顺序与论文中有差异
         self.path.append(nn.Sequential(  # 1
-            nn.LazyConv2d(out_channels, kernel_size=1),
-            nn.LazyBatchNorm2d(),
-            DeformableConvolutionBlock(out_channels, out_channels),
-            nn.LazyBatchNorm2d()
+            nn.LazyConv2d(out_channels, kernel_size=1),nn.LazyBatchNorm2d(),nn.ReLU(),
+            DeformableConvolutionBlock(out_channels, out_channels),nn.LazyBatchNorm2d(),nn.ReLU(),
         ))
         self.path.append(nn.Sequential(  # 2
             nn.MaxPool2d(kernel_size=3, stride=1, padding=1),
-            nn.LazyConv2d(out_channels, kernel_size=1),
-            nn.LazyBatchNorm2d()
+            nn.LazyConv2d(out_channels, kernel_size=1), nn.LazyBatchNorm2d(),nn.ReLU(),
         ))
         self.path.append(nn.Sequential(  # 3
-            nn.LazyConv2d(out_channels, kernel_size=1),
-            nn.LazyBatchNorm2d()
+            nn.LazyConv2d(out_channels, kernel_size=1),nn.LazyBatchNorm2d(),nn.ReLU(),
         ))
         if torch.cuda.is_available():
             for i, p in enumerate(self.path):

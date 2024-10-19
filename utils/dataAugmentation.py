@@ -9,6 +9,7 @@ from warnings import warn
 from typing import *
 from tqdm import tqdm
 from logging import info
+from utils.MyFill2 import MyFill2_albumentations
 
 def remove_nested_parentheses(s: str)->str:
     # 使用正则表达式匹配嵌套的圆括号及其内容
@@ -204,8 +205,18 @@ class MixUp:
         else:
             no = ''
         origin_image, noise_image = cv2.imread(origin), cv2.imread(noise)
-        # 调整 Mixup 图像尺寸为原图像尺寸
-        noise_image = cv2.resize(noise_image, (origin_image.shape[1], origin_image.shape[0]))
+        mode = 'origin'
+        if mode == 'origin':
+            noise_image = cv2.resize(noise_image, (origin_image.shape[1], origin_image.shape[0]))
+        elif mode == 'MyFill2':  
+            # 对两张图片进行MyFill2返回的是张量，将其转化为原来的类型
+            origin_image = MyFill2_albumentations(min_width=256,min_height=256)(image=origin_image)['image']
+            noise_image = MyFill2_albumentations(min_width=256,min_height=256)(image=noise_image)['image']
+            # 获得最大图片的尺寸
+            max_size = max(origin_image.shape[0], origin_image.shape[1], noise_image.shape[0], noise_image.shape[1])
+            # 调整 Mixup 图像尺寸为原图像尺寸
+            noise_image = cv2.resize(noise_image, (max_size, max_size))
+            origin_image = cv2.resize(origin_image, (max_size, max_size))
         # 计算 Mixup 权重
         mixup_image = (self.lam * origin_image + (1 - self.lam) * noise_image).astype(np.uint8)
         if self.ratio is None:

@@ -18,14 +18,23 @@ from typing import *
 class ClaDatasetConfig:
     data_folder_path: Path = MISSING
     image_format: str = "Tensor"
-    num_classes: int = 6
+    num_classes: int = 3
     official_train: bool = True
     BUS: bool = True
     USG: bool = True
     trainROI:bool=True
-    
+    selected_class:List[bool]=field(default_factory=lambda: 
+        [
+            False, #2
+            False, #3
+            True, #4A
+            True, #4B
+            True, #4C
+            False #5
+        ])
     fea_official_train: bool = False
-    _convert_: str = "all"
+    # ratio: List[int] = field(default_factory=lambda: [1,1,1,1,1,1])
+    # _convert_: str = "all"
 
 
 @dataclass
@@ -148,20 +157,20 @@ class ClaAugmentedDatasetConfig:
             
             # os.path.join(os.curdir, "data", 'breast', 
             # 'cla', 'trainROI'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_1.5'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_2'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_2.5'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_3'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_3.5'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_4'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_4.5'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_5'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_5.5'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_6'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_6.5'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_7'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_7.5'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_8'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_1.5'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_2'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_2.5'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_3'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_3.5'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_4'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_4.5'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_5'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_5.5'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_6'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_6.5'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_7'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_7.5'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_8'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_MyFill2_256'),
 
             
@@ -170,19 +179,20 @@ class ClaAugmentedDatasetConfig:
             
             # balance
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','Mixup,ratio=(0.4,0.1,2.0,3.4,4.0,3.4)-2'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','Rotate,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','Rotate,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
             
             # 500
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','ElasticTransform,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','GaussNoise,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','HorizontalFlip,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','MyFill2_albumentations,ratio=(9.5,0.4,9.2,18.2,28.9,50.2)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','HorizontalFlip,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','MyFill2_albumentations,ratio=(9.5,0.4,9.2,18.2,28.9,50.2)-1'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','RandomBrightnessContrast,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','RandomGamma,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','Rotate,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-2'),
+     
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','Rotate,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-2'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','ShiftScaleRotate,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','Rotate,HorizontalFlip,RandomBrightnessContrast,GaussNoise,ElasticTransform,ShiftScaleRotate,RandomGamma,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_USG_ROI','Mixup,ratio=(8.9,0.4,8.3,15.7,23.2,37.0)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_USG_ROI','Mixup,ratio=(8.9,0.4,8.3,15.7,23.2,37.0)-1'),
                                 
 
         ]

@@ -19,6 +19,22 @@ class MyBCELoss:
     def __call__(self, input, target, **kwargs):
         return BCELoss()(Sigmoid()(input), target)
 
+
+class WeightedCrossEntropyLoss(nn.Module):
+    """
+    专门针对多分类任务实现的加权交叉熵损失函数
+    """
+    def __init__(self, weight: Optional[List[float]] = None, reduction: str = 'mean'):
+        super().__init__()
+        self.weight = torch.tensor(weight) if weight is not None else None
+        self.reduction = reduction
+
+    def forward(self, input: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        if self.weight is not None:
+            self.weight = self.weight.to(input.device)
+        return nn.functional.cross_entropy(input, target, weight=self.weight, reduction=self.reduction)
+    
+    
 class MyBinaryCrossEntropyLoss:
     def __int__(self):
         """

@@ -27,7 +27,7 @@ class Trainer:
         self.train_transform = instantiate(self.cfg.train_transform)
         self.valid_transform = instantiate(self.cfg.valid_transform)
         # 用于记录以折为单位的最佳指标
-        self.best_vloss, self.best_vf1, self.best_vaccuracy, self.best_vconfusion_matrix = 1_000_000., None, None, None
+        self.best_vloss, self.best_overall, = 1_000_000., -1
 
     def train(self) -> None:
         for train_ds, valid_ds in instantiate(self.cfg.dataset, data_folder_path=self.cfg.env.data_folder_path,
@@ -204,8 +204,34 @@ class Trainer:
             if avg_vloss < best_loss:
                 best_loss, best_f1, best_accuracy, best_confusion_matrix = avg_vloss, avg_vf1, avg_vaccuracy, confusion_matrix
             # 判断是否要更新在所有折上获取的最佳指标，若更新，同时保存参数
+            if os.path.exists(os.path.join(HydraConfig.get().runtime.output_dir, 'last.pth')):
+                os.remove(os.path.join(HydraConfig.get().runtime.output_dir, 'last.pth'))
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': schedular.state_dict(),
+                'best_vloss': self.best_vloss
+            }, os.path.join(HydraConfig.get().runtime.output_dir, "last.pth"))
+            if 0.6*avg_vaccuracy+0.4*avg_vf1 > self.best_overall:
+                self.best_overall = 0.6*avg_vaccuracy+0.4*avg_vf1
+                info(f"\n###############################################################\n"
+                     f"# Validation overall improved to {0.6*avg_vaccuracy+0.4*avg_vf1:.6f} - saving best model #\n"
+                     f"###############################################################")
+                # 保存checkpoint（包括epoch，model_state_dict，optimizer_state_dict，best_vloss，但仅在best时保存）
+                # 保存断点重训所需的信息（需要包括epoch，model_state_dict，optimizer_state_dict，best_vloss）
+                # 只保留一份最佳指标对应的参数
+                if os.path.exists(os.path.join(HydraConfig.get().runtime.output_dir, 'best_overall.pth')):
+                    os.remove(os.path.join(HydraConfig.get().runtime.output_dir, 'best_overall.pth'))
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'scheduler_state_dict': schedular.state_dict(),
+                    'best_vloss': self.best_vloss
+                }, os.path.join(HydraConfig.get().runtime.output_dir, "best_overall.pth"))
             if avg_vloss < self.best_vloss:
-                self.best_vloss, self.best_vf1, self.best_vaccuracy, self.best_vconfusion_matrix = avg_vloss, avg_vf1, avg_vaccuracy, confusion_matrix
+                self.best_vloss = avg_vloss
                 info(f"\n############################################################\n"
                      f"# Validation loss improved to {avg_vloss:.6f} - saving best model #\n"
                      f"############################################################")
@@ -220,7 +246,7 @@ class Trainer:
                     'optimizer_state_dict': optimizer.state_dict(),
                     'scheduler_state_dict': schedular.state_dict(),
                     'best_vloss': self.best_vloss
-                }, os.path.join(HydraConfig.get().runtime.output_dir, "model.pth"))
+                }, os.path.join(HydraConfig.get().runtime.output_dir, "best_vloss.pth"))
             early_stopping(train_loss=avg_loss,val_loss=avg_vloss)
             # 检查早停条件
             if early_stopping.early_stop:

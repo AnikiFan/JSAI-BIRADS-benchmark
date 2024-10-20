@@ -79,13 +79,8 @@ if __name__ == '__main__':
     ratio,actual_target_num,class_distribution  = calculateForAugmentation(mode='same', target_num=target_num, dataset=dataset)
         # 设置要使用的增广策略
     selected_transforms = [
-        A.Rotate(limit=(14.9,15.1), p=1.0),
-        A.Rotate(limit=(44.9,45.1), p=1.0),
-        A.Rotate(limit=(89.9,90.1), p=1.0),
-        A.Rotate(limit=(-15.1,-14.9), p=1.0),
-        A.Rotate(limit=(-45.1,-44.9), p=1.0),
-        A.Rotate(limit=(-90.1,-89.9), p=1.0),
-        A.HorizontalFlip(p=1.0),
+        # A.Rotate(limit=10, p=1.0),
+        # A.HorizontalFlip(p=1.0),
         # A.VerticalFlip(p=1.0),
         # A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=1.0),
         

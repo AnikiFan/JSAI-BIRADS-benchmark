@@ -162,7 +162,7 @@ class Tester:
         info(f'confusion matrix:\n{str(confusion_matrix)}')
 
 
-task = 'cla'
+task = 'fea'
 feature = 'boundary'
 day = '15'
 time = '15-43-00'

@@ -11,7 +11,6 @@ from typing import *
 class SGDOptimizerConfig:
     _target_: str = "torch.optim.SGD"
     params:Any=MISSING
-# 先从这个开始调看看
 
 @dataclass
 class AdamOptimizerConfig:

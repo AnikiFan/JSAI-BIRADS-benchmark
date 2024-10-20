@@ -45,7 +45,6 @@ class FeaDatasetConfig:
     official_train: bool = False
     BUS: bool = False
     USG: bool = False
-    trainROI:bool=False
     fea_official_train: bool = True
     feature: str = 'all'
 

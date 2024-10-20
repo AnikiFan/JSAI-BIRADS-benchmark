@@ -12,11 +12,72 @@ from torchvision import transforms
 torchvision 中的transforms 写成config类
 '''
 
+
+
+"""
+基础变换配置
+"""
+
+@dataclass
+class ToTensorConfig:
+    _target_: str = "torchvision.transforms.ToTensor"
+
+
+@dataclass
+class MyCropConfig:
+    _target_: str = "utils.MyCrop.MyCrop"
+
+@dataclass
+class MyFillConfig:
+    _target_: str = "utils.MyFill.MyFill"
+    _convert_: str = "all"
+
+@dataclass
+class MyFill2Config:
+    _target_: str = "utils.MyFill2.MyFill2"
+    #note: 所有图片最大尺寸：1552，970
+    min_width: int = 1604  
+    min_height: int = 1000 
+    _convert_: str = "all"
+
+@dataclass
+class ResizeConfig:
+    """
+    这里设置_convert_="all"是为了让size在传入参数时变为list类型，否则会以hydra库中的类传入，不符合规定
+    注意，convert只支持转换为list，不支持转换为tuple
+    """
+
+    _target_: str = "torchvision.transforms.Resize"
+    size: List[int] = field(default_factory=lambda: [1600, 1600])
+    antialias: bool = False  # 显式设置为True，避免警告，抗锯齿
+    _convert_: str = "all"
+
+
+@dataclass
+class PILResizeConfig:
+    _target_: str = "utils.PILResize.PILResize"
+    size: List[int] = field(default_factory=lambda: [256, 256])
+    _convert_: str = "all"
+
+@dataclass
+class transform_RandomRotationConfig:
+    _target_: str = "torchvision.transforms.RandomRotation"
+    degrees: Tuple[int, int] = field(default_factory=lambda: (-15, 15))
+    _convert_: str = "all"
+
+#############################################################################
+
 @dataclass
 class DefaultTrainTransformConfig:
     _target_: str = "torchvision.transforms.Compose"
     transforms: List[Any] = field(
-        default_factory=lambda: [MyCropConfig(),ResizeConfig()]
+        default_factory=lambda: [
+            # MyCropConfig(),
+            MyFill2Config(),
+            transform_RandomRotationConfig(),
+            # ResizeConfig(),
+            NormalizeConfig()
+        ]
     )
 
 
@@ -25,11 +86,13 @@ class DefaultValidTransformConfig:
     _target_: str = "torchvision.transforms.Compose"
     transforms: List[Any] = field(
         default_factory=lambda: [
-            # MyCropConfig(), 
             MyFill2Config(),
-            # ResizeConfig(),
             NormalizeConfig()]
     )
+
+
+
+#############################################################################
 
 @dataclass
 class EmptyTransformConfig:
@@ -40,6 +103,18 @@ class EmptyTransformConfig:
             ResizeConfig()]
     )
 
+
+
+@dataclass
+class NormalizeConfig:
+    _target_: str = "torchvision.transforms.Normalize"
+    mean: List[float] = field(default_factory=lambda: [0.485, 0.456, 0.406])
+    std: List[float] = field(default_factory=lambda: [0.229, 0.224, 0.225])
+
+
+
+
+#############################################################################
 @dataclass
 class Transform_RandomResizedCropConfig:
     _target_: str = "torchvision.transforms.RandomResizedCrop"
@@ -79,54 +154,8 @@ class Transform_NormalizeConfig:
 
 
 
-@dataclass
-class ToTensorConfig:
-    _target_: str = "torchvision.transforms.ToTensor"
-
-
-@dataclass
-class MyCropConfig:
-    _target_: str = "utils.MyCrop.MyCrop"
-
-@dataclass
-class MyFillConfig:
-    _target_: str = "utils.MyFill.MyFill"
-    _convert_: str = "all"
-    
-@dataclass
-class MyFill2Config:
-    _target_: str = "utils.MyFill2.MyFill2"
-    min_width: int = 1600 
-    min_height: int = 1600
-    _convert_: str = "all"
-
-@dataclass
-class ResizeConfig:
-    """
-    这里设置_convert_="all"是为了让size在传入参数时变为list类型，否则会以hydra库中的类传入，不符合规定
-    注意，convert只支持转换为list，不支持转换为tuple
-    """
-
-    _target_: str = "torchvision.transforms.Resize"
-    size: List[int] = field(default_factory=lambda: [1600, 1600])
-    antialias: bool = False  # 显式设置为True，避免警告，抗锯齿
-    _convert_: str = "all"
-
-
-@dataclass
-class PILResizeConfig:
-    _target_: str = "utils.PILResize.PILResize"
-    size: List[int] = field(default_factory=lambda: [256, 256])
-    _convert_: str = "all"
-
 # @dataclass
 
-
-@dataclass
-class NormalizeConfig:
-    _target_: str = "torchvision.transforms.Normalize"
-    mean: List[float] = field(default_factory=lambda: [0.4914, 0.4822, 0.4465])
-    std: List[float] = field(default_factory=lambda: [0.2023, 0.1994, 0.201])
 
 
 @dataclass

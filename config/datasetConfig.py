@@ -18,19 +18,19 @@ from typing import *
 class ClaDatasetConfig:
     data_folder_path: Path = MISSING
     image_format: str = "Tensor"
-    num_classes: int = 3
+    num_classes: int = 6
     official_train: bool = True
     BUS: bool = True
     USG: bool = True
     trainROI:bool=True
     selected_class:List[bool]=field(default_factory=lambda: 
         [
-            False, #2
-            False, #3
+            True, #2
+            True, #3
             True, #4A
             True, #4B
             True, #4C
-            False #5
+            True #5
         ])
     fea_official_train: bool = False
     # ratio: List[int] = field(default_factory=lambda: [1,1,1,1,1,1])
@@ -155,8 +155,7 @@ class ClaAugmentedDatasetConfig:
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.9,0.5,3.1,4.9,5.6,4.8)-2'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(1.9,1.5,4.1,5.9,6.6,5.8)-1'),
             
-            # os.path.join(os.curdir, "data", 'breast', 
-            # 'cla', 'trainROI'),
+            os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_1.5'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_2'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_2.5'),

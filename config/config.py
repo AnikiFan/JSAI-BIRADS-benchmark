@@ -112,7 +112,7 @@ def init_config():
     cs.store(group='model', name="VGG", node=VGGModelConfig)
     cs.store(group='model', name="linear_sanity_check", node=LinearSanityCheckerModelConfig)
     cs.store(group='model', name="conv_sanity_check", node=ConvSanityCheckerModelConfig)
-    cs.store(group='model', name="pretrained_resnet", node=PretrainedResNetModelConfig)
+    cs.store(group='model', name="pretrained_resnet", node=PretrainedModelConfig)
     cs.store(group='model', name="unet_classifier", node=UnetModelConfig)
     cs.store(group='model', name="resnet_classifier", node=ResNetClassifierModelConfig)
     cs.store(group='model', name="mobilenet_v2", node=MobileNetModleConfig)

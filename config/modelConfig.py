@@ -125,7 +125,8 @@ class GCNNModelConfig(UnpretrainedModelConfig):
 class ResNetClassifierModelConfig(PretrainedModelConfig):
     _target_:str="models.PretrainClassifer.resnet.ResNetClassifier"
     num_classes:int=MISSING
-    freeze_backbone:bool=False
+    # feature_only:bool=True
+    # freeze_backbone:bool=True
     dropout:float=0.2
     lr:float=0.001
     
@@ -159,11 +160,11 @@ class MobileNetV2ClassifierModelConfig(PretrainedModelConfig):
 @dataclass
 class ViTClassifier_timm_ModelConfig(PretrainedModelConfig):
     _target_:str="models.timm.ViT.ViTClassifier_timm"
-    # model_name:str="vit_base_patch16_224"
+    # model_name:str="vit_base_patch16_224.augreg_in21k"
     # model_name:str='vit_mediumd_patch16_reg4_gap_256.sbb_in12k_ft_in1k'
-    # model_name:str='fastvit_ma36.apple_in1k'
-    model_name:str='densenet121.ra_in1k'
-    classifier_head:bool=True
+    model_name:str='fastvit_ma36.apple_in1k'
+    # model_name:str='densenet121.ra_in1k'
+    classifier_head:bool=False
     num_classes:int=6
     pretrained:bool=True
     lr:float=0.001
@@ -175,3 +176,7 @@ class ViTClassifier_timm_ModelConfig(PretrainedModelConfig):
 class DenseNetClassifier_timm_ModelConfig(PretrainedModelConfig):
     _target_:str="models.timm.denseNet.DenseNetClassifier"
     lr:float=0.001
+    features_only:bool=False
+    num_classes:int=6
+    pretrained:bool=True
+    freeze_backbone:bool=False

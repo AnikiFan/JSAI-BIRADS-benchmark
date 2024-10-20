@@ -19,7 +19,10 @@ class MobileNetV2Classifier(nn.Module):
         self.pretrained = pretrained
 
         # 加载预训练的 MobileNet v2 模型
-        self.model = models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT)
+        if self.pretrained:
+            self.model = models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT)
+        else:
+            self.model = models.mobilenet_v2(pretrained=self.pretrained)
 
         if self.feature_extract:
             self.freeze_features()
@@ -40,25 +43,30 @@ class MobileNetV2Classifier(nn.Module):
         """
         dropout_rates = [0.5, 0.5]  # 根据需要调整 dropout 率
 
-        # 获取特征提取部分的输出特征数
-        num_ftrs = self.model.last_channel  # MobileNetV2 的最后输出通道数
+        # # 获取特征提取部分的输出特征数
+        # num_ftrs = self.model.last_channel  # MobileNetV2 的最后输出通道数
 
-        # 定义新的分类器
-        self.model.classifier = nn.Sequential(
-            nn.Flatten(),  # 展平成一维向量
-            nn.Linear(num_ftrs, 1024),  # 全连接层 1
-            nn.ReLU(),
-            nn.Dropout(dropout_rates[0]),
-            nn.Linear(1024, 1024),  # 全连接层 2
-            nn.ReLU(),
-            nn.Dropout(dropout_rates[1]),
-            nn.Linear(1024, 512),  # 全连接层 3
-            nn.ReLU(),
-            nn.Linear(512, 128),  # 全连接层 4
-            nn.ReLU(),
-            nn.Linear(128, self.num_classes),  # 输出层
-            # nn.Softmax(dim=1),  # 如果使用 CrossEntropyLoss，可以省略 Softmax
-        )
+        # # 定义新的分类器
+        # self.model.classifier = nn.Sequential(
+        #     nn.Flatten(),  # 展平成一维向量
+        #     nn.Linear(num_ftrs, 1024),  # 全连接层 1
+        #     nn.ReLU(),
+        #     nn.Dropout(dropout_rates[0]),
+        #     nn.Linear(1024, 1024),  # 全连接层 2
+        #     nn.ReLU(),
+        #     nn.Dropout(dropout_rates[1]),
+        #     nn.Linear(1024, 512),  # 全连接层 3
+        #     nn.ReLU(),
+        #     nn.Linear(512, 128),  # 全连接层 4
+        #     nn.ReLU(),
+        #     nn.Linear(128, self.num_classes),  # 输出层
+        #     # nn.Softmax(dim=1),  # 如果使用 CrossEntropyLoss，可以省略 Softmax
+        # )
+        
+        # 获取原分类器的输入特征数
+        num_ftrs = self.model.classifier[1].in_features
+        # 替换分类器的最后一层
+        self.model.classifier[1] = nn.Linear(num_ftrs, self.num_classes)
 
     def forward(self, x):
         """

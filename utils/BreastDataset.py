@@ -11,7 +11,11 @@ import re
 from logging import debug
 
 
-def make_table(data_folder_path: str, official_train: bool = True, BUS: bool = True, USG: bool = True,
+def make_table(data_folder_path: str,
+               official_train: bool = True,
+               BUS: bool = True,
+               USG: bool = True,
+               trainROI: bool = False,
                fea_official_train=False, feature='all', *, seed: int = 42) -> pd.DataFrame:
     """
     合成未经变换的数据整合而成的csv，file_name列为图像的路径，label列为对应图像的标签
@@ -25,6 +29,7 @@ def make_table(data_folder_path: str, official_train: bool = True, BUS: bool = T
     official_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'train')
     BUS_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'BUS', 'Images')
     USG_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'USG')
+    trainROI_data_path = os.path.join(data_folder_path, 'breast', 'cla', 'trainROI')
     fea_official_data_path = os.path.join(data_folder_path, 'breast', 'fea', 'train')
     assert os.path.exists(
         official_data_path), f"{official_data_path} does not exist! please use OfficialClaDataOrganizer first!"
@@ -50,11 +55,19 @@ def make_table(data_folder_path: str, official_train: bool = True, BUS: bool = T
         table.file_name = table.file_name.apply(lambda x: os.path.join(USG_data_path, x))
         tables.append(table)
         debug("append USG")
+    if trainROI:
+        table = pd.read_csv(os.path.join(trainROI_data_path, 'ground_truth.csv'))
+        table['label'] = table['label'].apply(lambda x: int(x))
+        table.file_name = table.file_name.apply(lambda x: os.path.join(trainROI_data_path, x))
+        tables.append(table)
+        debug("append trainROI")
+
     if fea_official_train:
         table = pd.read_csv(os.path.join(fea_official_data_path, 'ground_truth.csv'), dtype=str)
         table.file_name = table.file_name.apply(lambda x: os.path.join(fea_official_data_path, x))
         tables.append(table)
         debug("append fea_official_train")
+
     assert len(tables), "No selected dataset!"
     table = pd.concat(tables, axis=0)
     table.reset_index(drop=True, inplace=True)
@@ -174,26 +187,25 @@ def adjust_ratio(train: pd.DataFrame, ratio: str | Tuple[float] | Tuple[int]) ->
         debug(table.label.value_counts())
         return table
 
-def convert_class(table:pd.DataFrame,selected_class:List[bool]) -> pd.DataFrame:
+
+def convert_class(table: pd.DataFrame, selected_class: List[bool]) -> pd.DataFrame:
     to = 0
-    for idx,flag in enumerate(selected_class):
+    for idx, flag in enumerate(selected_class):
         if not flag:
             continue
-        table.loc[table.label==idx,'label'] = to
+        table.loc[table.label == idx, 'label'] = to
         to += 1
     return table
-
-
 
 
 class BreastCrossValidationData:
     def __init__(self, data_folder_path: str, k_fold: int = 5,
                  train_transform: Optional[torchvision.transforms.Compose] = None,
                  valid_transform: Optional[torchvision.transforms.Compose] = None, image_format: str = 'PIL',
-                 official_train: bool = True, BUS: bool = True, USG: bool = True, fea_official_train=False,
-                 feature='all', ratio: str | Tuple[float] | Tuple[int] = 'same',
-                 selected_class: List[bool] = [True, True, True, True, True, True], *, seed: int = 42,
-                 augmented_folder_list: Optional[List[str]] = None, **kwargs):
+                 official_train: bool = True, BUS: bool = True, USG: bool = True, trainROI: bool = False,
+                 fea_official_train=False, feature='all', ratio: str | Tuple[float] | Tuple[int] = 'same',
+                 selected_class: List[bool] = [True, True, True, True, True, True], *,
+                 seed: int = 42, augmented_folder_list: Optional[List[str]] = None, **kwargs):
         """
         初始化返回k折叫交叉验证数据集的迭代器
         :param data_folder_path:
@@ -204,6 +216,8 @@ class BreastCrossValidationData:
         :param official_train:
         :param BUS:
         :param USG:
+        :param trainROI:
+        :param fea_official_train:
         :param fea_official_train:
         :param feature: 选择使用fea任务的某个特征进行训练，默认为'all'，即使用全部
         :param ratio: 指定训练集中的标签比例，若为'same'，即保持不变
@@ -211,7 +225,7 @@ class BreastCrossValidationData:
         :param augmented_folder_list: 增强后的图像所在文件夹的完整路径！
         :param kwargs:
         """
-        self.table = make_table(data_folder_path=data_folder_path, official_train=official_train, BUS=BUS, USG=USG,
+        self.table = make_table(data_folder_path=data_folder_path, official_train=official_train, BUS=BUS, USG=USG,trainROI=trainROI,
                                 fea_official_train=fea_official_train, feature=feature, seed=seed)
         self.sep_point = np.round(np.linspace(0, self.table.shape[0], k_fold + 1)).astype(np.int_)
         self.cur_valid_fold = 0
@@ -268,7 +282,11 @@ class BreastCrossValidationData:
 def getBreastTrainValidData(data_folder_path: str, valid_ratio: float = 0.2,
                             train_transform: Optional[torchvision.transforms.Compose] = None,
                             valid_transform: Optional[torchvision.transforms.Compose] = None,
-                            official_train: bool = True, BUS: bool = True, USG: bool = True, fea_official_train=False,
+                            official_train: bool = True,
+                            BUS: bool = True,
+                            USG: bool = True,
+                            trainROI: bool = False,
+                            fea_official_train=False,
                             feature='all', image_format: str = 'PIL', ratio: str | Tuple[float] | Tuple[int] = 'same',
                             selected_class: List[bool] = [True, True, True, True, True, True], *, seed: int = 42,
                             augmented_folder_list: Optional[List[str]] = None, **kwargs) -> Optional[
@@ -282,6 +300,8 @@ def getBreastTrainValidData(data_folder_path: str, valid_ratio: float = 0.2,
     :param official_train:
     :param BUS:
     :param USG:
+    :param trainROI:
+    :param fea_official_train:
     :param fea_official_train:
     :param feature: 选择使用fea任务的某个特征进行训练，默认为'all'，即使用全部
     :param image_format:
@@ -291,7 +311,7 @@ def getBreastTrainValidData(data_folder_path: str, valid_ratio: float = 0.2,
     :param kwargs:
     :return:
     """
-    table = make_table(data_folder_path=data_folder_path, official_train=official_train, BUS=BUS, USG=USG,
+    table = make_table(data_folder_path=data_folder_path, official_train=official_train, BUS=BUS, USG=USG,trainROI=trainROI,
                        fea_official_train=fea_official_train, feature=feature, seed=seed)
     sep_point = int(table.shape[0] * valid_ratio)
     valid_table = table.iloc[:sep_point, :]

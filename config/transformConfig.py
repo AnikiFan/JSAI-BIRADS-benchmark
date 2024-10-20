@@ -16,7 +16,7 @@ torchvision 中的transforms 写成config类
 class DefaultTrainTransformConfig:
     _target_: str = "torchvision.transforms.Compose"
     transforms: List[Any] = field(
-        default_factory=lambda: [MyCropConfig(),ResizeConfig()]
+        default_factory=lambda: [MyCropConfig(), ResizeConfig()]
     )
 
 
@@ -24,21 +24,16 @@ class DefaultTrainTransformConfig:
 class DefaultValidTransformConfig:
     _target_: str = "torchvision.transforms.Compose"
     transforms: List[Any] = field(
-        default_factory=lambda: [MyCropConfig(),ResizeConfig()]
+        default_factory=lambda: [MyCropConfig(), ResizeConfig()]
     )
 
 @dataclass
 class EmptyTransformConfig:
     _target_: str = "torchvision.transforms.Compose"
-    transforms: List[Any] = field(default_factory=lambda: [])
+    transforms: List[Any] =field(
+        default_factory=lambda: [ResizeConfig()]
+    )
 
-@dataclass
-class RandomCropConfig:
-    _target_: str = "torchvision.transforms.v2.RandomCrop"
-    size:int = 224
-    pad_if_needed: bool = True
-
-    
 @dataclass
 class Transform_RandomResizedCropConfig:
     _target_: str = "torchvision.transforms.RandomResizedCrop"

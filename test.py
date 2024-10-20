@@ -164,8 +164,8 @@ class Tester:
 
 task = 'fea'
 feature = 'boundary'
-day = '16'
-time = '17-20-59'
+day = '14'
+time = '09-12-09'
 checkpoint_path = os.path.join(os.curdir, "outputs", '2024-10-'+day, time)
 
 

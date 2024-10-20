@@ -35,7 +35,7 @@ def show(imgs,image_name=None, save_folder_path=None, display=True):
 
 
 class MyFill2(nn.Module):
-    """自定义填充模块，将图片变成指定最小宽高的正方形图片，使用黑色填充空白部分。
+    """自定义填充模块，将图片变成指定最小宽高的长方形或正方形图片，使用黑色填充空白部分。
     如果图片尺寸小于最小宽高，则随机放置原图；否则，居中放置。
     """
 
@@ -50,20 +50,19 @@ class MyFill2(nn.Module):
             # 获取原始尺寸
             w, h = x.size
             # 计算目标尺寸
-            target_w = max(w, self.min_width) 
+            target_w = max(w, self.min_width)
             target_h = max(h, self.min_height)
-            max_side = max(target_w, target_h)
             # 创建新的背景图像（黑色）
-            new_img = Image.new("RGB", (max_side, max_side))
+            new_img = Image.new("RGB", (target_w, target_h))
             # 判断是否需要随机放置
             if w < self.min_width or h < self.min_height:
                 # 随机生成粘贴位置
-                left = np.random.randint(0, max_side - w + 1)
-                top = np.random.randint(0, max_side - h + 1)
+                left = np.random.randint(0, target_w - w + 1)
+                top = np.random.randint(0, target_h - h + 1)
             else:
-                # 随机粘贴，但保证原图完全在新图像内
-                left = np.random.randint(0, max_side - w + 1)
-                top = np.random.randint(0, max_side - h + 1)
+                # 居中放置
+                left = (target_w - w) // 2
+                top = (target_h - h) // 2
             # 将原图粘贴到背景图像
             new_img.paste(x, (left, top))
             return new_img
@@ -72,18 +71,17 @@ class MyFill2(nn.Module):
             c, h, w = x.shape
             target_w = max(w, self.min_width)
             target_h = max(h, self.min_height)
-            max_side = max(target_w, target_h)
             # 创建新的张量（黑色背景）
-            new_img = torch.zeros(c, max_side, max_side, dtype=x.dtype, device=x.device)
+            new_img = torch.zeros(c, target_h, target_w, dtype=x.dtype, device=x.device)
             # 判断是否需要随机放置
             if w < self.min_width or h < self.min_height:
                 # 随机生成粘贴位置
-                top = torch.randint(0, max_side - h + 1, (1,)).item()
-                left = torch.randint(0, max_side - w + 1, (1,)).item()
+                top = torch.randint(0, target_h - h + 1, (1,)).item()
+                left = torch.randint(0, target_w - w + 1, (1,)).item()
             else:
-                # 随机粘贴，但保证原图完全在新图像内
-                left = torch.randint(0, max_side - w + 1, (1,)).item()
-                top = torch.randint(0, max_side - h + 1, (1,)).item()
+                # 居中放置
+                left = (target_w - w) // 2
+                top = (target_h - h) // 2
             # 将原图粘贴到背景张量
             new_img[:, top:top + h, left:left + w] = x
             return new_img
@@ -91,6 +89,7 @@ class MyFill2(nn.Module):
             if debug:
                 raise TypeError(f"Unsupported input type: {type(x)}")
             return x
+
     def __name__(self):
         return 'MyFill2(min_width={}, min_height={})'.format(self.min_width, self.min_height)
 
@@ -170,4 +169,4 @@ if __name__ == '__main__':
     for image_name, image in tqdm(testImages):
         transformed_image = transforms(image)
         # print(transformed_image.size)
-        show([image, transformed_image], image_name=image_name, save_folder_path=os.path.join('data', 'breast', 'cla', 'trainROI_MyFill2_256'))
+        show([image, transformed_image], image_name=image_name, save_folder_path=os.path.join('data', 'breast', 'cla', 'trainROI_MyFill2_256_demo'))

@@ -51,7 +51,7 @@ class MultiClassAccuracy:
     _target_: str = "torcheval.metrics.functional.multiclass_accuracy"
     input: Any = MISSING
     target: Any = MISSING
-    average: str = 'macro'
+    average: str = 'micro'
     num_classes: Any = MISSING
 
 

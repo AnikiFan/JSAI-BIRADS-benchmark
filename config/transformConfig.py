@@ -25,9 +25,10 @@ class DefaultValidTransformConfig:
     _target_: str = "torchvision.transforms.Compose"
     transforms: List[Any] = field(
         default_factory=lambda: [
-            MyCropConfig(), 
+            # MyCropConfig(), 
             MyFill2Config(),
-            ResizeConfig()]
+            # ResizeConfig(),
+            NormalizeConfig()]
     )
 
 @dataclass
@@ -95,8 +96,8 @@ class MyFillConfig:
 @dataclass
 class MyFill2Config:
     _target_: str = "utils.MyFill2.MyFill2"
-    min_width: int = 256
-    min_height: int = 256
+    min_width: int = 1600 
+    min_height: int = 1600
     _convert_: str = "all"
 
 @dataclass
@@ -107,15 +108,15 @@ class ResizeConfig:
     """
 
     _target_: str = "torchvision.transforms.Resize"
-    size: List[int] = field(default_factory=lambda: [256, 256])
-    antialias: bool = True  # 显式设置为True，避免警告，抗锯齿
+    size: List[int] = field(default_factory=lambda: [1600, 1600])
+    antialias: bool = False  # 显式设置为True，避免警告，抗锯齿
     _convert_: str = "all"
 
 
 @dataclass
 class PILResizeConfig:
     _target_: str = "utils.PILResize.PILResize"
-    size: List[int] = field(default_factory=lambda: [128, 128])
+    size: List[int] = field(default_factory=lambda: [256, 256])
     _convert_: str = "all"
 
 # @dataclass

@@ -16,7 +16,7 @@ torchvision 中的transforms 写成config类
 class DefaultTrainTransformConfig:
     _target_: str = "torchvision.transforms.Compose"
     transforms: List[Any] = field(
-        default_factory=lambda: [MyCropConfig(), ResizeConfig()]
+        default_factory=lambda: [MyCropConfig(),ResizeConfig()]
     )
 
 

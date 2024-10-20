@@ -1,37 +1,37 @@
 import torch
 from torch import nn
-from TDSNet.FeatureBlock import FeatureBlock
-from TDSNet.ClassifierBlock import ClassifierBlock
-from TDSNet.ConvolutionBlock import ConvolutionBlock
-from TDSNet.DDModule import DDModel
+from .FeatureBlock import FeatureBlock
+from .ClassifierBlock import ClassifierBlock
+from .ConvolutionBlock import ConvolutionBlock
+from .DDModule import DDModel
 
 
 class TDSNet(nn.Module):
-    def __init__(self, num_class=10):
+    def __init__(self, num_classes=10,**kwargs):
         super().__init__()
 
         self.featureBlock = FeatureBlock(64)  # out_channels = 64
 
-        self.classifierBlock = ClassifierBlock(num_class, 1024)
+        self.classifierBlock = ClassifierBlock(num_classes, 512)
 
         self.cb1 = ConvolutionBlock(1, 64, first=True)  # out_channels = 64
-        self.cb2 = ConvolutionBlock(2, 128)  # out_channels = 128
-        self.cb3 = ConvolutionBlock(2, 128)  # out_channels = 128
-        self.cb4 = ConvolutionBlock(2, 128)  # out_channels = 128
+        self.cb2 = ConvolutionBlock(2, 64)  # out_channels = 128
+        self.cb3 = ConvolutionBlock(2, 64)  # out_channels = 128
+        self.cb4 = ConvolutionBlock(2, 64)  # out_channels = 128
 
         self.db1 = DDModel(64)
         self.db2 = nn.Sequential(
             DDModel(64),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            DDModel(128)
+            DDModel(64)
         )
         self.db3 = nn.Sequential(
             nn.MaxPool2d(kernel_size=2, stride=2),
-            DDModel(128)
+            DDModel(64)
         )
         self.db4 = nn.Sequential(
             nn.MaxPool2d(kernel_size=2, stride=2),
-            DDModel(128)
+            DDModel(64)
         )
 
     def forward(self, x):

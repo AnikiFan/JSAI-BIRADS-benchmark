@@ -64,10 +64,61 @@ class ConvSanityCheckerModelConfig(UnpretrainedModelConfig):
     lr:float=0.001
 
 @dataclass
-class PretrainedResNetModelConfig(PretrainedModelConfig):
-    _target_:str="models.model4compare.ResNet18.ResNet18"
+class ResNet18ModelConfig(PretrainedModelConfig):
+    _target_:str="models.model4compare.ResNet.ResNet18"
     num_classes:int=MISSING
     lr:float=0.001
+
+
+@dataclass
+class ResNet34ModelConfig(PretrainedModelConfig):
+    _target_: str = "models.model4compare.ResNet.ResNet34"
+    num_classes: int = MISSING
+    lr: float = 0.001
+
+@dataclass
+class ResNet50ModelConfig(PretrainedModelConfig):
+    _target_: str = "models.model4compare.ResNet.ResNet50"
+    num_classes: int = MISSING
+    lr: float = 0.001
+
+@dataclass
+class ResNet101ModelConfig(PretrainedModelConfig):
+    _target_: str = "models.model4compare.ResNet.ResNet101"
+    num_classes: int = MISSING
+    lr: float = 0.001
+
+@dataclass
+class ResNet152ModelConfig(PretrainedModelConfig):
+    _target_: str = "models.model4compare.ResNet.ResNet152"
+    num_classes: int = MISSING
+    lr: float = 0.001
+
+
+@dataclass
+class IDNetModelConfig(UnpretrainedModelConfig):
+    _target_:str="models.IDCNet.IDCNet.IDNet"
+    num_classes:int=MISSING
+    lr:float=0.001
+
+@dataclass
+class IDCNetModelConfig(UnpretrainedModelConfig):
+    _target_:str="models.IDCNet.IDCNet.IDCNet"
+    num_classes:int=MISSING
+    lr:float=0.001
+
+@dataclass
+class TDSNetModelConfig(UnpretrainedModelConfig):
+    _target_:str="models.TDSNet.TDSNet.TDSNet"
+    num_classes:int=MISSING
+    lr:float=0.001
+
+
+@dataclass
+class GCNNModelConfig(UnpretrainedModelConfig):
+    _target_: str = "models.GCNN.GCNN.GCNN"
+    num_classes: int = MISSING
+    lr: float = 0.001
 
 
 @dataclass

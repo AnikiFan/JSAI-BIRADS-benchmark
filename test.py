@@ -151,6 +151,11 @@ class Tester:
                 f1_score = my_binary_f1_score(input,target)
                 confusion_matrix = my_binary_confusion_matrix(input,target)
                 info("注意左上方是TN,右下方是TP")
+        with open(os.path.join(checkpoint_path,'score.txt'),'w') as f:
+            f.write('ACCURACY   {:.10f}\n'.format(accuracy))
+            f.write('F1         {:.10f}\n'.format(f1_score))
+            f.write('OVERALL    {:.10f}\n'.format(accuracy*0.6+f1_score*0.4))
+            f.write(f'confusion matrix:\n{str(confusion_matrix)}')
         info('ACCURACY   {:.10f}'.format(accuracy))
         info('F1         {:.10f}'.format(f1_score))
         info('OVERALL    {:.10f}'.format(accuracy*0.6+f1_score*0.4))

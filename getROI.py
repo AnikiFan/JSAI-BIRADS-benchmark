@@ -107,10 +107,12 @@ def add_ROI_to_ground_truth(ground_truth_csv_src:str=os.path.join(os.curdir,'dat
 
 
 
-def cropImageWithROI(image:Image.Image,x:float,y:float,width:float,height:float,ratio:float=1)->Image.Image:
+def cropImageWithROI(image:Image.Image,x:float,y:float,width:float,height:float,ratio:float=1,
+                     fix_size:tuple=None)->Image.Image:
     '''
     根据x,y,width,height裁剪图像
     :@param ratio: 裁剪图像的比例，默认为1
+    :@param fix_size: 裁剪图像的固定大小，默认为None
     '''
     image_width,image_height = image.size
     # 将归一化坐标转换为像素坐标
@@ -118,6 +120,10 @@ def cropImageWithROI(image:Image.Image,x:float,y:float,width:float,height:float,
     y_pixel = int(y * image_height)
     width_pixel = int(width * image_width)
     height_pixel = int(height * image_height)
+    
+    if fix_size:
+        width_pixel = fix_size[0]
+        height_pixel = fix_size[1]
     
     x_left = max(x_pixel - width_pixel/2*ratio, 0)
     y_upper = max(y_pixel - height_pixel/2*ratio, 0)
@@ -132,7 +138,8 @@ def getROIImageSet(imageSet_src:str,
                    imageSet_dst:str,
                    save:bool=False,
                    overwrite:bool=False,
-                   ratio:float=1
+                   ratio:float=1,
+                   fix_size:tuple=None
                    ):
     """
     处理图像集并保存裁剪后的ROI图像。
@@ -160,7 +167,10 @@ def getROIImageSet(imageSet_src:str,
                 
                 # 打开并裁剪图像
                 with Image.open(os.path.join(imageSet_src, image_name)) as img:
-                    cropped_image = cropImageWithROI(img, x, y, width, height,ratio=ratio)
+                    if fix_size:
+                        cropped_image = cropImageWithROI(img, x, y, width, height,ratio=ratio,fix_size=fix_size)
+                    else:
+                        cropped_image = cropImageWithROI(img, x, y, width, height,ratio=ratio)
                     if save:
                         cropped_image.save(os.path.join(imageSet_dst, image_name))
             except Exception as e:
@@ -176,6 +186,37 @@ def getROIImageSet(imageSet_src:str,
     ground_truth_ROI.to_csv(os.path.join(imageSet_dst, 'ground_truth_ROI.csv'), index=False)
 
     print("ROI图像集处理完成")
+def check_image_sizes(image_folder):
+    """
+    检查指定文件夹中所有图片的尺寸是否一致。
+
+    :param image_folder: 包含图片的文件夹路径
+    :return: 如果所有图片尺寸一致，返回True和尺寸；否则返回False和一个包含不同尺寸的集合
+    """
+    print(f"正在检查文件夹 {image_folder} 中的图片尺寸...")
+    sizes = set()
+    for filename in os.listdir(image_folder):
+        if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+            img_path = os.path.join(image_folder, filename)
+            with Image.open(img_path) as img:
+                sizes.add(img.size)
+    
+    if len(sizes) == 1:
+        size = sizes.pop()
+        print(f"所有图片尺寸一致：{size[0]}x{size[1]}")
+        return True, size
+    else:
+        print(f"发现 {len(sizes)} 种不同的图片尺寸：")
+        for size in sizes:
+            print(f"- {size[0]}x{size[1]}")
+        return False, sizes
+
+# 使用示例
+# is_consistent, result = check_image_sizes(os.path.join(os.curdir, 'data', 'breast', 'cla', 'trainROI_FixSize256_1'))
+# if is_consistent:
+#     print(f"数据集中所有图片尺寸一致，为 {result[0]}x{result[1]}")
+# else:
+#     print("数据集中存在不同尺寸的图片")
 
 
 if __name__ == '__main__':
@@ -192,24 +233,32 @@ if __name__ == '__main__':
     #             save=True,
     #             ratio=2)
     
-    ratio_list = [
-                #   2,
-                  2.5,
-                  #3,
-                  3.5,
-                #   4,
-                  4.5,
-                #   5,
-                  5.5,
-                #   6,
-                  6.5,
-                #   7
-                  ]
+    # ratio_list = [
+    #             #   2,
+    #               2.5,
+    #               #3,
+    #               3.5,
+    #             #   4,
+    #               4.5,
+    #             #   5,
+    #               5.5,
+    #             #   6,
+    #               6.5,
+    #             #   7
+    #               ]
+    ratio_list = [1]
 
     for ratio in ratio_list:
         getROIImageSet(os.path.join(os.curdir,'data','breast','cla','train'),
-                os.path.join(os.curdir,'data','breast','cla','trainROI_'+str(ratio)),
-                overwrite=False,
+                os.path.join(os.curdir,'data','breast','cla','trainROI_FixSize256_'+str(ratio)),
+                overwrite=True,
                 save=True,
-                ratio=ratio)
+                ratio=ratio,
+                fix_size=(256,256))
+        
+    is_consistent, result = check_image_sizes(os.path.join(os.curdir,'data','breast','cla','trainROI_FixSize256_1'))
+    if is_consistent:
+        print(f"数据集中所有图片尺寸一致，为 {result[0]}x{result[1]}")
+    else:
+        print("数据集中存在不同尺寸的图片")
         

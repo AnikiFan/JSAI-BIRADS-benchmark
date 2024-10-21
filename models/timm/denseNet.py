@@ -106,10 +106,10 @@ class DenseNetClassifier(nn.Module):
         前向传播
         '''
         # 根据模型是否在训练，选择使用训练的transform还是验证的transform
-        if self.training:
-            x = self.train_transform(x)
-        else:
-            x = self.val_transform(x)
+        # if self.training:
+        #     x = self.train_transform(x)
+        # else:
+        #     x = self.val_transform(x)
         
         # 前向传播，backbone输出特征
         x = self.base_model(x)

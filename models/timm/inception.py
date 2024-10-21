@@ -9,7 +9,7 @@ from torchsummary import summary
 class InceptionClassifier(nn.Module):
     def __init__(
         self,
-        model_name="inception_v3.ra_in1k", 
+        model_name="inception_resnet_v2.tf_in1k'", 
         pretrained=True, 
         num_classes=6, 
         features_only=True,

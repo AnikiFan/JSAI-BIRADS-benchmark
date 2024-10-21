@@ -25,6 +25,9 @@ outputs/*
 *.xlsx
 *.ipynb
 *.xml
+data/*
 demo.py
 **/.idea/
 nohup.out
+yolo_runs/*
+yoloModel/*

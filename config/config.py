@@ -13,9 +13,9 @@ from typing import *
 
 cla_defaults = [
         {"train": "cla_task"},
-        {"model": "linear_sanity_check"},
-        {"dataset": "cla_single"},
-        {"optimizer": "SGD"},
+        {"model": "TDSNet"},
+        {"dataset": "cla4_single"},
+        {"optimizer": "Adam"},
         {"env": "fx"},
         {"train_transform": "default"},
         {"valid_transform": "default"},
@@ -24,7 +24,7 @@ cla_defaults = [
 
 fea_defaults = [
         {"train": "fea_task"},
-        {"model": "mobilenet_v2"},
+        {"model": "pretrained_resnet"},
         {"dataset": "fea_single"},
         {"optimizer": "SGD"},
         {"env": "fx"},
@@ -35,7 +35,7 @@ fea_defaults = [
 
 boundary_defaults = [
         {"train": "boundary_task"},
-        {"model": "linear_sanity_check"},
+        {"model": "pretrained_resnet"},
         {"dataset": "boundary_single"},
         {"optimizer": "SGD"},
         {"env": "fx"},
@@ -46,7 +46,7 @@ boundary_defaults = [
 
 calcification_defaults = [
         {"train": "calcification_task"},
-        {"model": "linear_sanity_check"},
+        {"model": "pretrained_resnet"},
         {"dataset": "calcification_single"},
         {"optimizer": "SGD"},
         {"env": "fx"},
@@ -57,9 +57,9 @@ calcification_defaults = [
 
 direction_defaults = [
         {"train": "direction_task"},
-        {"model": "linear_sanity_check"},
+        {"model": "densenet_classifier_timm"},
         {"dataset": "direction_single"},
-        {"optimizer": "SGD"},
+        {"optimizer": "Adam"},
         {"env": "fx"},
         {"train_transform": "default"},
         {"valid_transform": "default"},
@@ -68,9 +68,9 @@ direction_defaults = [
 
 shape_defaults = [
         {"train": "shape_task"},
-        {"model": "linear_sanity_check"},
+        {"model": "mobilenet_v2_classifier"},
         {"dataset": "shape_single"},
-        {"optimizer": "SGD"},
+        {"optimizer": "Adam"},
         {"env": "fx"},
         {"train_transform": "default"},
         {"valid_transform": "default"},
@@ -79,7 +79,7 @@ shape_defaults = [
 
 @dataclass
 class Config:
-    defaults: List[Any] = field(default_factory=lambda:boundary_defaults)
+    defaults: List[Any] = field(default_factory=lambda:cla_defaults)
     train: Any = MISSING
     model: Any = MISSING
     dataset: Any = MISSING
@@ -112,7 +112,7 @@ def init_config():
     cs.store(group='model', name="VGG", node=VGGModelConfig)
     cs.store(group='model', name="linear_sanity_check", node=LinearSanityCheckerModelConfig)
     cs.store(group='model', name="conv_sanity_check", node=ConvSanityCheckerModelConfig)
-    cs.store(group='model', name="pretrained_resnet", node=PretrainedResNetModelConfig)
+    cs.store(group='model', name="pretrained_resnet", node=PretrainedModelConfig)
     cs.store(group='model', name="unet_classifier", node=UnetModelConfig)
     cs.store(group='model', name="resnet_classifier", node=ResNetClassifierModelConfig)
     cs.store(group='model', name="mobilenet_v2", node=MobileNetModleConfig)
@@ -120,11 +120,15 @@ def init_config():
     cs.store(group='model', name="mobilenet_v2_classifier", node=MobileNetV2ClassifierModelConfig)
     cs.store(group='model', name="vit_classifier_timm", node=ViTClassifier_timm_ModelConfig)
     cs.store(group='model', name="denseNet_classifier_timm", node=DenseNetClassifier_timm_ModelConfig)
+    cs.store(group='model', name="IDNet", node=IDNetModelConfig)
+    cs.store(group='model', name="IDCNet", node=IDCNetModelConfig)
+    cs.store(group='model', name="TDSNet", node=TDSNetModelConfig)
 
     cs.store(group='dataset', name="fashion_mnist", node=FashionMNISTDatasetConfig)
     cs.store(group='dataset', name="mnist", node=MNISTDatasetConfig)
     cs.store(group='dataset', name="cifar10", node=CIFAR10DatasetConfig)
     cs.store(group='dataset', name="cla_single", node=ClaSingleFoldDatasetConfig)
+    cs.store(group='dataset', name="cla4_single", node=Cla4SingleFoldDatasetConfig)
     cs.store(group='dataset', name="cla_multiple", node=ClaCrossValidationDatasetConfig)
     cs.store(group='dataset', name="fea_single", node=FeaSingleFoldDatasetConfig)
     cs.store(group='dataset', name="fea_multiple", node=FeaCrossValidationDatasetConfig)

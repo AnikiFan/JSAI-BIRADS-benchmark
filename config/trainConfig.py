@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 from omegaconf import MISSING
 from pathlib import Path
 from typing import *
+from torch import nn, Tensor
+import torchvision
 
 """
 训练过程配置，例如损失函数，早停等参数设置
@@ -12,10 +14,19 @@ from typing import *
 class CrossEntropyLossConfig:
     _target_: str = 'torch.nn.CrossEntropyLoss'
 
+    
+@dataclass
+class WeightedCrossEntropyLossConfig:
+    _target_: str = 'utils.loss_function.WeightedCrossEntropyLoss'
+    weight: Optional[List[float]] = field(default_factory=lambda: [1.0, 2.0, 3.0, 3.0, 3.0, 3.0])
+    reduction: str = 'mean'
+
 
 @dataclass
 class BinaryCrossEntropyLossConfig:
     _target_: str = 'utils.loss_function.MyBinaryCrossEntropyLoss'
+
+
 
 @dataclass
 class MultiClassFocalLossConfig:
@@ -23,10 +34,19 @@ class MultiClassFocalLossConfig:
     https://zhuanlan.zhihu.com/p/562641889
     """
     _target_: str = 'utils.loss_function.MultiClassFocalLoss'
-    alpha:List[float] = MISSING
-    gamma:float = MISSING
+    alpha:List[float] = field(default_factory=lambda: [1, 1, 2, 2, 2, 2])
+    gamma:float = 2
     reduction:str = 'mean'
     _convert_:str='all'
+    
+@dataclass
+class TorchvisionFocalLossConfig:
+    _target_: str = 'torchvision.ops.focal_loss.sigmoid_focal_loss'
+    alpha: float = 0.25
+    gamma: float = 2.0
+    reduction: str = 'mean'
+    
+
 
 @dataclass
 class BinaryFocalLossConfig:
@@ -42,7 +62,7 @@ class BCELossConfig:
 @dataclass
 class EarlyStopping:
     _target_: str = 'utils.earlyStopping.EarlyStopping'
-    patience: int = 200
+    patience: int = 100
     min_delta: float = 0.001
     min_train_loss: float = 1.5 #现象：无论是否设置，其实只要10个epoch内loss不下降，模型基本上就不会再提升了（比如loss=1.2时也只是在1.2附近震荡）
 
@@ -51,8 +71,8 @@ class MultiClassAccuracy:
     _target_: str = "torcheval.metrics.functional.multiclass_accuracy"
     input: Any = MISSING
     target: Any = MISSING
-    average: str = 'macro'
-    num_classes: int = 6
+    average: str = 'micro'
+    num_classes: Any = MISSING
 
 
 @dataclass
@@ -61,7 +81,7 @@ class MultiClassF1Score:
     input: Any = MISSING
     target: Any = MISSING
     average: str = 'macro'
-    num_classes: int = 6
+    num_classes: Any  = MISSING
 
 
 @dataclass
@@ -69,7 +89,7 @@ class MultiClassConfusionMatrix:
     _target_: str = "torcheval.metrics.functional.multiclass_confusion_matrix"
     input: Any = MISSING
     target: Any = MISSING
-    num_classes: int = 6
+    num_classes: Any = MISSING
 
 
 @dataclass
@@ -177,10 +197,11 @@ class CalcificationTrainConfig(SingleFeaTrainConfig):
 
 @dataclass
 class DirectionTrainConfig(SingleFeaTrainConfig):
-    loss_function:BinaryFocalLossConfig = field(default_factory=lambda:BinaryFocalLossConfig(
-        alpha = 0.8,
-        gamma=2
-    ))
+    pass
+    # loss_function:BinaryFocalLossConfig = field(default_factory=lambda:BinaryFocalLossConfig(
+    #     alpha = 0.8,
+    #     gamma=2
+    # ))
 
 
 @dataclass
@@ -191,9 +212,12 @@ class ShapeTrainConfig(SingleFeaTrainConfig):
 @dataclass
 class RemoteTrainConfig(ClaTrainConfig):
     checkpoint_path: Path = MISSING
-    epoch_num: int = 1000
-    num_workers: int = 10
-    batch_size: int = 16
+    epoch_num: int = 400
+    num_workers: int = 12
+    batch_size: int = 8
     info_frequency: int = 100
     early_stopping: EarlyStopping = field(default_factory=EarlyStopping)
-    loss_function: CrossEntropyLossConfig = field(default_factory=CrossEntropyLossConfig)
+    # loss_function: CrossEntropyLossConfig = field(default_factory=MultiClassFocalLossConfig)
+    # loss_function: TorchvisionFocalLossConfig = field(default_factory=TorchvisionFocalLossConfig)
+    # loss_function: MultiClassFocalLossConfig = field(default_factory=MultiClassFocalLossConfig)
+    loss_function: WeightedCrossEntropyLossConfig = field(default_factory=WeightedCrossEntropyLossConfig)

@@ -23,10 +23,18 @@ class ClaDatasetConfig:
     BUS: bool = True
     USG: bool = True
     trainROI:bool=True
-    
+    selected_class:List[bool]=field(default_factory=lambda: 
+        [
+            True, #2
+            True, #3
+            True, #4A
+            True, #4B
+            True, #4C
+            True #5
+        ])
     fea_official_train: bool = False
-    ratio: List[int] = field(default_factory=lambda :[1,1,1,1,1,1])
-    _convert_:str = "all"
+    # ratio: List[int] = field(default_factory=lambda: [1,1,1,1,1,1])
+    # _convert_: str = "all"
 
 
 @dataclass
@@ -37,9 +45,9 @@ class FeaDatasetConfig:
     official_train: bool = False
     BUS: bool = False
     USG: bool = False
-    trainROI:bool=False
     fea_official_train: bool = True
     feature: str = 'all'
+
 
 @dataclass
 class SingleFeaDatasetConfig:
@@ -52,20 +60,27 @@ class SingleFeaDatasetConfig:
     fea_official_train: bool = True
 
 
+@dataclass
 class BoundaryDatasetConfig(SingleFeaDatasetConfig):
-    # BUG： 不知道为什么在这里写的配置无法被继承
+    ratio: List[int] = field(default_factory=lambda: [1, 1])
     feature: str = 'boundary'
 
 
+@dataclass
 class CalcificationDatasetConfig(SingleFeaDatasetConfig):
+    ratio: List[int] = field(default_factory=lambda: [1, 1])
     feature: str = 'calcification'
 
 
+@dataclass
 class DirectionDatasetConfig(SingleFeaDatasetConfig):
+    ratio: List[int] = field(default_factory=lambda: [1, 1])
     feature: str = 'direction'
 
 
+@dataclass
 class ShapeDatasetConfig(SingleFeaDatasetConfig):
+    ratio: List[int] = field(default_factory=lambda: [1, 1])
     feature: str = 'shape'
 
 
@@ -139,26 +154,43 @@ class ClaAugmentedDatasetConfig:
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.9,0.5,3.1,4.9,5.6,4.8)-2'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(1.9,1.5,4.1,5.9,6.6,5.8)-1'),
             
-            # os.path.join(os.curdir, "data", 'breast', 
-            # 'cla', 'trainROI'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_1.5'),
+            os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_1.5'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_2'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_2.5'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_3'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_3.5'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_4'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_4.5'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_5'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_5.5'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_6'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_6.5'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_7'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_7.5'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_8'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_MyFill2_256'),
+
             
             
             #!augmented_ROI 
             
             # balance
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','Mixup,ratio=(0.4,0.1,2.0,3.4,4.0,3.4)-2'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','Rotate,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','Rotate,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
             
             # 500
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','ElasticTransform,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','GaussNoise,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','HorizontalFlip,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','GaussNoise,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','HorizontalFlip,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','MyFill2_albumentations,ratio=(9.5,0.4,9.2,18.2,28.9,50.2)-1'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','RandomBrightnessContrast,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','RandomGamma,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
+     
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','Rotate,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-2'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','ShiftScaleRotate,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_ROI','Rotate,HorizontalFlip,RandomBrightnessContrast,GaussNoise,ElasticTransform,ShiftScaleRotate,RandomGamma,ratio=(1.4,0.3,1.3,2.6,4.0,6.8)-1'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented_USG_ROI','Mixup,ratio=(8.9,0.4,8.3,15.7,23.2,37.0)-1'),
                                 
 
         ]
@@ -171,45 +203,74 @@ class FeaAugmentedDatasetConfig:
 
 @dataclass
 class BoundaryAugmentedDatasetConfig:
-    pass
+    augmented_folder_list: List[Path] = field(default_factory=lambda: [
+        # os.path.join(os.curdir,'data','breast','fea','augmented','RandomBrightnessContrast-1'),
+        # os.path.join(os.curdir, 'data','breast', 'fea', 'augmented', 'GaussNoise-1'),
+        # os.path.join(os.curdir, 'data','breast', 'fea', 'augmented', 'HorizontalFlip-1'),
+        os.path.join(os.curdir, 'data', 'breast', 'fea', 'augmented', 'VerticalFlip-1'),
+    ])
+
 
 @dataclass
 class CalcificationAugmentedDatasetConfig:
     pass
 
+
 @dataclass
 class DirectionAugmentedDatasetConfig:
-    pass
+    augmented_folder_list: List[Path] = field(default_factory=lambda: [
+        os.path.join(os.curdir, 'data', 'breast', 'fea', 'augmented', 'RandomBrightnessContrast-1'),
+        # os.path.join(os.curdir,'data','breast','fea','augmented','ElasticTransform-1'),
+        os.path.join(os.curdir, 'data', 'breast', 'fea', 'augmented', 'Mixup-1'),
+        os.path.join(os.curdir, 'data', 'breast', 'fea', 'augmented', 'HorizontalFlip-1'),
+        os.path.join(os.curdir, 'data', 'breast', 'fea', 'augmented', 'VerticalFlip-1'),
+    ])
+
 
 @dataclass
 class ShapeAugmentedDatasetConfig:
-    pass
+    augmented_folder_list: List[Path] = field(default_factory=lambda: [
+        os.path.join(os.curdir, 'data', 'breast', 'fea', 'augmented', 'RandomBrightnessContrast-1'),
+        # os.path.join(os.curdir,'data','breast','fea','augmented','ElasticTransform-1'),
+        # os.path.join(os.curdir, 'data','breast', 'fea', 'augmented', 'GaussNoise-1'),
+        os.path.join(os.curdir, 'data', 'breast', 'fea', 'augmented', 'HorizontalFlip-1'),
+        os.path.join(os.curdir, 'data', 'breast', 'fea', 'augmented', 'VerticalFlip-1'),
+    ])
 
 
 @dataclass
-class ClaSingleFoldDatasetConfig(ClaDatasetConfig,ClaAugmentedDatasetConfig):
+class Cla4SingleFoldDatasetConfig(ClaDatasetConfig,ClaAugmentedDatasetConfig):
+    _target_: str = "utils.BreastDataset.getBreastTrainValidData"
+    selected_class: List[bool] = field(default_factory=lambda: [False,False,True,True,True,False])
+    ratio:List[int]= field(default_factory=lambda:[1,1,1,1,1,1])
+    num_classes:int= 3
+
+
+@dataclass
+class ClaSingleFoldDatasetConfig(ClaDatasetConfig, ClaAugmentedDatasetConfig):
     _target_: str = "utils.BreastDataset.getBreastTrainValidData"
 
 
 @dataclass
-class ClaCrossValidationDatasetConfig(ClaDatasetConfig,ClaAugmentedDatasetConfig):
+class ClaCrossValidationDatasetConfig(ClaDatasetConfig, ClaAugmentedDatasetConfig):
     _target_: str = "utils.BreastDataset.BreastCrossValidationData"
-    k_fold:int=5
+    k_fold:int=5 
     
+
+
 
 @dataclass
 class FeaSingleFoldDatasetConfig(FeaDatasetConfig, FeaAugmentedDatasetConfig):
     _target_: str = "utils.BreastDataset.getBreastTrainValidData"
 
+
 @dataclass
-class FeaCrossValidationDatasetConfig(FeaDatasetConfig,FeaAugmentedDatasetConfig):
+class FeaCrossValidationDatasetConfig(FeaDatasetConfig, FeaAugmentedDatasetConfig):
     _target_: str = "utils.BreastDataset.BreastCrossValidationData"
 
 
 @dataclass
 class BoundarySingleFoldDatasetConfig(BoundaryDatasetConfig, BoundaryAugmentedDatasetConfig):
-    feature: str = 'boundary'
-    ratio: List[int] = field(default_factory=lambda:[1,1])
     _target_: str = "utils.BreastDataset.getBreastTrainValidData"
 
 
@@ -220,8 +281,6 @@ class BoundaryCrossValidationDatasetConfig(BoundaryDatasetConfig, BoundaryAugmen
 
 @dataclass
 class CalcificationSingleFoldDatasetConfig(CalcificationDatasetConfig, CalcificationAugmentedDatasetConfig):
-    feature: str = 'calcification'
-    ratio: List[int] = field(default_factory=lambda:[1,1])
     _target_: str = "utils.BreastDataset.getBreastTrainValidData"
 
 
@@ -232,7 +291,6 @@ class CalcificationCrossValidationDatasetConfig(CalcificationDatasetConfig, Calc
 
 @dataclass
 class DirectionSingleFoldDatasetConfig(DirectionDatasetConfig, DirectionAugmentedDatasetConfig):
-    feature: str = 'direction'
     _target_: str = "utils.BreastDataset.getBreastTrainValidData"
 
 

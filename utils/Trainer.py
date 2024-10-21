@@ -27,7 +27,7 @@ class Trainer:
         self.train_transform = instantiate(self.cfg.train_transform)
         self.valid_transform = instantiate(self.cfg.valid_transform)
         # 用于记录以折为单位的最佳指标
-        self.best_vloss, self.best_vf1, self.best_vaccuracy, self.best_vconfusion_matrix = 1_000_000., None, None, None
+        self.best_vloss, self.best_overall, = 1_000_000., -1
 
     def train(self) -> None:
         for train_ds, valid_ds in instantiate(self.cfg.dataset, data_folder_path=self.cfg.env.data_folder_path,
@@ -98,14 +98,13 @@ class Trainer:
                 train_labels.extend(labels)
                 outputs, labels = torch.cat(outputs, dim=0), torch.cat(labels, dim=0)
                 avg_loss = self.loss_fn(input=outputs, target=labels).item()
-                avg_accuracy = instantiate(self.cfg.train.accuracy, input=outputs, target=labels).item()
-                avg_f1 = instantiate(self.cfg.train.f1_score, input=outputs, target=labels).item()
+                avg_accuracy = instantiate(self.cfg.train.accuracy, input=outputs, target=labels,num_classes=self.cfg.dataset.num_classes).item()
+                avg_f1 = instantiate(self.cfg.train.f1_score, input=outputs, target=labels,num_classes=self.cfg.dataset.num_classes).item()
                 tb_x = (epoch_index - 1) * len(train_loader) + i
                 tb_writer.add_scalar('Loss/train', avg_loss, tb_x)
                 tb_writer.add_scalar('Accuracy/train', avg_accuracy, tb_x)
                 tb_writer.add_scalar('F1/train', avg_f1, tb_x)
                 outputs, labels = [], []
-        # 为了避免指标出现大幅波动，不对尾部剩余的一小部分计算指标
         train_outputs.extend(outputs)
         train_labels.extend(labels)
         train_outputs = torch.cat(train_outputs, dim=0)
@@ -148,6 +147,7 @@ class Trainer:
         # 为了初始化lazy layer，先传入一张图片
         # 初始化权重
         if not self.cfg.model.pretrained:
+            info('initialize model with xavier method')
             model.forward(next(iter(train_loader))[0].to(self.cfg.env.device))
             model.apply(Trainer.init_weights)
         optimizer = instantiate(self.cfg.optimizer, params=model.parameters())
@@ -162,12 +162,14 @@ class Trainer:
                                                                                           train_loader=train_loader,
                                                                                           optimizer=optimizer,
                                                                                           epoch_index=epoch,
+                                                                                          tb_writer=writer)
             
             # 更新学习率调度器
-            if isinstance(self.schedular, torch.optim.lr_scheduler.ReduceLROnPlateau):
-                self.schedular.step(avg_vloss)  # 使用验证损失作为指标
+            if isinstance(schedular, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                schedular.step(avg_loss)  # 使用验证损失作为指标
             else:
-                self.schedular.step()
+                schedular.step()
+
             model.eval()
             with torch.no_grad():
                 valid_outcomes = [(vlabel.to(self.cfg.env.device), model(vinputs.to(self.cfg.env.device))) for
@@ -208,8 +210,34 @@ class Trainer:
             if avg_vloss < best_loss:
                 best_loss, best_f1, best_accuracy, best_confusion_matrix = avg_vloss, avg_vf1, avg_vaccuracy, confusion_matrix
             # 判断是否要更新在所有折上获取的最佳指标，若更新，同时保存参数
+            if os.path.exists(os.path.join(HydraConfig.get().runtime.output_dir, 'last.pth')):
+                os.remove(os.path.join(HydraConfig.get().runtime.output_dir, 'last.pth'))
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': schedular.state_dict(),
+                'best_vloss': self.best_vloss
+            }, os.path.join(HydraConfig.get().runtime.output_dir, "last.pth"))
+            if 0.6*avg_vaccuracy+0.4*avg_vf1 > self.best_overall:
+                self.best_overall = 0.6*avg_vaccuracy+0.4*avg_vf1
+                info(f"\n###############################################################\n"
+                     f"# Validation overall improved to {0.6*avg_vaccuracy+0.4*avg_vf1:.6f} - saving best model #\n"
+                     f"###############################################################")
+                # 保存checkpoint（包括epoch，model_state_dict，optimizer_state_dict，best_vloss，但仅在best时保存）
+                # 保存断点重训所需的信息（需要包括epoch，model_state_dict，optimizer_state_dict，best_vloss）
+                # 只保留一份最佳指标对应的参数
+                if os.path.exists(os.path.join(HydraConfig.get().runtime.output_dir, 'best_overall.pth')):
+                    os.remove(os.path.join(HydraConfig.get().runtime.output_dir, 'best_overall.pth'))
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'scheduler_state_dict': schedular.state_dict(),
+                    'best_vloss': self.best_vloss
+                }, os.path.join(HydraConfig.get().runtime.output_dir, "best_overall.pth"))
             if avg_vloss < self.best_vloss:
-                self.best_vloss, self.best_vf1, self.best_vaccuracy, self.best_vconfusion_matrix = avg_vloss, avg_vf1, avg_vaccuracy, confusion_matrix
+                self.best_vloss = avg_vloss
                 info(f"\n############################################################\n"
                      f"# Validation loss improved to {avg_vloss:.6f} - saving best model #\n"
                      f"############################################################")
@@ -224,10 +252,20 @@ class Trainer:
                     'optimizer_state_dict': optimizer.state_dict(),
                     'scheduler_state_dict': schedular.state_dict(),
                     'best_vloss': self.best_vloss
-                }, os.path.join(HydraConfig.get().runtime.output_dir, "model.pth"))
+                }, os.path.join(HydraConfig.get().runtime.output_dir, "best_vloss.pth"))
             early_stopping(train_loss=avg_loss,val_loss=avg_vloss)
             # 检查早停条件
             if early_stopping.early_stop:
+                # 保存最终模型
+                info("保存最终模型...")
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'scheduler_state_dict': schedular.state_dict(),
+                    'best_vloss': self.best_vloss
+                }, os.path.join(HydraConfig.get().runtime.output_dir, "final_model.pth"))
+                info("最终模型已保存。")
                 info("Early stopping triggered!")
                 break
         

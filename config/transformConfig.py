@@ -64,6 +64,13 @@ class transform_RandomRotationConfig:
     _target_: str = "torchvision.transforms.RandomRotation"
     degrees: Tuple[int, int] = field(default_factory=lambda: (-15, 15))
     _convert_: str = "all"
+    
+@dataclass
+class Transform_GrayscaleConfig:
+    _target_: str = "torchvision.transforms.Grayscale"
+    num_output_channels: int = 1
+
+
 
 #############################################################################
 
@@ -76,7 +83,8 @@ class DefaultTrainTransformConfig:
             MyFill2Config(),
             transform_RandomRotationConfig(),
             # ResizeConfig(),
-            NormalizeConfig()
+            NormalizeConfig(),
+            Transform_GrayscaleConfig(),
         ]
     )
 
@@ -87,7 +95,9 @@ class DefaultValidTransformConfig:
     transforms: List[Any] = field(
         default_factory=lambda: [
             MyFill2Config(),
-            NormalizeConfig()]
+            NormalizeConfig(),
+            Transform_GrayscaleConfig(),
+            ]
     )
 
 

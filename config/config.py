@@ -123,6 +123,7 @@ def init_config():
     cs.store(group='model', name="IDNet", node=IDNetModelConfig)
     cs.store(group='model', name="IDCNet", node=IDCNetModelConfig)
     cs.store(group='model', name="TDSNet", node=TDSNetModelConfig)
+    cs.store(group='model', name="inception_classifier", node=InceptionClassifier_timm_ModelConfig)
 
     cs.store(group='dataset', name="fashion_mnist", node=FashionMNISTDatasetConfig)
     cs.store(group='dataset', name="mnist", node=MNISTDatasetConfig)

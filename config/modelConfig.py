@@ -181,3 +181,15 @@ class DenseNetClassifier_timm_ModelConfig(PretrainedModelConfig):
     num_classes:int=6
     pretrained:bool=True
     freeze_backbone:bool=False
+
+
+
+@dataclass
+class InceptionClassifier_timm_ModelConfig(PretrainedModelConfig):
+    _target_:str="models.timm.inception.InceptionClassifier"
+    lr:float=0.001
+    model_name:str="inception_resnet_v2.tf_in1k"
+    features_only:bool=False
+    num_classes:int=6
+    pretrained:bool=True
+    freeze_backbone:bool=False

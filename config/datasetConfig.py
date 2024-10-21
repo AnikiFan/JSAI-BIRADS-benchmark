@@ -20,9 +20,9 @@ class ClaDatasetConfig:
     image_format: str = "Tensor"
     num_classes: int = 6
     official_train: bool = True
-    BUS: bool = True
-    USG: bool = True
-    trainROI:bool=True
+    BUS: bool = False
+    USG: bool = False
+    trainROI:bool=False
     selected_class:List[bool]=field(default_factory=lambda: 
         [
             True, #2
@@ -154,7 +154,7 @@ class ClaAugmentedDatasetConfig:
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(0.9,0.5,3.1,4.9,5.6,4.8)-2'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'augmented','Mixup,ratio=(1.9,1.5,4.1,5.9,6.6,5.8)-1'),
             
-            os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI'),
+            # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_1.5'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_2'),
             # os.path.join(os.curdir, "data", 'breast', 'cla', 'trainROI_2.5'),

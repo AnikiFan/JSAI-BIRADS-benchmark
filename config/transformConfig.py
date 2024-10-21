@@ -36,8 +36,8 @@ class MyFillConfig:
 class MyFill2Config:
     _target_: str = "utils.MyFill2.MyFill2"
     #note: 所有图片最大尺寸：1552，970
-    min_width: int = 1604  
-    min_height: int = 1000 
+    min_width: int = 800 
+    min_height: int = 800
     _convert_: str = "all"
 
 @dataclass
@@ -48,7 +48,7 @@ class ResizeConfig:
     """
 
     _target_: str = "torchvision.transforms.Resize"
-    size: List[int] = field(default_factory=lambda: [1600, 1600])
+    size: List[int] = field(default_factory=lambda: [300, 300])
     antialias: bool = False  # 显式设置为True，避免警告，抗锯齿
     _convert_: str = "all"
 
@@ -82,9 +82,10 @@ class DefaultTrainTransformConfig:
             # MyCropConfig(),
             MyFill2Config(),
             transform_RandomRotationConfig(),
+            ResizeConfig(),
             # ResizeConfig(),
             NormalizeConfig(),
-            Transform_GrayscaleConfig(),
+            # Transform_GrayscaleConfig(),
         ]
     )
 
@@ -96,7 +97,8 @@ class DefaultValidTransformConfig:
         default_factory=lambda: [
             MyFill2Config(),
             NormalizeConfig(),
-            Transform_GrayscaleConfig(),
+            ResizeConfig(),
+            # Transform_GrayscaleConfig(),
             ]
     )
 
@@ -118,8 +120,10 @@ class EmptyTransformConfig:
 @dataclass
 class NormalizeConfig:
     _target_: str = "torchvision.transforms.Normalize"
-    mean: List[float] = field(default_factory=lambda: [0.485, 0.456, 0.406])
-    std: List[float] = field(default_factory=lambda: [0.229, 0.224, 0.225])
+    # mean: List[float] = field(default_factory=lambda: [0.485, 0.456, 0.406])
+    # std: List[float] = field(default_factory=lambda: [0.229, 0.224, 0.225])
+    mean: List[float] = field(default_factory=lambda: [0.5, 0.5, 0.5])
+    std: List[float] = field(default_factory=lambda: [0.5, 0.5, 0.5])
 
 
 

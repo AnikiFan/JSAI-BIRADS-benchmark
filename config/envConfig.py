@@ -13,22 +13,24 @@ class EnvConfig:
     device: str = getDevice()
     pin_memory: bool = True
     pin_memory_device: str = device if device.startswith('cuda') else ''
-
+    data_folder_path: Path = os.path.join(os.curdir, 'data')
+    model_weight_path:Path = os.path.join(data_folder_path, 'model_weight')
 
 @dataclass
 class FXEnvConfig(EnvConfig):
-    data_folder_path: Path = os.path.join(os.curdir, 'data')
+    pass
 
 
 @dataclass
 class ZHYLocalEnvConfig(EnvConfig):
-    data_folder_path: Path = os.path.join(os.curdir, 'data')
     # device: str = getDevice()
     device: str = 'cpu'
     pin_memory: bool = False
     
+@dataclass
 class ZhyRemoteEnvConfig(EnvConfig):
-    data_folder_path: Path = os.path.join(os.curdir, 'data')
+    final: bool = False
+    pass
     
 
 

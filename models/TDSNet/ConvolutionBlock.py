@@ -7,8 +7,7 @@ class ConvolutionBlock(nn.Module):
         super().__init__()
         if first:
             self.net = nn.Sequential(
-                nn.LazyConv2d(out_channels, kernel_size=7, stride=1, padding=3),
-                nn.LazyBatchNorm2d()
+                nn.LazyConv2d(out_channels, kernel_size=7, stride=1, padding=3),nn.LazyBatchNorm2d(),nn.ReLU()
             )
         else:
             conv_blks = []

@@ -11,23 +11,75 @@ from .transformConfig import *
 from .schedularConfig import *
 from typing import *
 
+cla_defaults = [
+        {"train": "cla_task"},
+        {"model": "TDSNet"},
+        {"dataset": "cla4_single"},
+        {"optimizer": "Adam"},
+        {"env": "fx"},
+        {"train_transform": "default"},
+        {"valid_transform": "default"},
+        {"schedular": "exponential"},
+    ]
 
-@dataclass
-class Config:
-    defaults: List[Any] = field(default_factory=lambda: [
-        {"train": "default"},
-        {"model": "linear_sanity_check"},
-        {"dataset": "mnist"},
+fea_defaults = [
+        {"train": "fea_task"},
+        {"model": "pretrained_resnet"},
+        {"dataset": "fea_single"},
         {"optimizer": "SGD"},
         {"env": "fx"},
         {"train_transform": "default"},
         {"valid_transform": "default"},
         {"schedular": "exponential"},
+    ]
 
-        # 彩色日志插件，会导致无法自动保存日志
-        # {"override hydra/job_logging": "colorlog"},
-        # {"override hydra/hydra_logging": "colorlog"}
-    ])
+boundary_defaults = [
+        {"train": "boundary_task"},
+        {"model": "pretrained_resnet"},
+        {"dataset": "boundary_single"},
+        {"optimizer": "SGD"},
+        {"env": "fx"},
+        {"train_transform": "default"},
+        {"valid_transform": "default"},
+        {"schedular": "exponential"},
+    ]
+
+calcification_defaults = [
+        {"train": "calcification_task"},
+        {"model": "pretrained_resnet"},
+        {"dataset": "calcification_single"},
+        {"optimizer": "SGD"},
+        {"env": "fx"},
+        {"train_transform": "default"},
+        {"valid_transform": "default"},
+        {"schedular": "exponential"},
+    ]
+
+direction_defaults = [
+        {"train": "direction_task"},
+        {"model": "densenet_classifier_timm"},
+        {"dataset": "direction_single"},
+        {"optimizer": "Adam"},
+        {"env": "fx"},
+        {"train_transform": "default"},
+        {"valid_transform": "default"},
+        {"schedular": "exponential"},
+    ]
+
+shape_defaults = [
+        {"train": "shape_task"},
+        {"model": "mobilenet_v2_classifier"},
+        {"dataset": "shape_single"},
+        {"optimizer": "Adam"},
+        {"env": "fx"},
+        {"train_transform": "default"},
+        {"valid_transform": "default"},
+        {"schedular": "exponential"},
+    ]
+
+@dataclass
+class Config:
+    defaults: List[Any] = field(default_factory=lambda:cla_defaults)
     train: Any = MISSING
     model: Any = MISSING
     dataset: Any = MISSING
@@ -46,7 +98,13 @@ def init_config():
     # 初始化
     cs = ConfigStore.instance()
 
-    cs.store(group='train', name="default", node=DefaultTrainConfig)
+    cs.store(group='train', name="cla_task", node=ClaTrainConfig)
+    cs.store(group='train', name="fea_task", node=FeaTrainConfig)
+    cs.store(group='train', name="boundary_task", node=BoundaryTrainConfig)
+    cs.store(group='train', name="calcification_task", node=CalcificationTrainConfig)
+    cs.store(group='train', name="direction_task", node=DirectionTrainConfig)
+    cs.store(group='train', name="shape_task", node=ShapeTrainConfig)
+    cs.store(group='train', name="cla_task_remote", node=RemoteTrainConfig)
 
     cs.store(group='model', name="alex_net", node=AlexNetModelConfig)
     cs.store(group='model', name="google_net", node=GoogleNetModelConfig)
@@ -55,16 +113,37 @@ def init_config():
     cs.store(group='model', name="linear_sanity_check", node=LinearSanityCheckerModelConfig)
     cs.store(group='model', name="conv_sanity_check", node=ConvSanityCheckerModelConfig)
     cs.store(group='model', name="pretrained_resnet", node=PretrainedResNetModelConfig)
-    cs.store(group='model', name="default", node=DefaultModelConfig)
+    cs.store(group='model', name="unet_classifier", node=UnetModelConfig)
     cs.store(group='model', name="resnet_classifier", node=ResNetClassifierModelConfig)
+    cs.store(group='model', name="mobilenet_v2", node=MobileNetModleConfig)
+    cs.store(group='model', name="pretrained_classifier", node=PretrainedClassifierModelConfig)
+    cs.store(group='model', name="mobilenet_v2_classifier", node=MobileNetV2ClassifierModelConfig)
+    cs.store(group='model', name="vit_classifier_timm", node=ViTClassifier_timm_ModelConfig)
+    cs.store(group='model', name="denseNet_classifier_timm", node=DenseNetClassifier_timm_ModelConfig)
+    cs.store(group='model', name="IDNet", node=IDNetModelConfig)
+    cs.store(group='model', name="IDCNet", node=IDCNetModelConfig)
+    cs.store(group='model', name="TDSNet", node=TDSNetModelConfig)
 
     cs.store(group='dataset', name="fashion_mnist", node=FashionMNISTDatasetConfig)
     cs.store(group='dataset', name="mnist", node=MNISTDatasetConfig)
     cs.store(group='dataset', name="cifar10", node=CIFAR10DatasetConfig)
-    cs.store(group='dataset', name="single", node=SingleFoldDatasetConfig)
-    cs.store(group='dataset', name="multiple", node=CrossValidationDatasetConfig)
+    cs.store(group='dataset', name="cla_single", node=ClaSingleFoldDatasetConfig)
+    cs.store(group='dataset', name="cla4_single", node=Cla4SingleFoldDatasetConfig)
+    cs.store(group='dataset', name="cla_multiple", node=ClaCrossValidationDatasetConfig)
+    cs.store(group='dataset', name="fea_single", node=FeaSingleFoldDatasetConfig)
+    cs.store(group='dataset', name="fea_multiple", node=FeaCrossValidationDatasetConfig)
+    cs.store(group='dataset', name="boundary_single", node=BoundarySingleFoldDatasetConfig)
+    cs.store(group='dataset', name="boundary_multiple", node=BoundaryCrossValidationDatasetConfig)
+    cs.store(group='dataset', name="calcification_single", node=CalcificationSingleFoldDatasetConfig)
+    cs.store(group='dataset', name="calcification_multiple", node=CalcificationCrossValidationDatasetConfig)
+    cs.store(group='dataset', name="direction_single", node=DirectionSingleFoldDatasetConfig)
+    cs.store(group='dataset', name="direction_multiple", node=DirectionCrossValidationDatasetConfig)
+    cs.store(group='dataset', name="shape_single", node=ShapeSingleFoldDatasetConfig)
+    cs.store(group='dataset', name="shape_multiple", node=ShapeCrossValidationDatasetConfig)
 
     cs.store(group='optimizer', name="SGD", node=SGDOptimizerConfig)
+    cs.store(group='optimizer', name="Adam", node=AdamOptimizerConfig)
+    cs.store(group='optimizer', name="AdamW", node=AdamWOptimizerConfig)
 
     cs.store(group='env', name="fx", node=FXEnvConfig)
     cs.store(group='env', name="zhy_local", node=ZHYLocalEnvConfig)
@@ -72,11 +151,23 @@ def init_config():
     cs.store(group='env', name="yzl", node=YZLEnvConfig)
 
     cs.store(group='train_transform', name="default", node=DefaultTrainTransformConfig)
+    cs.store(group='train_transform', name="custom", node=CustomTrainTransformConfig)
+    cs.store(group='train_transform', name="vit", node=ViTClassifierTrainTransformConfig)
+    cs.store(group='train_transform', name="fastvit", node=FastViT_trainTransformConfig)
+    cs.store(group='train_transform', name="empty", node=EmptyTransformConfig)
 
     cs.store(group='valid_transform', name="default", node=DefaultValidTransformConfig)
+    cs.store(group='valid_transform', name="custom", node=CustomValidTransformConfig)
+    cs.store(group='valid_transform', name="vit", node=ViTClassifierValidTransformConfig)
+    cs.store(group='valid_transform', name="fastvit", node=FastViT_validTransformConfig)
+    cs.store(group='valid_transform', name="empty", node=EmptyTransformConfig)
 
     cs.store(group='schedular', name="exponential", node=ExponentialLRConfig)
     cs.store(group='schedular', name="dummy", node=DummySchedularConfig)
+    cs.store(group='schedular', name="multi_step", node=MultiStepLRConfig)
+    cs.store(group='schedular', name="cosine", node=CosineAnnealingLRConfig)
+    cs.store(group='schedular', name="plateau", node=ReduceLROnPlateauConfig)
+    cs.store(group='schedular', name="step", node=StepLRConfig)
 
     # 初始化
     cs.store(name="my_config", node=Config)

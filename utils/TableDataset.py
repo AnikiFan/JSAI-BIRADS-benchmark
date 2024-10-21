@@ -1,5 +1,4 @@
 import os
-
 import torch
 from torchvision.datasets import VisionDataset
 import pandas as pd
@@ -7,6 +6,7 @@ import numpy as np
 from torchvision.transforms import transforms
 from PIL import Image
 from typing import *
+from collections.abc import Iterable
 
 
 class TableDataset(VisionDataset):
@@ -76,9 +76,13 @@ class TableDataset(VisionDataset):
         :param item:
         :return:
         """
+        label = self.table.iloc[item].label
+        # 针对fea任务
+        if isinstance(label,str):
+            label = torch.Tensor([int(x) for x in label])
         if self.transform:
-            return self.transform(self.reader(self.table.iloc[item].file_name)), self.table.iloc[item].label
-        return self.reader(self.table.iloc[item].file_name), self.table.iloc[item].label
+            return self.transform(self.reader(self.table.iloc[item].file_name)), label
+        return self.reader(self.table.iloc[item].file_name), label
 
     def __iter__(self):
         """

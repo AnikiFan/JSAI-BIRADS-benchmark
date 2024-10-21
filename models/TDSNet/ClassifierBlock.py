@@ -8,8 +8,8 @@ class ClassifierBlock(nn.Module):
     def __init__(self, num_class, in_channels):
         super().__init__()
         self.net = nn.Sequential(
-            SeparableConv2D(in_channels),
-            SELayer(1024),
+            SeparableConv2D(in_channels,in_channels),
+            SELayer(in_channels),
             nn.AdaptiveAvgPool2d((1, 1)),
             nn.Flatten(),
             nn.LazyBatchNorm1d(),

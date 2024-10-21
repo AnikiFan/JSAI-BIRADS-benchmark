@@ -9,7 +9,7 @@
 
 请先初始化框架
 
-使用`\utils\dataAugmentations.py`。
+使用`\utils\dataAugmentations.py`。（路径中不能包含中文，否则`imread`会报错！）
 
 增强后得到的数据自动存放在对应任务数据文件夹下的`augmented`文件夹下的文件夹中，文件夹的名称是所用变换的名称以及所用比例（fea任务不支持）。在该文件夹下，会有`README.md`文件详细描述所用变换的参数。
 

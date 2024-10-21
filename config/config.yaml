@@ -1,8 +1,8 @@
 defaults:
   - _self_
   - my_config
-  - override hydra/job_logging: default
-  - override hydra/hydra_logging: default
+  - override hydra/job_logging: colorlog
+  - override hydra/hydra_logging: colorlog
   - override hydra/sweeper: optuna
   - override hydra/sweeper/sampler: tpe
 hydra:

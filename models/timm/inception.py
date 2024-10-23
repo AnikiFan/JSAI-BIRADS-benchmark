@@ -6,19 +6,20 @@ from logging import info
 from torchsummary import summary
 
 
-class DenseNetClassifier(nn.Module):
+class InceptionClassifier(nn.Module):
     def __init__(
         self,
-        model_name="densenet121.ra_in1k", 
+        model_name="inception_resnet_v2.tf_in1k'", 
         pretrained=True, 
         num_classes=6, 
         features_only=True,
         freeze_backbone=True,
         **kwargs
     ):
-        super(DenseNetClassifier, self).__init__()
+        super(InceptionClassifier, self).__init__()
         pathToCheckpoints = {
-            "densenet121.ra_in1k": "./model_data/densenet121.ra_in1k.bin",
+            # "densenet121.ra_in1k": "./model_data/densenet121.ra_in1k.bin",
+            'inception_resnet_v2.tf_in1k': "./model_data/inception_resnet_v2.tf_in1k.bin",
         }
         # 模型参数
         self.features_only = features_only
@@ -114,8 +115,8 @@ class DenseNetClassifier(nn.Module):
         # 前向传播，backbone输出特征
         x = self.base_model(x)
         # 如果基模型输出的是列表或元组（例如，多个特征层），选择最后一个特征层
-        if isinstance(x, (list, tuple)):
-            x = x[-1]
+        # if isinstance(x, (list, tuple)):
+        #     x = x[-1]
         
         # 分类器输出分类结果
         # x = self.classifier(x)
@@ -135,7 +136,7 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     
-    model = DenseNetClassifier(model_name="densenet121.ra_in1k", pretrained=True, num_classes=6, features_only=True, freeze_backbone=True)
+    model = InceptionClassifier(model_name="inception_resnet_v2.tf_in1k", pretrained=True, num_classes=6, features_only=True, freeze_backbone=True)
     model.to(device)  # 将模型移动到指定设备
     
     # 创建一个示例输入并移动到指定设备

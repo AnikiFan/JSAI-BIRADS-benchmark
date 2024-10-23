@@ -12,11 +12,81 @@ from torchvision import transforms
 torchvision 中的transforms 写成config类
 '''
 
+
+
+"""
+基础变换配置
+"""
+
+@dataclass
+class ToTensorConfig:
+    _target_: str = "torchvision.transforms.ToTensor"
+
+
+@dataclass
+class MyCropConfig:
+    _target_: str = "utils.MyCrop.MyCrop"
+
+@dataclass
+class MyFillConfig:
+    _target_: str = "utils.MyFill.MyFill"
+    _convert_: str = "all"
+
+@dataclass
+class MyFill2Config:
+    _target_: str = "utils.MyFill2.MyFill2"
+    #note: 所有图片最大尺寸：1552，970
+    min_width: int = 800 
+    min_height: int = 800
+    _convert_: str = "all"
+
+@dataclass
+class ResizeConfig:
+    """
+    这里设置_convert_="all"是为了让size在传入参数时变为list类型，否则会以hydra库中的类传入，不符合规定
+    注意，convert只支持转换为list，不支持转换为tuple
+    """
+
+    _target_: str = "torchvision.transforms.Resize"
+    size: List[int] = field(default_factory=lambda: [300, 300])
+    antialias: bool = False  # 显式设置为True，避免警告，抗锯齿
+    _convert_: str = "all"
+
+
+@dataclass
+class PILResizeConfig:
+    _target_: str = "utils.PILResize.PILResize"
+    size: List[int] = field(default_factory=lambda: [256, 256])
+    _convert_: str = "all"
+
+@dataclass
+class transform_RandomRotationConfig:
+    _target_: str = "torchvision.transforms.RandomRotation"
+    degrees: Tuple[int, int] = field(default_factory=lambda: (-15, 15))
+    _convert_: str = "all"
+    
+@dataclass
+class Transform_GrayscaleConfig:
+    _target_: str = "torchvision.transforms.Grayscale"
+    num_output_channels: int = 1
+
+
+
+#############################################################################
+
 @dataclass
 class DefaultTrainTransformConfig:
     _target_: str = "torchvision.transforms.Compose"
     transforms: List[Any] = field(
-        default_factory=lambda: [MyCropConfig(), ResizeConfig()]
+        default_factory=lambda: [
+            # MyCropConfig(),
+            MyFill2Config(),
+            transform_RandomRotationConfig(),
+            ResizeConfig(),
+            # ResizeConfig(),
+            NormalizeConfig(),
+            # Transform_GrayscaleConfig(),
+        ]
     )
 
 
@@ -24,16 +94,41 @@ class DefaultTrainTransformConfig:
 class DefaultValidTransformConfig:
     _target_: str = "torchvision.transforms.Compose"
     transforms: List[Any] = field(
-        default_factory=lambda: [MyCropConfig(), ResizeConfig()]
+        default_factory=lambda: [
+            MyFill2Config(),
+            NormalizeConfig(),
+            ResizeConfig(),
+            # Transform_GrayscaleConfig(),
+            ]
     )
+
+
+
+#############################################################################
 
 @dataclass
 class EmptyTransformConfig:
     _target_: str = "torchvision.transforms.Compose"
     transforms: List[Any] =field(
-        default_factory=lambda: [ResizeConfig()]
+        default_factory=lambda: [
+            MyFillConfig(),
+            ResizeConfig()]
     )
 
+
+
+@dataclass
+class NormalizeConfig:
+    _target_: str = "torchvision.transforms.Normalize"
+    # mean: List[float] = field(default_factory=lambda: [0.485, 0.456, 0.406])
+    # std: List[float] = field(default_factory=lambda: [0.229, 0.224, 0.225])
+    mean: List[float] = field(default_factory=lambda: [0.5, 0.5, 0.5])
+    std: List[float] = field(default_factory=lambda: [0.5, 0.5, 0.5])
+
+
+
+
+#############################################################################
 @dataclass
 class Transform_RandomResizedCropConfig:
     _target_: str = "torchvision.transforms.RandomResizedCrop"
@@ -73,43 +168,8 @@ class Transform_NormalizeConfig:
 
 
 
-@dataclass
-class ToTensorConfig:
-    _target_: str = "torchvision.transforms.ToTensor"
-
-
-@dataclass
-class MyCropConfig:
-    _target_: str = "utils.MyCrop.MyCrop"
-
-
-@dataclass
-class ResizeConfig:
-    """
-    这里设置_convert_="all"是为了让size在传入参数时变为list类型，否则会以hydra库中的类传入，不符合规定
-    注意，convert只支持转换为list，不支持转换为tuple
-    """
-
-    _target_: str = "torchvision.transforms.Resize"
-    size: List[int] = field(default_factory=lambda: [224,224])
-    antialias: bool = True  # 显式设置为True，避免警告，抗锯齿
-    _convert_: str = "all"
-
-
-@dataclass
-class PILResizeConfig:
-    _target_: str = "utils.PILResize.PILResize"
-    size: List[int] = field(default_factory=lambda: [128, 128])
-    _convert_: str = "all"
-
 # @dataclass
 
-
-@dataclass
-class NormalizeConfig:
-    _target_: str = "torchvision.transforms.Normalize"
-    mean: List[float] = field(default_factory=lambda: [0.4914, 0.4822, 0.4465])
-    std: List[float] = field(default_factory=lambda: [0.2023, 0.1994, 0.201])
 
 
 @dataclass
@@ -136,7 +196,6 @@ class CustomValidTransformConfig:
             NormalizeConfig(),
         ]
     )
-
 
 # @dataclass
 # class TimmTrainTransformConfig:

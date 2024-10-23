@@ -225,6 +225,8 @@ class BreastCrossValidationData:
         :param augmented_folder_list: 增强后的图像所在文件夹的完整路径！
         :param kwargs:
         """
+        # 检查offcial_train和train_ROI是否同时为True
+        assert not (official_train and trainROI), "不能同时选择official_train数据和train_ROI数据,否则数据泄露"  
         self.table = make_table(data_folder_path=data_folder_path, official_train=official_train, BUS=BUS, USG=USG,trainROI=trainROI,
                                 fea_official_train=fea_official_train, feature=feature, seed=seed)
         self.sep_point = np.round(np.linspace(0, self.table.shape[0], k_fold + 1)).astype(np.int_)

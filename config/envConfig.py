@@ -24,7 +24,7 @@ class FXEnvConfig(EnvConfig):
 @dataclass
 class ZHYLocalEnvConfig(EnvConfig):
     # device: str = getDevice()
-    device: str = 'cpu'
+    device: str = 'mps'
     pin_memory: bool = False
     
 @dataclass

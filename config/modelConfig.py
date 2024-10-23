@@ -142,8 +142,9 @@ class PretrainedClassifierModelConfig:
     _target_:str="models.UnetClassifer.unet.PretrainedClassifier"
     resnet_type:str="resnet50"
     num_classes:int=MISSING
+    in_channels:int=1
     pretrained:bool=True
-    backbone:str="resnet50"
+    backbone:str="vgg"
     freeze_backbone:bool=False
     # dropout:float=0.2
     lr:float=0.001
@@ -176,6 +177,18 @@ class ViTClassifier_timm_ModelConfig(PretrainedModelConfig):
 class DenseNetClassifier_timm_ModelConfig(PretrainedModelConfig):
     _target_:str="models.timm.denseNet.DenseNetClassifier"
     lr:float=0.001
+    features_only:bool=False
+    num_classes:int=6
+    pretrained:bool=True
+    freeze_backbone:bool=False
+
+
+
+@dataclass
+class InceptionClassifier_timm_ModelConfig(PretrainedModelConfig):
+    _target_:str="models.timm.inception.InceptionClassifier"
+    lr:float=0.001
+    model_name:str="inception_resnet_v2.tf_in1k"
     features_only:bool=False
     num_classes:int=6
     pretrained:bool=True

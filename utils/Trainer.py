@@ -167,12 +167,14 @@ class Trainer:
                                                                                           train_loader=train_loader,
                                                                                           optimizer=optimizer,
                                                                                           epoch_index=epoch,
+                                                                                          tb_writer=writer)
             
             # 更新学习率调度器
-            if isinstance(self.schedular, torch.optim.lr_scheduler.ReduceLROnPlateau):
-                self.schedular.step(avg_vloss)  # 使用验证损失作为指标
+            if isinstance(schedular, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                schedular.step(avg_loss)  # 使用验证损失作为指标
             else:
-                self.schedular.step()
+                schedular.step()
+
             model.eval()
             with torch.no_grad():
                 valid_outcomes = [(vlabel.to(self.cfg.env.device), model(vinputs.to(self.cfg.env.device))) for
@@ -259,6 +261,16 @@ class Trainer:
             early_stopping(train_loss=avg_loss,val_loss=avg_vloss)
             # 检查早停条件
             if early_stopping.early_stop:
+                # 保存最终模型
+                info("保存最终模型...")
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'scheduler_state_dict': schedular.state_dict(),
+                    'best_vloss': self.best_vloss
+                }, os.path.join(HydraConfig.get().runtime.output_dir, "final_model.pth"))
+                info("最终模型已保存。")
                 info("Early stopping triggered!")
                 break
         

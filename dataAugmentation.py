@@ -1,5 +1,6 @@
 from utils.dataAugmentation import Preprocess, MixUp
 import albumentations as A
+from utils.MyFill2 import MyFill2_albumentations as MyFill2
 import numpy as np
 from utils.classDistribution import getClassDistribution
 import os
@@ -40,7 +41,7 @@ def calculateForAugmentation(mode: Literal['balance', 'same'] = 'balance',
         target_num = np.array([500, 500, 500, 500, 500, 500])
     if dataset is None:
         dataset = {
-            'official_train': False,
+            'official_train': True,
             'BUS': False,
             'USG': False,
             'trainROI': True,
@@ -70,10 +71,11 @@ if __name__ == '__main__':
     dataset = {
         'official_train':False,
         'BUS':False,
-        'USG':False,
+        'USG':True,
         'trainROI':True,
     }
-    target_num = np.array([500, 500, 500, 500, 500, 500])
+    target_num = np.array([3970, 317, 3922, 5073, 5810, 6470])
+    # target_num = np.array([100, 100, 100, 100, 100, 100])
     ratio,actual_target_num,class_distribution  = calculateForAugmentation(mode='same', target_num=target_num, dataset=dataset)
         # 设置要使用的增广策略
     selected_transforms = [
@@ -82,48 +84,51 @@ if __name__ == '__main__':
         # A.VerticalFlip(p=1.0),
         # A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=1.0),
         
-        A.Compose([
-            A.GaussNoise(var_limit=(10.0, 50.0), p=1.0),
-        ]),
+        # A.Compose([
+        #     MyFill2(256,256),
+        # ]),
+        # A.Compose([
+        #     A.GaussNoise(var_limit=(10.0, 50.0), p=1.0),
+        # ]),
         
         # A.GaussNoise(var_limit=(10.0, 50.0), p=1.0),
-        A.Compose([
-            A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=1.0),
-        ]),
+        # A.Compose([
+        #     A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=1.0),
+        # ]),
         
-        A.Compose([
-            A.ElasticTransform(alpha=1.0, sigma=50, alpha_affine=50, p=1.0),
-        ]),
+        # A.Compose([
+        #     A.ElasticTransform(alpha=1.0, sigma=50, alpha_affine=50, p=1.0),
+        # ]),
         
         # A.CLAHE(clip_limit=2.0, tile_grid_size=(8, 8), p=1.0),
         # A.GaussianBlur(blur_limit=(3, 7), p=1.0),
         # A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=10, p=1.0)
         
-        A.Compose([
-            A.Rotate(limit=10, p=1.0)
-        ]),
+        # A.Compose([
+        #     A.Rotate(limit=10, p=1.0)
+        # ]),
         # A.HorizontalFlip(p=1.0), 
         # A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=1.0),
         # A.GaussNoise(var_limit=(10.0, 50.0), p=1.0),
         # A.ElasticTransform(alpha=1.0, sigma=50, alpha_affine=50, p=1.0),
         # A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=0, p=1.0),
         # A.RandomGamma(gamma_limit=(80, 120), p=1.0)
-        A.Compose([
-            A.Rotate(limit=10, p=0.5),
-            A.HorizontalFlip(p=0.5), 
-            A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.5),
-            A.GaussNoise(var_limit=(10.0, 50.0), p=0.5),
-            A.ElasticTransform(alpha=1.0, sigma=50, alpha_affine=50, p=0.5),
-            A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=0, p=0.5),
-            A.RandomGamma(gamma_limit=(80, 120), p=0.5)
-        ])
+        # A.Compose([
+        #     A.Rotate(limit=10, p=0.5),
+        #     A.HorizontalFlip(p=0.5), 
+        #     A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.5),
+        #     A.GaussNoise(var_limit=(10.0, 50.0), p=0.5),
+        #     A.ElasticTransform(alpha=1.0, sigma=50, alpha_affine=50, p=0.5),
+        #     A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=0, p=0.5),
+        #     A.RandomGamma(gamma_limit=(80, 120), p=0.5)
+        # ])
     ]
  
     
     mixup_ratio = ratio
     
     mixups = [
-        'mixup_0.1',
+        'mixup_0.3',
     ]
     
  

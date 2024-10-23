@@ -1,4 +1,3 @@
-import os
 import torch
 from torchvision.datasets import VisionDataset
 import pandas as pd
@@ -6,7 +5,6 @@ import numpy as np
 from torchvision.transforms import transforms
 from PIL import Image
 from typing import *
-from collections.abc import Iterable
 
 
 class TableDataset(VisionDataset):
@@ -24,7 +22,6 @@ class TableDataset(VisionDataset):
         if image_format == 'PIL':
             self.reader = TableDataset._PIL_reader
         elif image_format == 'Tensor':
-            toTensor = transforms.ToTensor()
             self.reader = TableDataset._Tensor_reader
         elif image_format == 'ndarray':
             self.reader = TableDataset._ndarray_reader

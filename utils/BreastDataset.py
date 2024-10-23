@@ -337,3 +337,28 @@ def getBreastTrainValidData(data_folder_path: str, valid_ratio: float = 0.2,
     yield (
         TableDataset(train_table, transform=train_transform, image_format=image_format),
         TableDataset(valid_table, transform=valid_transform, image_format=image_format))
+
+
+class ClaWeightedBreastData:
+    def __init__(self,data_folder_path: str,train_transform,valid_transform,**kwargs):
+        self.finish = False
+        self.train_transform = train_transform
+        self.valid_transform = valid_transform
+        self.image_format='Tensor'
+        train_folder_path = os.path.join(data_folder_path,'breast','cla', 'train_weighted')
+        test_folder_path = os.path.join(data_folder_path,'breast','cla', 'test_weighted')
+        self.train_table = pd.read_csv(os.path.join(train_folder_path,'ground_truth.csv'))
+        self.valid_table = pd.read_csv(os.path.join(test_folder_path,'ground_truth.csv'))
+        self.train_table.file_name = self.train_table.file_name.apply(lambda x:os.path.join(train_folder_path,x))
+        self.valid_table.file_name = self.valid_table.file_name.apply(lambda x:os.path.join(test_folder_path,x))
+
+    def __iter__(self):
+        return self
+    def __next__(self):
+        if not self.finish:
+            self.finish = True
+            return (
+                TableDataset(self.train_table, transform=self.train_transform, image_format=self.image_format),
+                TableDataset(self.valid_table, transform=self.valid_transform, image_format=self.image_format)
+            )
+        raise StopIteration

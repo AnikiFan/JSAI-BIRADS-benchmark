@@ -48,6 +48,21 @@ class SingleFeaDatasetConfig:
     USG: bool = False
     fea_official_train: bool = True
 
+@dataclass
+class ROIDatasetConfig:
+    data_folder_path: Path = MISSING
+    _target_: str = "utils.ROIDataset.getROIBreastTrainValidData"
+    size:List[int]= field(default_factory=lambda :[224,224])
+    num_classes:int = 6
+    _convert_: str = "all"
+
+
+@dataclass
+class ClaWeightedConfig:
+    data_folder_path: Path = MISSING
+    _target_: str = "utils.BreastDataset.ClaWeightedBreastData"
+    num_classes: int = 6
+
 
 @dataclass
 class BoundaryDatasetConfig(SingleFeaDatasetConfig):
